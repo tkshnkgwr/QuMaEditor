@@ -1,0 +1,16 @@
+{
+  "$schema": "../../node_modules/@tauri-apps/cli/config.schema.json",
+  "identifier": "default",
+  "description": "Default permissions for QuMaEditor",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
+    "dialog:default",
+    "fs:default",
+    "http:default"
+  ]
+}

@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply font-sans antialiased overflow-hidden select-none;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+ * スクロールバー テーマ対応 (ライトモード & ダークモード)
+ * ----------------------------------------------------------------------------- */
+
+/* デフォルト & ダークモード用スクロールバー */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* ライトモード用スクロールバー (.light コンテナ配下の全要素) */
+.light ::-webkit-scrollbar-track,
+.light::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.light ::-webkit-scrollbar-thumb,
+.light::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.light ::-webkit-scrollbar-thumb:hover,
+.light::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* -----------------------------------------------------------------------------
+ * プレビュー表示内容からの PDF 出力 / 印刷専用スタイル (@media print)
+ * ----------------------------------------------------------------------------- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    font-size: 12pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 印刷枠における親コンテナの flex/grid 配分・左右オフセットを強制リセット */
+  div, main, section {
+    flex: none !important;
+    float: none !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* プレビュー以外のすべての UI 要素 (サイドバー, タイトルバー, タブ, ツールバー, エディタ, ステータスバー等) を完全非表示 */
+  header,
+  aside,
+  footer,
+  nav,
+  textarea,
+  .no-print,
+  [data-tauri-drag-region] {
+    display: none !important;
+  }
+
+  /* プレビュー描画領域 (.preview-markdown) のみを A4 印刷対象として用紙左端から幅100%展開 */
+  .preview-markdown {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    left: 0 !important;
+  }
+
+  .preview-markdown * {
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* 見出し */
+  .preview-markdown h1,
+  .preview-markdown h2,
+  .preview-markdown h3 {
+    color: #0f172a !important;
+    border-bottom: 1pt solid #cbd5e1 !important;
+    page-break-after: avoid;
+  }
+
+  /* テーブル */
+  .preview-markdown table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: avoid;
+  }
+
+  .preview-markdown th,
+  .preview-markdown td {
+    border: 1pt solid #cbd5e1 !important;
+    padding: 6pt 10pt !important;
+  }
+
+  .preview-markdown th {
+    background: #f1f5f9 !important;
+    font-weight: bold !important;
+  }
+
+  /* コードブロック */
+  .preview-markdown pre {
+    background: #f8fafc !important;
+    border: 1pt solid #cbd5e1 !important;
+    border-radius: 4pt !important;
+    padding: 8pt !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+    page-break-inside: avoid;
+  }
+
+  .preview-markdown code {
+    background: #f1f5f9 !important;
+    color: #0369a1 !important;
+    border: 1pt solid #e2e8f0 !important;
+  }
+
+  /* 引用ブロック */
+  .preview-markdown blockquote {
+    border-left: 3pt solid #0284c7 !important;
+    background: #f0f9ff !important;
+    color: #334155 !important;
+    padding: 6pt 12pt !important;
+  }
+}
