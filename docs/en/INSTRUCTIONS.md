@@ -26,9 +26,9 @@ This document provides extended development and operational guidelines for the A
 ## 3. Automated Documentation Syncing Rules
 - Sync documents upon significant updates:
 
-| Document | Role | Sync Trigger |
-| :--- | :--- | :--- |
-| `CHANGELOG.md` | Change History | Features, fixes, performance, removals |
-| `SPECIFICATION.md` | Specification & UI | Layout, data structure, shortcut changes |
-| `ARCHITECTURE.md` | Architecture | System boundaries, IPC, process model |
-| `DEVELOPMENT.md` | Dev Guide | Build commands, dependencies, workflow |
+| Document           | Role                | Sync Trigger                                   |
+| :----------------- | :------------------ | :--------------------------------------------- |
+| `CHANGELOG.md`     | Change History      | Features, fixes, performance, removals         |
+| `SPECIFICATION.md` | Specification & UI  | Layout, data structure, shortcut changes       |
+| `ARCHITECTURE.md`  | Architecture        | System boundaries, IPC, process model          |
+| `DEVELOPMENT.md`   | Dev Guide           | Build commands, dependencies, workflow         |

@@ -2,6 +2,16 @@
 
 QuMaEditor の主要な変更点およびリリース履歴です。
 
+## [1.1.0] - 2026-08-04
+
+### 🛠️ ドキュメント・自動型生成 & テスト全完備 (v1.1.0)
+
+- **Specta TypeScript 型自動生成環境 (`src/bindings.ts`)**: `specta` / `tauri-specta` を導入し、Rust 側の全 DTO および Tauri コマンド群から TypeScript 型定義を型安全に全自動出力・同期する環境を確立 (`npm run gen:specta`)。
+- **TypeDoc フロントエンド API ドキュメント (`docs/typedoc/`)**: `typedoc` を導入し、IPC ブリッジ・型定義の全フロントエンド API HTML ドキュメント環境を自動出力構築 (`npm run docs:frontend`)。
+- **RustDoc バックエンド HTML ドキュメント (`cargo doc`)**: 全 Rust モジュール・関数・DTO に RustDoc コメントを追加し、ネイティブコアライブラリドキュメントを完全生成。
+- **Tauri v2 IPC 開発・テスト仕様書 (`docs/ja/TAURI_GUIDE.md`)**: Tauri の IPC 通信アーキテクチャ、パーミッション (Capabilities)、3 レイヤーテスト構築ガイドを完全作成。
+- **Rust コアネイティブ単体テスト (Unit Tests)**: 全文検索、文字コード判定、Markdown パース、Text Diff 等を検証する全 5 件の単体テスト (`cargo test`) を作成し全件パス達成。
+
 ---
 
 ## [1.0.0] - 2026-08-04

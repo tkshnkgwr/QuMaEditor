@@ -1,0 +1,153 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>quma-editor</title><meta name="description" content="Documentation for quma-editor"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container"><a href="index.html" class="title">quma-editor</a>
+<div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/>
+<ul role="listbox" id="tsd-search-results"></ul>
+<div id="tsd-search-status" aria-live="polite" aria-atomic="true">
+<div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header>
+<div class="container container-main">
+<div class="col-content">
+<div class="tsd-page-title">
+<h1>quma-editor</h1></div>
+<div class="tsd-panel tsd-typography"><h1 id="qumaeditor-quick-minimal-markdown-editor" class="tsd-anchor-link">QuMaEditor (Quick &amp; Minimal Markdown Editor)<a href="#qumaeditor-quick-minimal-markdown-editor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p><strong>English</strong> | <a href="media/README_JA.md">日本語版 (Japanese)</a></p>
+<p><a href="https://tauri.app/"><img src="https://img.shields.io/badge/Tauri-v2-blue?logo=tauri" alt="Tauri v2"></a>
+<a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-1.80+-orange?logo=rust" alt="Rust"></a>
+<a href="https://react.dev/"><img src="https://img.shields.io/badge/React-v18-61dafb?logo=react" alt="React"></a>
+<a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-v5-3178c6?logo=typescript" alt="TypeScript"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a></p>
+<p>QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor built with <strong>Tauri v2</strong>, <strong>Rust</strong>, <strong>React 18</strong>, and <strong>TypeScript</strong>. Designed with a performance-first philosophy, it provides a seamless writing experience with near-zero resource consumption and instant native capabilities.</p>
+<hr>
+<h2 id="✨-highlights-key-features" class="tsd-anchor-link">✨ Highlights &amp; Key Features<a href="#✨-highlights-key-features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="⚡-rust-native-acceleration" class="tsd-anchor-link">⚡ Rust Native Acceleration<a href="#⚡-rust-native-acceleration" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Chunked File Streaming</strong>: Effortlessly loads 10MB+ large files in small chunks (<code>read_file_chunk_native</code>) without memory spikes.</li>
+<li><strong>Inverted Index Full-Text Search</strong>: Fast word-based inverted index search using Rust <code>LazyLock&lt;Mutex&lt;Vec&lt;DocSearchInput&gt;&gt;&gt;</code>.</li>
+<li><strong>Parallel Multi-Threaded Encoding</strong>: Multi-file batch encoding conversion (<code>rayon</code>) to UTF-8 and Shift_JIS.</li>
+<li><strong>Native Text Diff</strong>: Ultra-fast line-by-line diff calculation powered by the Rust <code>similar</code> crate.</li>
+</ul>
+<h3 id="🎨-modern-ui-color-themes" class="tsd-anchor-link">🎨 Modern UI &amp; Color Themes<a href="#🎨-modern-ui-color-themes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>High-Contrast Themes</strong>: Dynamic light/dark mode adaptation across all panels, modals, syntax highlighting, and scrollbars.</li>
+<li><strong>Ultra-Bright Front Matter</strong>: Enhanced YAML Front Matter protection panel (<code>bg-amber-50/60</code>) in light mode.</li>
+<li><strong>Prism Code Highlighting</strong>: Clean <code>prism</code> syntax highlighting style for multi-line code blocks in light mode.</li>
+</ul>
+<h3 id="🔍-advanced-search-tag-system" class="tsd-anchor-link">🔍 Advanced Search &amp; Tag System<a href="#🔍-advanced-search-tag-system" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Instant Keyword Highlighting</strong>: Real-time query matching with amber badges (<code>&lt;mark&gt;</code>) in titles, body snippets, and search hits.</li>
+<li><strong>YAML Tag Filtering</strong>: Search and filter documents by tag names (<code>#guide</code>, <code>#sample</code>, etc.) fully integrated into JS filtering and Rust search engines.</li>
+<li><strong>High-Contrast Search Titles</strong>: High-visibility target document titles (<code>text-cyan-300</code> / <code>text-cyan-900</code>) in search result hits.</li>
+</ul>
+<h3 id="📄-preview-printing-direct-pdf" class="tsd-anchor-link">📄 Preview, Printing &amp; Direct PDF<a href="#📄-preview-printing-direct-pdf" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><strong>Direct Instant PDF Export</strong>: One-click instant <code>.pdf</code> file saving from preview rendering without opening the print dialog.</li>
+<li><strong>A4 Full-Width Printing (<code>Ctrl + P</code>)</strong>: Complete UI isolation (<code>print:hidden</code>) guaranteeing 100% page width printing of preview content.</li>
+<li><strong>GFM Table Text Alignment</strong>: Full support for left <code>:---</code>, center <code>:---:</code>, and right <code>---:</code> Markdown table alignment.</li>
+</ul>
+<hr>
+<h2 id="⌨️-keyboard-shortcuts" class="tsd-anchor-link">⌨️ Keyboard Shortcuts<a href="#⌨️-keyboard-shortcuts" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Shortcut</th>
+<th style="text-align:left">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><code>Ctrl + N</code></td>
+<td style="text-align:left">Create new Markdown document</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Ctrl + O</code></td>
+<td style="text-align:left">Open local text file (.md, .txt)</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Ctrl + S</code></td>
+<td style="text-align:left">Manually trigger document save</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Ctrl + P</code></td>
+<td style="text-align:left">Open A4 Print / PDF dialog</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Ctrl + B</code></td>
+<td style="text-align:left">Bold text formatting (<code>**text**</code>)</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Ctrl + I</code></td>
+<td style="text-align:left">Italic text formatting (<code>*text*</code>)</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>Ctrl + Shift + Z</code></td>
+<td style="text-align:left">Toggle Zen focus writing mode</td>
+</tr>
+<tr>
+<td style="text-align:left"><code>F1</code></td>
+<td style="text-align:left">Open Keyboard Shortcuts Help Modal</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="🏗️-architecture-overview" class="tsd-anchor-link">🏗️ Architecture Overview<a href="#🏗️-architecture-overview" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-0">+-------------------------------------------------------------------+</span><br/><span class="hl-0">|                        </span><span class="hl-1">QuMaEditor</span><span class="hl-0"> </span><span class="hl-1">Desktop</span><span class="hl-0">                         |</span><br/><span class="hl-0">+-------------------------------------------------------------------+</span><br/><span class="hl-0">|  </span><span class="hl-2">Frontend</span><span class="hl-0"> (</span><span class="hl-1">React</span><span class="hl-0"> </span><span class="hl-3">18</span><span class="hl-0"> + </span><span class="hl-1">TypeScript</span><span class="hl-0"> + </span><span class="hl-1">Tailwind</span><span class="hl-0"> </span><span class="hl-4">CSS</span><span class="hl-0">)                  |</span><br/><span class="hl-0">|   - </span><span class="hl-1">Real</span><span class="hl-0">-</span><span class="hl-1">time</span><span class="hl-0"> </span><span class="hl-4">GFM</span><span class="hl-0"> </span><span class="hl-1">Live</span><span class="hl-0"> </span><span class="hl-1">Preview</span><span class="hl-0"> &amp; </span><span class="hl-1">Prism</span><span class="hl-0"> / </span><span class="hl-4">VSC</span><span class="hl-0"> </span><span class="hl-1">Syntax</span><span class="hl-0"> </span><span class="hl-1">Highlighting</span><span class="hl-0">  |</span><br/><span class="hl-0">|   - </span><span class="hl-1">Multi</span><span class="hl-0">-</span><span class="hl-1">tab</span><span class="hl-0"> </span><span class="hl-1">management</span><span class="hl-0"> &amp; </span><span class="hl-1">Floating</span><span class="hl-0"> </span><span class="hl-1">Input</span><span class="hl-0"> </span><span class="hl-1">Toolbar</span><span class="hl-0">                 |</span><br/><span class="hl-0">|   - </span><span class="hl-1">Keyword</span><span class="hl-0"> </span><span class="hl-2">Highlighting</span><span class="hl-0"> (&lt;</span><span class="hl-5">mark</span><span class="hl-0">&gt;) &amp; </span><span class="hl-1">Tag</span><span class="hl-0"> </span><span class="hl-1">Filtering</span><span class="hl-0">                 |</span><br/><span class="hl-0">+-------------------------------------------------------------------+</span><br/><span class="hl-0">|                       </span><span class="hl-1">Tauri</span><span class="hl-0"> </span><span class="hl-1">v2</span><span class="hl-0"> </span><span class="hl-4">IPC</span><span class="hl-0"> </span><span class="hl-1">Bridge</span><span class="hl-0">                         |</span><br/><span class="hl-0">+-------------------------------------------------------------------+</span><br/><span class="hl-0">|  </span><span class="hl-2">Backend</span><span class="hl-0"> (</span><span class="hl-1">Rust</span><span class="hl-0"> </span><span class="hl-1">Native</span><span class="hl-0"> </span><span class="hl-1">Engine</span><span class="hl-0">)                                     |</span><br/><span class="hl-0">|   - </span><span class="hl-1">Chunk</span><span class="hl-0"> </span><span class="hl-2">Streaming</span><span class="hl-0"> (10</span><span class="hl-4">MB</span><span class="hl-0">+) | </span><span class="hl-1">Inverted</span><span class="hl-0"> </span><span class="hl-1">Index</span><span class="hl-0"> </span><span class="hl-1">Full</span><span class="hl-0">-</span><span class="hl-1">Text</span><span class="hl-0"> </span><span class="hl-1">Search</span><span class="hl-0">       |</span><br/><span class="hl-0">|   - </span><span class="hl-1">Rayon</span><span class="hl-0"> </span><span class="hl-1">Multi</span><span class="hl-0">-</span><span class="hl-1">threaded</span><span class="hl-0"> </span><span class="hl-1">Batch</span><span class="hl-0"> </span><span class="hl-1">Encoding</span><span class="hl-0"> | </span><span class="hl-1">Native</span><span class="hl-0"> </span><span class="hl-1">Text</span><span class="hl-0"> </span><span class="hl-1">Diff</span><span class="hl-0">        |</span><br/><span class="hl-0">+-------------------------------------------------------------------+</span>
+</code><button>Copy</button></pre>
+
+<hr>
+<h2 id="🚀-quick-start-installation" class="tsd-anchor-link">🚀 Quick Start &amp; Installation<a href="#🚀-quick-start-installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="prerequisites" class="tsd-anchor-link">Prerequisites<a href="#prerequisites" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<ul>
+<li><a href="https://www.rust-lang.org/">Rust</a> (1.80 or higher)</li>
+<li><a href="https://nodejs.org/">Node.js</a> (v18 or higher)</li>
+<li><a href="https://www.npmjs.com/">npm</a> or <a href="https://bun.sh/">bun</a></li>
+</ul>
+<h3 id="build-run-locally" class="tsd-anchor-link">Build &amp; Run Locally<a href="#build-run-locally" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<pre><code class="bash"><span class="hl-6"># 1. Clone repository</span><br/><span class="hl-2">git</span><span class="hl-0"> </span><span class="hl-7">clone</span><span class="hl-0"> </span><span class="hl-7">https://github.com/tkshnkgwr/QuMaEditor.git</span><br/><span class="hl-2">cd</span><span class="hl-0"> </span><span class="hl-7">QuMaEditor</span><br/><br/><span class="hl-6"># 2. Install dependencies</span><br/><span class="hl-2">npm</span><span class="hl-0"> </span><span class="hl-7">install</span><br/><br/><span class="hl-6"># 3. Launch in Tauri dev mode</span><br/><span class="hl-2">npm</span><span class="hl-0"> </span><span class="hl-7">run</span><span class="hl-0"> </span><span class="hl-7">tauri</span><span class="hl-0"> </span><span class="hl-7">dev</span>
+</code><button type="button">Copy</button></pre>
+
+<hr>
+<h2 id="📁-project-directory-structure" class="tsd-anchor-link">📁 Project Directory Structure<a href="#📁-project-directory-structure" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code><span class="hl-1">QuMaEditor</span><span class="hl-0">/</span><br/><span class="hl-0">├── .</span><span class="hl-1">agents</span><span class="hl-0">/               # </span><span class="hl-4">AI</span><span class="hl-0"> </span><span class="hl-1">Agent</span><span class="hl-0"> </span><span class="hl-1">Guidelines</span><span class="hl-0"> &amp; </span><span class="hl-2">Persona</span><span class="hl-0"> (</span><span class="hl-4">AGENTS</span><span class="hl-0">.</span><span class="hl-1">md</span><span class="hl-0">)</span><br/><span class="hl-0">├── </span><span class="hl-1">docs</span><span class="hl-0">/</span><br/><span class="hl-0">│   ├── </span><span class="hl-1">ja</span><span class="hl-0">/                # </span><span class="hl-1">Japanese</span><span class="hl-0"> </span><span class="hl-1">Specifications</span><span class="hl-0"> &amp; </span><span class="hl-1">Documentation</span><br/><span class="hl-0">│   └── </span><span class="hl-1">en</span><span class="hl-0">/                # </span><span class="hl-1">English</span><span class="hl-0"> </span><span class="hl-1">Specifications</span><span class="hl-0"> &amp; </span><span class="hl-1">Documentation</span><br/><span class="hl-0">├── </span><span class="hl-1">src</span><span class="hl-0">/                   # </span><span class="hl-1">React</span><span class="hl-0"> </span><span class="hl-1">Frontend</span><span class="hl-0"> </span><span class="hl-1">Source</span><span class="hl-0"> </span><span class="hl-1">Code</span><br/><span class="hl-0">│   ├── </span><span class="hl-1">components</span><span class="hl-0">/        # </span><span class="hl-4">UI</span><span class="hl-0"> </span><span class="hl-2">Components</span><span class="hl-0"> (</span><span class="hl-1">Editor</span><span class="hl-0">, </span><span class="hl-1">Preview</span><span class="hl-0">, </span><span class="hl-1">Sidebar</span><span class="hl-0">, </span><span class="hl-1">Modals</span><span class="hl-0">)</span><br/><span class="hl-0">│   ├── </span><span class="hl-1">utils</span><span class="hl-0">/             # </span><span class="hl-1">Tauri</span><span class="hl-0"> </span><span class="hl-1">Native</span><span class="hl-0"> </span><span class="hl-4">IPC</span><span class="hl-0"> &amp; </span><span class="hl-1">Storage</span><span class="hl-0"> </span><span class="hl-1">Helpers</span><br/><span class="hl-0">│   └── </span><span class="hl-1">App</span><span class="hl-0">.</span><span class="hl-1">tsx</span><span class="hl-0">            # </span><span class="hl-1">Main</span><span class="hl-0"> </span><span class="hl-1">Application</span><span class="hl-0"> </span><span class="hl-1">Workspace</span><br/><span class="hl-0">├── </span><span class="hl-1">src</span><span class="hl-0">-</span><span class="hl-1">tauri</span><span class="hl-0">/             # </span><span class="hl-1">Rust</span><span class="hl-0"> </span><span class="hl-1">Native</span><span class="hl-0"> </span><span class="hl-2">Backend</span><span class="hl-0"> (</span><span class="hl-1">Tauri</span><span class="hl-0"> </span><span class="hl-1">v2</span><span class="hl-0"> </span><span class="hl-1">Engine</span><span class="hl-0">)</span><br/><span class="hl-0">│   ├── </span><span class="hl-1">src</span><span class="hl-0">/</span><span class="hl-1">lib</span><span class="hl-0">.</span><span class="hl-1">rs</span><span class="hl-0">         # </span><span class="hl-1">Native</span><span class="hl-0"> </span><span class="hl-1">Commands</span><span class="hl-0"> &amp; </span><span class="hl-1">Search</span><span class="hl-0"> </span><span class="hl-1">Engines</span><br/><span class="hl-0">│   └── </span><span class="hl-1">Cargo</span><span class="hl-0">.</span><span class="hl-1">toml</span><span class="hl-0">         # </span><span class="hl-1">Rust</span><span class="hl-0"> </span><span class="hl-1">Dependencies</span><br/><span class="hl-0">├── </span><span class="hl-1">package</span><span class="hl-0">.</span><span class="hl-1">json</span><span class="hl-0">           # </span><span class="hl-1">Single</span><span class="hl-0"> </span><span class="hl-1">Source</span><span class="hl-0"> </span><span class="hl-8">of</span><span class="hl-0"> </span><span class="hl-1">Truth</span><span class="hl-0"> </span><span class="hl-1">for</span><span class="hl-0"> </span><span class="hl-2">Versioning</span><span class="hl-0"> (</span><span class="hl-1">v1</span><span class="hl-0">.</span><span class="hl-3">0.0</span><span class="hl-0">)</span><br/><span class="hl-0">└── </span><span class="hl-4">LICENSE</span><span class="hl-0">                # </span><span class="hl-4">MIT</span><span class="hl-0"> </span><span class="hl-1">License</span>
+</code><button>Copy</button></pre>
+
+<hr>
+<h2 id="📄-license" class="tsd-anchor-link">📄 License<a href="#📄-license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>This project is licensed under the <strong><a href="media/LICENSE">MIT License</a></strong> - see the LICENSE file for details.</p>
+</div></div>
+<div class="col-sidebar">
+<div class="page-menu">
+<div class="tsd-navigation settings">
+<details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div>
+<div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg>
+<h3>On This Page</h3></summary>
+<div class="tsd-accordion-details"><a href="#qumaeditor-quick-minimal-markdown-editor"><span>Qu<wbr/>Ma<wbr/>Editor (<wbr/>Quick &amp; <wbr/>Minimal <wbr/>Markdown <wbr/>Editor)</span></a>
+<ul>
+<li><a href="#✨-highlights-key-features"><span>✨ <wbr/>Highlights &amp; <wbr/>Key <wbr/>Features</span></a></li>
+<li>
+<ul>
+<li><a href="#⚡-rust-native-acceleration"><span>⚡ <wbr/>Rust <wbr/>Native <wbr/>Acceleration</span></a></li>
+<li><a href="#🎨-modern-ui-color-themes"><span>🎨 <wbr/>Modern <wbr/>UI &amp; <wbr/>Color <wbr/>Themes</span></a></li>
+<li><a href="#🔍-advanced-search-tag-system"><span>🔍 <wbr/>Advanced <wbr/>Search &amp; <wbr/>Tag <wbr/>System</span></a></li>
+<li><a href="#📄-preview-printing-direct-pdf"><span>📄 <wbr/>Preview, <wbr/>Printing &amp; <wbr/>Direct <wbr/>PDF</span></a></li></ul></li>
+<li><a href="#⌨️-keyboard-shortcuts"><span>⌨️ <wbr/>Keyboard <wbr/>Shortcuts</span></a></li>
+<li><a href="#🏗️-architecture-overview"><span>🏗️ <wbr/>Architecture <wbr/>Overview</span></a></li>
+<li><a href="#🚀-quick-start-installation"><span>🚀 <wbr/>Quick <wbr/>Start &amp; <wbr/>Installation</span></a></li>
+<li>
+<ul>
+<li><a href="#prerequisites"><span>Prerequisites</span></a></li>
+<li><a href="#build-run-locally"><span>Build &amp; <wbr/>Run <wbr/>Locally</span></a></li></ul></li>
+<li><a href="#📁-project-directory-structure"><span>📁 <wbr/>Project <wbr/>Directory <wbr/>Structure</span></a></li>
+<li><a href="#📄-license"><span>📄 <wbr/>License</span></a></li></ul></div></details></div>
+<div class="site-menu">
+<nav class="tsd-navigation"><a href="modules.html">quma-editor</a>
+<ul class="tsd-small-nested-navigation" id="tsd-nav-container">
+<li>Loading...</li></ul></nav></div></div></div><footer>
+<p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer>
+<div class="overlay"></div></body></html>

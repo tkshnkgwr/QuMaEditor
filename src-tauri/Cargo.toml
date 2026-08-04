@@ -1,6 +1,6 @@
 [package]
 name = "QuMaEditor"
-version = "1.0.0"
+version = "1.1.0"
 description = "High Performance Native Markdown Editor Desktop Application"
 authors = ["you"]
 edition = "2021"
@@ -28,6 +28,9 @@ printpdf = "0.7"            # ブラウザ非依存のネイティブ PDF 直接
 syntect = "5.2"             # ネイティブ高速構文ハイライト
 similar = "2.6"             # 高速 Text Diff 差分計算エンジン
 rayon = "1.10"              # マルチスレッド並列処理エンジン
+specta = { version = "=2.0.0-rc.20" }
+specta-typescript = "0.0.7"
+tauri-specta = { version = "=2.0.0-rc.20", features = ["javascript", "typescript"] }
 
 [profile.release]
 opt-level = 'z'     # サイズ最適化

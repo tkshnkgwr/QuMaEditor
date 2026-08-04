@@ -6,6 +6,13 @@ Tracked tasks and completed features for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.1.0 Release (2026-08-04)
+- [x] **Specta Auto TS Binding Export**: Auto-export type-safe TypeScript bindings (`src/bindings.ts`) from Rust DTOs.
+- [x] **TypeDoc Frontend API Docs**: Generated HTML API documentation for frontend IPC wrappers (`docs/typedoc/`).
+- [x] **RustDoc Backend HTML Docs**: Generated HTML documentation for native Rust core library (`cargo doc`).
+- [x] **Tauri v2 IPC Architecture Guide**: Complete IPC protocol, permission, and test suite documentation (`TAURI_GUIDE.md`).
+- [x] **Rust Core Unit Test Suite**: Created unit test suite covering key native modules (5/5 passed).
+
 ### v1.0.0 Formal Release (2026-08-04)
 - [x] **Tauri v2 + Rust Architecture**: High performance native desktop architecture.
 - [x] **Titlebar Controls & Cursor**: Frameless drag (`data-tauri-drag-region`), window actions, fixed default cursor.

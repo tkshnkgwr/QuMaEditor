@@ -5,7 +5,7 @@ QuMaEditor (Quick & Minimal Markdown Editor) の機能仕様およびアーキ�
 ---
 
 ## 1. 概要 (Overview)
-QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript フロントエンドで構築された、超軽量・超高速なディスクトップ Markdown エディタです。
+QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript フロントエンドで構築された、超軽量・超高速なディスクトップ Markdown エディタです。(現在のバージョン: v1.1.0)
 
 ---
 
@@ -33,5 +33,6 @@ QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript 
 ---
 
 ## 3. システム動作環境
+- **バージョン**: v1.1.0
 - **OS**: Windows 10 / 11 (Tauri v2 Native Window)
 - **ランタイム**: Rust Native Engine + WebKit / WebView2

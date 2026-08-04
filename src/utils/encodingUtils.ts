@@ -86,7 +86,7 @@ export async function prepareEncodedBlobAsync(
     let mimeCharset = 'utf-8';
     if (encoding === 'Shift_JIS') mimeCharset = 'shift_jis';
     else if (encoding === 'EUC-JP') mimeCharset = 'euc-jp';
-    return new Blob([nativeBytes], { type: `text/markdown;charset=${mimeCharset}` });
+    return new Blob([new Uint8Array(nativeBytes)], { type: `text/markdown;charset=${mimeCharset}` });
   }
 
   return prepareEncodedBlob(text, encoding);

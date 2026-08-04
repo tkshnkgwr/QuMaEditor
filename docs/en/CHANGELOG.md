@@ -2,6 +2,16 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.1.0] - 2026-08-04
+
+### 🛠️ Documentation, Specta TS Binding & Test Suite (v1.1.0)
+
+- **Specta TypeScript Binding Export (`src/bindings.ts`)**: Integrated `specta` and `tauri-specta` for auto-generating type-safe TypeScript bindings from Rust DTOs (`npm run gen:specta`).
+- **TypeDoc Frontend API Documentation (`docs/typedoc/`)**: Integrated `typedoc` to generate HTML API documentation for IPC wrappers and types (`npm run docs:frontend`).
+- **RustDoc Backend HTML Documentation (`cargo doc`)**: Added comprehensive RustDoc comments to all Rust modules, DTOs, and functions.
+- **Tauri v2 IPC Architecture Guide (`docs/en/TAURI_GUIDE.md`)**: Documented Tauri IPC protocols, capability security settings, and test suite guidelines.
+- **Rust Core Unit Tests**: Added unit test suite covering full-text search, encoding detection, Markdown parsing, and Text Diff algorithms (5/5 tests passing).
+
 ---
 
 ## [1.0.0] - 2026-08-04

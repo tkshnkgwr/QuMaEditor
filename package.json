@@ -1,7 +1,7 @@
 {
   "name": "quma-editor",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "docs:frontend": "typedoc --skipErrorChecking --out docs/typedoc src/utils/tauriNative.ts src/types.ts",
+    "gen:specta": "cargo run --bin gen_specta --manifest-path src-tauri/Cargo.toml",
     "tauri": "tauri"
   },
   "dependencies": {
@@ -41,6 +43,7 @@
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
     "tailwindcss": "^4.1.14",
+    "typedoc": "^0.28.1",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2"
   }
