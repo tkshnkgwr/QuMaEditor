@@ -470,7 +470,7 @@ pub mod tauri_commands {
 
 /// Specta により TypeScript 型定義ファイル (src/bindings.ts) を自動エクスポートするハンドラー
 pub fn export_specta_types() {
-    let builder = tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
+    let _builder = tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
         tauri_commands::detect_and_convert_to_utf8,
         tauri_commands::convert_utf8_to_encoding,
         tauri_commands::read_file_chunk_native,
@@ -484,7 +484,7 @@ pub fn export_specta_types() {
     ]);
 
     #[cfg(debug_assertions)]
-    builder
+    _builder
         .export(
             specta_typescript::Typescript::default().bigint(specta_typescript::BigIntExportBehavior::Number),
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/bindings.ts"),
