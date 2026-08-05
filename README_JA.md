@@ -2,7 +2,7 @@
 
 **日本語版 (Japanese)** | [English](README.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.1.0-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.2.0-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v18-61dafb?logo=react)](https://react.dev/)
@@ -36,20 +36,27 @@ QuMaEditor (Quick & Minimal Markdown Editor) は、**Tauri v2**, **Rust**, **Rea
 - **A4 フルサイズ印刷対応 (`Ctrl + P`)**: UI要素や編集画面を `print:hidden` で完全に排除し、プレビュー文章のみを A4 100% で出力。
 - **GFM 表組みアライメント対応**: Markdown 表組みの左寄せ `:---`、中央 `:---:`、右寄せ `---:` レンダリングに対応。
 
+### 💾 ネイティブファイル保存 & OS エクスプローラー連携 (v1.2.0)
+- **実ファイル直上書き保存 (`Ctrl + S`)**: 開いたローカル `.md` ファイルのパスを保持し、手動保存および打鍵後の自動保存で **PC 上の実ファイルへ直接上書き保存**。
+- **名前を付けて保存 (`Ctrl + Shift + S`)**: 保存ダイアログを開き、好きな場所に `.md` ファイルとして直接出力。
+- **右クリックメニュー「QuMaEditorで開く」**: Windows エクスプローラーのコンテキストメニューに即座に自動登録。
+- **二重起動防止 (Single Instance)**: 複数プロセス起動を防ぎ、起動中の QuMaEditor にファイルを新規タブとして自動集約。
+
 ---
 
 ## ⌨️ 主要キーボードショートカット
 
-| ショートカット     | アクション / 機能                      |
-| :----------------- | :------------------------------------- |
-| `Ctrl + N`         | 新規 Markdown ドキュメントの作成       |
-| `Ctrl + O`         | ローカルテキストファイル (.md, .txt) を開く |
-| `Ctrl + S`         | ドキュメントの手動保存                 |
-| `Ctrl + P`         | A4 印刷 / PDF ダイアログの起動         |
-| `Ctrl + B`         | 太字書式の挿入 (`**テキスト**`)        |
-| `Ctrl + I`         | 斜体書式の挿入 (`*テキスト*`)          |
-| `Ctrl + Shift + Z` | Zen 集中執筆モードの切り替え           |
-| `F1`               | キーボードショートカット確認ヘルプ表示 |
+| ショートカット | アクション / 機能 |
+| :--- | :--- |
+| `Ctrl + N` | 新規 Markdown ドキュメントの作成 |
+| `Ctrl + O` | ローカルテキストファイル (.md, .txt) を開く |
+| `Ctrl + S` | 元ファイルへの直上書き保存 |
+| `Ctrl + Shift + S` | 名前を付けて保存 (ローカルファイル保存) |
+| `Ctrl + P` | A4 印刷 / PDF ダイアログの起動 |
+| `Ctrl + B` | 太字書式の挿入 (`**テキスト**`) |
+| `Ctrl + I` | 斜体書式の挿入 (`*テキスト*`) |
+| `Ctrl + Shift + Z` | Zen 集中執筆モードの切り替え |
+| `F1` | キーボードショートカット確認ヘルプ表示 |
 
 ---
 

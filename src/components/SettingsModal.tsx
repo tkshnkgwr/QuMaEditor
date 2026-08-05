@@ -1,5 +1,7 @@
-import React from 'react';
-import { X, Settings as SettingsIcon, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Settings as SettingsIcon, RotateCcw, HardDrive, Trash2, Copy, Check, Folder, Send } from 'lucide-react';
+import { appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
+import { checkSendToMenuNative, registerSendToMenuNative } from '../utils/tauriNative';
 import { EditorSettings } from '../types';
 
 interface SettingsModalProps {
@@ -19,6 +21,89 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onResetData,
   isDark = true,
 }) => {
+  const [appDataPath, setAppDataPath] = useState<string>('読み込み中...');
+  const [storageKb, setStorageKb] = useState<number>(0);
+  const [docCount, setDocCount] = useState<number>(0);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [isSendToRegistered, setIsSendToRegistered] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // SendTo 登録状態のチェック
+    checkSendToMenuNative().then((res) => setIsSendToRegistered(res));
+
+    // LocalStorage 容量およびドキュメント数の計測
+    try {
+      let totalBytes = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          const val = localStorage.getItem(key) || '';
+          totalBytes += (key.length + val.length) * 2;
+        }
+      }
+      setStorageKb(parseFloat((totalBytes / 1024).toFixed(1)));
+
+      const docsRaw = localStorage.getItem('markdown_editor_docs_v1');
+      if (docsRaw) {
+        const parsed = JSON.parse(docsRaw);
+        if (Array.isArray(parsed)) {
+          setDocCount(parsed.length);
+        }
+      }
+    } catch (e) {
+      console.warn('Storage calculation error:', e);
+    }
+
+    // Tauri AppData パスの取得
+    const fetchPath = async () => {
+      try {
+        const dir = await appDataDir().catch(() => appLocalDataDir());
+        setAppDataPath(dir);
+      } catch (e) {
+        setAppDataPath('ブラウザ内 LocalStorage 領域 (Web Mode)');
+      }
+    };
+    fetchPath();
+  }, [isOpen]);
+
+  const handleToggleSendTo = async (enable: boolean) => {
+    const success = await registerSendToMenuNative(enable);
+    if (success || !enable) {
+      setIsSendToRegistered(enable);
+    }
+  };
+
+  const handleCopyPath = () => {
+    if (!appDataPath) return;
+    navigator.clipboard.writeText(appDataPath);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  // 一時キャッシュクリア（LocalStorage の軽量クリーンアップ）
+  const handleCleanCache = () => {
+    try {
+      const docsRaw = localStorage.getItem('markdown_editor_docs_v1');
+      if (docsRaw) {
+        const parsed = JSON.parse(docsRaw);
+        if (Array.isArray(parsed)) {
+          // 実ファイルパス付きまたはお気に入りを保護
+          const cleaned = parsed.filter((d: any) => d.filePath || d.isFavorite);
+          localStorage.setItem('markdown_editor_docs_v1', JSON.stringify(cleaned));
+          alert(`キャッシュと未保存一時データをクリアしました。\n(実ファイルパスを持つ ${cleaned.length} 件のドキュメントを保持中)`);
+          onResetData();
+          return;
+        }
+      }
+      localStorage.clear();
+      onResetData();
+    } catch (e) {
+      console.error('Cache cleanup error:', e);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -26,7 +111,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       isDark ? 'bg-black/60' : 'bg-slate-900/30'
     }`}>
       <div
-        className={`w-full max-w-md p-5 rounded-xl border shadow-2xl transition-colors ${
+        className={`w-full max-w-md p-5 rounded-xl border shadow-2xl transition-colors max-h-[90vh] overflow-y-auto ${
           isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
         }`}
       >
@@ -37,7 +122,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         >
           <div className="flex items-center gap-2 font-semibold text-sm text-cyan-500">
             <SettingsIcon className="w-4 h-4" />
-            <span>エディタ設定</span>
+            <span>エディタ & ストレージ設定</span>
           </div>
           <button
             onClick={onClose}
@@ -137,24 +222,95 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </select>
           </div>
 
-          {/* ローカルストレージデータのリセット */}
-          <div className={`pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-            <button
-              onClick={() => {
-                if (confirm('ローカルストレージのデータを初期状態にリセットしますか？')) {
-                  onResetData();
-                  onClose();
-                }
-              }}
-              className={`w-full py-2 px-3 rounded border text-xs transition-colors flex items-center justify-center gap-2 ${
-                isDark
-                  ? 'bg-rose-950/60 hover:bg-rose-900/80 border-rose-800/80 text-rose-300'
-                  : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-800 font-medium'
-              }`}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              データを初期サンプルにリセット
-            </button>
+          {/* Windows エクスプローラーの「送る (SendTo)」連携 */}
+          <div className="flex items-center justify-between">
+            <span className={`font-medium flex items-center gap-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              <Send className="w-3.5 h-3.5 text-cyan-400" />
+              Windows「送る (SendTo)」メニューに登録
+            </span>
+            <input
+              type="checkbox"
+              checked={isSendToRegistered}
+              onChange={(e) => handleToggleSendTo(e.target.checked)}
+              className="w-4 h-4 rounded accent-cyan-500 cursor-pointer"
+              title="エクスプローラーの『送る』メニューに QuMaEditor を追加/解除"
+            />
+          </div>
+
+          {/* 内部ストレージ (LocalStorage / AppData) 情報セクション */}
+          <div className={`pt-3 border-t space-y-2 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+            <div className="flex items-center justify-between">
+              <span className={`font-semibold flex items-center gap-1.5 ${isDark ? 'text-cyan-400' : 'text-cyan-700'}`}>
+                <HardDrive className="w-3.5 h-3.5" />
+                内部データ領域 (LocalStorage / Cache)
+              </span>
+              <span className={`font-mono text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>
+                {storageKb} KB / 約 5,000 KB ({docCount} 件)
+              </span>
+            </div>
+
+            {/* パス表示とコピー */}
+            <div className={`p-2.5 rounded border text-[11px] font-mono space-y-1 ${
+              isDark ? 'bg-slate-950/80 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
+            }`}>
+              <div className="flex items-center justify-between opacity-75">
+                <span className="flex items-center gap-1">
+                  <Folder className="w-3 h-3 text-amber-500" />
+                  AppData 格納ディレクトリパス:
+                </span>
+                <button
+                  onClick={handleCopyPath}
+                  className={`p-1 rounded hover:bg-slate-800 transition-colors flex items-center gap-1 ${
+                    isCopied ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                  title="パスをコピー"
+                >
+                  {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  <span>{isCopied ? 'コピー完了' : 'コピー'}</span>
+                </button>
+              </div>
+              <div className="break-all select-all font-mono text-[10px] text-cyan-400/90 leading-tight">
+                {appDataPath}
+              </div>
+            </div>
+
+            {/* キャッシュクリア ＆ リセットボタン群 */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                onClick={() => {
+                  if (confirm('肥大化した一時キャッシュ・未保存データを削除してメモリをクリアしますか？\n(実ファイルパス付きのドキュメントは保持されます)')) {
+                    handleCleanCache();
+                  }
+                }}
+                className={`py-1.5 px-2 rounded border text-[11px] transition-colors flex items-center justify-center gap-1.5 ${
+                  isDark
+                    ? 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-800/60 text-amber-300'
+                    : 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-800 font-medium'
+                }`}
+                title="一時データをクリアして内部領域を軽量再作成"
+              >
+                <Trash2 className="w-3 h-3" />
+                一時キャッシュを整理
+              </button>
+
+              <button
+                onClick={() => {
+                  if (confirm('ローカルストレージのすべてのデータを完全初期化しサンプル状態にリセットしますか？')) {
+                    onResetData();
+                    onClose();
+                  }
+                }}
+                className={`py-1.5 px-2 rounded border text-[11px] transition-colors flex items-center justify-center gap-1.5 ${
+                  isDark
+                    ? 'bg-rose-950/50 hover:bg-rose-900/70 border-rose-800/70 text-rose-300'
+                    : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-800 font-medium'
+                }`}
+                title="データを全初期化して再構築"
+              >
+                <RotateCcw className="w-3 h-3" />
+                初期状態にリセット
+              </button>
+            </div>
           </div>
         </div>
 
@@ -170,3 +326,4 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     </div>
   );
 };
+

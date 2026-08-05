@@ -13,6 +13,7 @@ interface PreviewProps {
   onToggleTaskItem?: (taskIndex: number) => void;
   onScrollRef?: (el: HTMLDivElement | null) => void;
   isDark?: boolean;
+  fontSize?: number;
 }
 
 function parseLiForTask(
@@ -94,7 +95,12 @@ function parseLiForTask(
   };
 }
 
-export const Preview: React.FC<PreviewProps> = ({ content, onToggleTaskItem, onScrollRef, isDark = true }) => {
+export const Preview: React.FC<PreviewProps> = ({
+  content,
+  onScrollRef,
+  isDark = true,
+  fontSize,
+}) => {
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [nativeHtml, setNativeHtml] = useState<string | null>(null);
   const [isNativeUsed, setIsNativeUsed] = useState(false);
@@ -130,6 +136,7 @@ export const Preview: React.FC<PreviewProps> = ({ content, onToggleTaskItem, onS
   return (
     <div
       ref={onScrollRef}
+      style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}
       className={`flex-1 h-full p-6 overflow-y-auto preview-markdown transition-colors print:block print:w-full print:h-auto print:p-0 print:m-0 print:border-none ${
         isDark
           ? 'bg-slate-900/80 text-slate-200 border-l border-slate-800/80 selection:bg-cyan-800 selection:text-slate-100'

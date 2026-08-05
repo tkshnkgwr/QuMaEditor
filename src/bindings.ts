@@ -84,6 +84,14 @@ async highlightCodeNative(code: string, language: string) : Promise<Result<strin
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async readFileNative(filePath: string) : Promise<Result<ConvertedTextDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("read_file_native", { filePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

@@ -24,6 +24,7 @@ export interface MarkdownDoc {
   updatedBy?: string;    // 更新者
   isFavorite?: boolean;
   tags?: string[];
+  filePath?: string;   // 実ファイルの絶対パス（ローカルファイル上書き保存用）
   isRemote?: boolean;   // リモートファイルフラグ（trueの場合は自動保存対象外）
   remoteUrl?: string;  // リモート参照元URL
 }

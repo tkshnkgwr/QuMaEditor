@@ -23,6 +23,7 @@ import { calculateTextStats, insertFormatting, toggleTaskInMarkdown } from './ut
 import { decodeFileContent, prepareEncodedBlob } from './utils/encodingUtils';
 import { parseYamlFrontMatter, buildFullMarkdownWithFrontMatter } from './utils/yamlUtils';
 import { generatePdfNative, parseMarkdownNative } from './utils/tauriNative';
+import { openNativeFileDialog, saveNativeFile, openNativeFileFromPath } from './utils/fileSystem';
 import { TitleBar } from './components/TitleBar';
 import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
@@ -162,7 +163,7 @@ export default function App() {
     // キー入力が完全にストップして指定時間（最小2000ms、デフォルト3000ms）経過後に保存を実行
     const delayMs = Math.max(2000, Math.min(10000, settings.autoSaveIntervalMs || 3000));
 
-    autoSaveTimeoutRef.current = setTimeout(() => {
+    autoSaveTimeoutRef.current = setTimeout(async () => {
       // リモートファイルの場合: 仕様に基づき自動保存を行わない
       if (currentDoc.isRemote) {
         setSaveStatus('unsaved');
@@ -175,6 +176,12 @@ export default function App() {
 
       // 入力完全停止後の保存実行
       setSaveStatus('saving');
+
+      // 実ファイルパスが存在する場合は実ファイルにもバックグラウンド直上書き
+      if (currentDoc.filePath) {
+        await saveNativeFile(currentDoc, { forceSaveAs: false });
+      }
+
       setDocs((latestDocs) => {
         saveStoredDocs(latestDocs);
         return latestDocs;
@@ -183,8 +190,8 @@ export default function App() {
       const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setLastSavedTime(timeStr);
       logger.info(
-        `[自動保存完了] 打鍵停止後、ローカルファイル "${currentDoc.title}" を自動保存しました (${timeStr})`,
-        `ドキュメントID: ${currentDoc.id}`
+        `[自動保存完了] 打鍵停止後、"${currentDoc.title}" を自動保存しました (${timeStr})`,
+        currentDoc.filePath ? `ファイルパス: ${currentDoc.filePath}` : `ドキュメントID: ${currentDoc.id}`
       );
     }, delayMs);
   };
@@ -306,8 +313,40 @@ export default function App() {
     });
   };
 
-  // PC/ファイルサーバーのローカルファイルを開く (自動判別対応)
-  const handleOpenLocalFile = () => {
+  // PC/ファイルサーバーのローカルファイルを開く (Tauri ネイティブダイアログ優先)
+  const handleOpenLocalFile = async () => {
+    // まず Tauri ネイティブダイアログでのファイルオープンを試行
+    const nativeResult = await openNativeFileDialog();
+    if (nativeResult) {
+      const { doc: openedDoc } = nativeResult;
+      setDocs((prevDocs) => {
+        // すでに同じパスが開かれているかチェック
+        const existing = prevDocs.find((d) => d.filePath === openedDoc.filePath && d.filePath);
+        if (existing) {
+          setActiveDocId(existing.id);
+          saveActiveDocId(existing.id);
+          setOpenTabIds((prev) => (prev.includes(existing.id) ? prev : [...prev, existing.id]));
+          return prevDocs;
+        }
+        const updated = [openedDoc, ...prevDocs];
+        saveStoredDocs(updated);
+        return updated;
+      });
+      setActiveDocId(openedDoc.id);
+      saveActiveDocId(openedDoc.id);
+      setOpenTabIds((prev) => {
+        const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
+        saveOpenTabIds(next);
+        return next;
+      });
+      logger.info(
+        `[ファイルオープン成功] ファイルを開きました: "${openedDoc.title}"`,
+        `パス: ${openedDoc.filePath}`
+      );
+      return;
+    }
+
+    // Web ブラウザ環境等のフォールバック
     fileInputRef.current?.click();
   };
 
@@ -354,6 +393,60 @@ export default function App() {
     reader.readAsArrayBuffer(file);
     // 同じファイル名を再選択できるように値をリセット
     e.target.value = '';
+  };
+
+  // 実ファイルへの保存（直上書き保存 または 名前を付けて保存）
+  const handleSaveCurrentDoc = async (options: { forceSaveAs?: boolean } = {}) => {
+    setSaveStatus('saving');
+
+    // Tauri ネイティブ保存の試行
+    const res = await saveNativeFile(currentDoc, options);
+
+    if (res.success && res.filePath) {
+      const updatedDocPath = res.filePath;
+      const fileNameWithExt = updatedDocPath.split(/[/\\]/).pop() || currentDoc.title;
+      const newTitle = res.isSaveAs ? (fileNameWithExt.replace(/\.[^/.]+$/, '') || currentDoc.title) : currentDoc.title;
+
+      setDocs((prevDocs) => {
+        const updated = prevDocs.map((doc) =>
+          doc.id === currentDoc.id
+            ? {
+                ...doc,
+                filePath: updatedDocPath,
+                title: newTitle,
+                isRemote: false, // リモートからローカル保存された場合はリモートフラグ解除
+                updatedAt: new Date().toISOString(),
+              }
+            : doc
+        );
+        saveStoredDocs(updated);
+        return updated;
+      });
+
+      setSaveStatus('saved');
+      const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setLastSavedTime(timeStr);
+
+      logger.info(
+        res.isSaveAs
+          ? `[名前を付けて保存完了] "${newTitle}" をファイル保存しました (${timeStr})`
+          : `[上書き保存完了] 元ファイル "${newTitle}" へ直上書き保存しました (${timeStr})`,
+        `パス: ${updatedDocPath}`
+      );
+      return;
+    }
+
+    if (res.error && res.error !== 'Canceled by user') {
+      logger.error(`[ファイル保存エラー] 保存処理に失敗しました`, res.error);
+      alert(`ファイルの保存に失敗しました:\n${res.error}`);
+      setSaveStatus('unsaved');
+    } else if (!res.success && res.error === 'Canceled by user') {
+      setSaveStatus('saved');
+    } else {
+      // フォールバック（Web環境ブラウザダウンロード）
+      handleExportMarkdown();
+      setSaveStatus('saved');
+    }
   };
 
   // ドキュメントのタグ変更 (Yama YAML Front Matter用)
@@ -615,17 +708,110 @@ export default function App() {
     updateDocContent(currentDoc.content + dateStr);
   };
 
-  // 画像アップロード / ドラッグ＆ドロップ処理
-  const handleImageFile = (file: File) => {
+  // ドロップされたファイル全体のスマート判定ハンドラー (画像 ➔ インライン挿入 / テキスト ➔ タブで開く)
+  const handleDroppedFile = async (file: File) => {
+    // 画像ファイルの場合
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        const imageName = file.name.replace(/\.[^/.]+$/, '');
+        const imageMd = `\n\n![${imageName}](${dataUrl})\n\n`;
+        updateDocContent(currentDoc.content + imageMd);
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Markdown / テキストファイルの場合
     const reader = new FileReader();
     reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      const imageName = file.name.replace(/\.[^/.]+$/, '');
-      const imageMd = `\n\n![${imageName}](${dataUrl})\n\n`;
-      updateDocContent(currentDoc.content + imageMd);
+      const arrayBuffer = e.target?.result as ArrayBuffer;
+      if (!arrayBuffer) return;
+
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const { text, encoding } = decodeFileContent(uint8Array);
+      const defaultTitle = file.name.replace(/\.[^/.]+$/, '') || '無題のドキュメント';
+      const { body, metadata } = parseYamlFrontMatter(text);
+      const nativePath = (file as any).path || undefined;
+
+      const openedDoc: MarkdownDoc = {
+        id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        title: metadata.title || defaultTitle,
+        content: body,
+        encoding: (metadata.encoding as SupportedEncoding) || encoding,
+        createdAt: metadata.created || new Date().toISOString(),
+        updatedAt: metadata.updated || new Date().toISOString(),
+        tags: metadata.tags || [],
+        filePath: nativePath,
+        isFavorite: false,
+      };
+
+      setDocs((prevDocs) => {
+        const updated = [openedDoc, ...prevDocs];
+        saveStoredDocs(updated);
+        return updated;
+      });
+      setActiveDocId(openedDoc.id);
+      saveActiveDocId(openedDoc.id);
+      setOpenTabIds((prev) => {
+        const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
+        saveOpenTabIds(next);
+        return next;
+      });
     };
-    reader.readAsDataURL(file);
+    reader.readAsArrayBuffer(file);
   };
+
+  // Tauri ネイティブ全画面ドラッグ＆ドロップの待機
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    const setupFileDrop = async () => {
+      try {
+        const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+        const appWindow = getCurrentWebviewWindow();
+        unlisten = await appWindow.onDragDropEvent(async (event) => {
+          if (event.payload.type === 'drop') {
+            const paths = event.payload.paths;
+            for (const filePath of paths) {
+              if (/\.(md|markdown|txt|mdown|mkd)$/i.test(filePath) || !/\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(filePath)) {
+                const res = await openNativeFileFromPath(filePath);
+                if (res) {
+                  const { doc: openedDoc } = res;
+                  setDocs((prevDocs) => {
+                    const existing = prevDocs.find((d) => d.filePath === openedDoc.filePath && d.filePath);
+                    if (existing) {
+                      setActiveDocId(existing.id);
+                      saveActiveDocId(existing.id);
+                      setOpenTabIds((prev) => (prev.includes(existing.id) ? prev : [...prev, existing.id]));
+                      return prevDocs;
+                    }
+                    const updated = [openedDoc, ...prevDocs];
+                    saveStoredDocs(updated);
+                    return updated;
+                  });
+                  setActiveDocId(openedDoc.id);
+                  saveActiveDocId(openedDoc.id);
+                  setOpenTabIds((prev) => {
+                    const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
+                    saveOpenTabIds(next);
+                    return next;
+                  });
+                }
+              }
+            }
+          }
+        });
+      } catch (e) {
+        console.log('DragDropEvent listener not active in Web mode');
+      }
+    };
+
+    setupFileDrop();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   // スクロール同期処理
   const handleScrollSync = useCallback(
@@ -653,6 +839,55 @@ export default function App() {
     setActiveDocId(freshDocs[0].id);
     setSettings(DEFAULT_SETTINGS);
   };
+
+  // コマンドライン引数（二重起動時およびエクスプローラー「送る」）からのファイルオープンイベント待機
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    const setupListener = async () => {
+      try {
+        const { listen } = await import('@tauri-apps/api/event');
+        unlisten = await listen<string>('open-file-from-cli', async (event) => {
+          const targetPath = event.payload;
+          if (!targetPath) return;
+
+          const res = await openNativeFileFromPath(targetPath);
+          if (res) {
+            const { doc: openedDoc } = res;
+            setDocs((prevDocs) => {
+              const existing = prevDocs.find((d) => d.filePath === openedDoc.filePath && d.filePath);
+              if (existing) {
+                setActiveDocId(existing.id);
+                saveActiveDocId(existing.id);
+                setOpenTabIds((prev) => (prev.includes(existing.id) ? prev : [...prev, existing.id]));
+                return prevDocs;
+              }
+              const updated = [openedDoc, ...prevDocs];
+              saveStoredDocs(updated);
+              return updated;
+            });
+            setActiveDocId(openedDoc.id);
+            saveActiveDocId(openedDoc.id);
+            setOpenTabIds((prev) => {
+              const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
+              saveOpenTabIds(next);
+              return next;
+            });
+            logger.info(
+              `[CLI/送るファイルオープン] 外部からファイルを開きました: "${openedDoc.title}"`,
+              `パス: ${openedDoc.filePath}`
+            );
+          }
+        });
+      } catch (e) {
+        console.log('Tauri event listen not available:', e);
+      }
+    };
+
+    setupListener();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   // グローバルキーボードショートカットのリスナー
   useEffect(() => {
@@ -694,17 +929,15 @@ export default function App() {
           e.preventDefault();
           handleOpenLocalFile();
         }
-        // Ctrl/Cmd + S : 手動保存
+        // Ctrl/Cmd + S : 手動直上書き保存
         else if (e.key.toLowerCase() === 's' && !e.shiftKey) {
           e.preventDefault();
-          saveStoredDocs(docs);
-          setSaveStatus('saved');
-          setLastSavedTime(new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }));
+          handleSaveCurrentDoc({ forceSaveAs: false });
         }
-        // Ctrl/Cmd + Shift + S : Markdownエクスポート
+        // Ctrl/Cmd + Shift + S : 名前を付けて保存
         else if (e.key.toLowerCase() === 's' && e.shiftKey) {
           e.preventDefault();
-          handleExportMarkdown();
+          handleSaveCurrentDoc({ forceSaveAs: true });
         }
         // Ctrl/Cmd + Shift + D : 差分比較モーダルを開く
         else if (e.key.toLowerCase() === 'd' && e.shiftKey) {
@@ -754,6 +987,7 @@ export default function App() {
           lastSavedTime={lastSavedTime}
           onNewDoc={handleNewDoc}
           onOpenLocalFile={handleOpenLocalFile}
+          onSaveFile={handleSaveCurrentDoc}
           onDuplicateDoc={handleDuplicateDoc}
           onExportMarkdown={handleExportMarkdown}
           onExportHtml={handleExportHtml}
@@ -820,7 +1054,7 @@ export default function App() {
               onFormat={handleFormat}
               onOpenTableModal={() => setIsTableModalOpen(true)}
               onInsertDate={handleInsertDate}
-              onImageUpload={handleImageFile}
+              onImageUpload={handleDroppedFile}
               isDark={isDark}
             />
           )}
@@ -861,7 +1095,7 @@ export default function App() {
                     setCursorCol(col);
                   }}
                   onScrollSync={handleScrollSync}
-                  onImageDrop={handleImageFile}
+                  onImageDrop={handleDroppedFile}
                   doc={currentDoc}
                   onUpdateTags={handleUpdateTags}
                   isDark={isDark}
@@ -878,6 +1112,7 @@ export default function App() {
                     previewScrollRef.current = el;
                   }}
                   isDark={isDark}
+                  fontSize={settings.fontSize}
                 />
               </div>
             )}

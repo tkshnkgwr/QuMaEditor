@@ -66,6 +66,7 @@ interface TitleBarProps {
   lastSavedTime: string | null;
   onNewDoc: () => void;
   onOpenLocalFile: () => void;
+  onSaveFile?: (options?: { forceSaveAs?: boolean }) => void;
   onDuplicateDoc: () => void;
   onExportMarkdown: () => void;
   onExportHtml: () => void;
@@ -96,6 +97,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   lastSavedTime,
   onNewDoc,
   onOpenLocalFile,
+  onSaveFile,
   onDuplicateDoc,
   onExportMarkdown,
   onExportHtml,
@@ -474,8 +476,38 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                   className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
-                  ファイルを開く (PC/ファイルサーバー)
+                  ファイルを開く (Ctrl+O)
                 </button>
+                {onSaveFile && (
+                  <>
+                    <button
+                      onClick={() => {
+                        onSaveFile({ forceSaveAs: false });
+                        setActiveMenu(null);
+                      }}
+                      className={`w-full px-3 py-1.5 text-left flex items-center justify-between gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Save className="w-3.5 h-3.5 text-emerald-400" />
+                        直上書き保存
+                      </span>
+                      <span className="text-[10px] opacity-40 font-mono">Ctrl+S</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onSaveFile({ forceSaveAs: true });
+                        setActiveMenu(null);
+                      }}
+                      className={`w-full px-3 py-1.5 text-left flex items-center justify-between gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Save className="w-3.5 h-3.5 text-cyan-400" />
+                        名前を付けて保存...
+                      </span>
+                      <span className="text-[10px] opacity-40 font-mono">Ctrl+Shift+S</span>
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     onDuplicateDoc();

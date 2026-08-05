@@ -466,6 +466,51 @@ pub mod tauri_commands {
     pub fn highlight_code_native(code: String, language: String) -> Result<String, String> {
         super::highlight_code_native(code, language)
     }
+
+    #[tauri::command]
+    #[specta::specta]
+    pub fn read_file_native(file_path: String) -> Result<ConvertedTextDto, String> {
+        super::read_file_native(file_path)
+    }
+}
+
+/// パス指定でローカルファイルを直接読み込み、文字コードを判別して UTF-8 テキストとして返します
+pub fn read_file_native(file_path: String) -> Result<ConvertedTextDto, String> {
+    let mut file = File::open(&file_path).map_err(|e| format!("Failed to open file ({}): {}", file_path, e))?;
+    let mut bytes = Vec::new();
+    file.read_to_end(&mut bytes).map_err(|e| format!("Failed to read file: {}", e))?;
+    detect_and_convert_to_utf8(bytes)
+}
+
+/// Windows エクスプローラーの右クリックメニューに「QuMaEditorで開く」を自動登録する
+pub fn register_context_menu_native() -> Result<bool, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        let exe_path = current_exe.to_string_lossy().replace('\\', "\\\\");
+
+        let ps_script = format!(
+            "$key = 'HKCU:\\Software\\Classes\\*\\shell\\QuMaEditor'; \
+            New-Item -Path $key -Force | Out-Null; \
+            Set-ItemProperty -Path $key -Name '(default)' -Value 'QuMaEditorで開く'; \
+            Set-ItemProperty -Path $key -Name 'Icon' -Value '{}'; \
+            $cmdKey = \"$key\\command\"; \
+            New-Item -Path $cmdKey -Force | Out-Null; \
+            Set-ItemProperty -Path $cmdKey -Name '(default)' -Value '\"{}\" \"%1\"';",
+            exe_path, exe_path
+        );
+
+        let _ = Command::new("powershell")
+            .args(["-NoProfile", "-Command", &ps_script])
+            .output();
+
+        Ok(true)
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Ok(false)
+    }
 }
 
 /// Specta により TypeScript 型定義ファイル (src/bindings.ts) を自動エクスポートするハンドラー
@@ -481,6 +526,7 @@ pub fn export_specta_types() {
         tauri_commands::parse_markdown_native,
         tauri_commands::generate_pdf_native,
         tauri_commands::highlight_code_native,
+        tauri_commands::read_file_native,
     ]);
 
     #[cfg(debug_assertions)]
@@ -494,10 +540,47 @@ pub fn export_specta_types() {
 
 /// Tauri アプリケーションエントリポイントの構成
 pub fn run() {
+    use tauri::{Emitter, Manager};
+
     export_specta_types();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // 既に起動している既存インスタンス側で受け取るコールバック (二重起動の防止＆前面化)
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+
+            // 二重起動・右クリック「QuMaEditorで開く」から渡されたコマンドライン引数 (ファイルパス) を送信
+            if argv.len() > 1 {
+                for arg in argv.iter().skip(1) {
+                    if !arg.starts_with('-') {
+                        let _ = app.emit("open-file-from-cli", arg.clone());
+                    }
+                }
+            }
+        }))
+        .setup(|app| {
+            // Windows エクスプローラー右クリックメニュー「QuMaEditorで開く」の自動登録
+            let _ = register_context_menu_native();
+
+            // 1つ目のプロセス初回起動時のコマンドライン引数チェック
+            let args: Vec<String> = std::env::args().collect();
+            if args.len() > 1 {
+                let app_handle = app.handle().clone();
+                let first_arg = args[1].clone();
+                if !first_arg.starts_with('-') {
+                    tauri::async_runtime::spawn(async move {
+                        std::thread::sleep(std::time::Duration::from_millis(800));
+                        let _ = app_handle.emit("open-file-from-cli", first_arg);
+                    });
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             tauri_commands::detect_and_convert_to_utf8,
             tauri_commands::convert_utf8_to_encoding,
@@ -509,6 +592,7 @@ pub fn run() {
             tauri_commands::parse_markdown_native,
             tauri_commands::generate_pdf_native,
             tauri_commands::highlight_code_native,
+            tauri_commands::read_file_native,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

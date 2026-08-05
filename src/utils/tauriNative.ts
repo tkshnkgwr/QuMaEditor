@@ -187,3 +187,29 @@ export async function highlightCodeNative(code: string, language: string): Promi
     return null;
   }
 }
+
+/**
+ * Rust ネイティブコマンドによる Windows 「送る (SendTo)」 メニューのショートカット登録・解除
+ */
+export async function registerSendToMenuNative(enable: boolean): Promise<boolean> {
+  try {
+    const res = await invoke<boolean>('register_sendto_menu_native', { enable });
+    return res;
+  } catch (err) {
+    console.warn('register_sendto_menu_native failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Rust ネイティブコマンドによる Windows 「送る (SendTo)」 メニュー登録状態チェック
+ */
+export async function checkSendToMenuNative(): Promise<boolean> {
+  try {
+    const res = await invoke<boolean>('check_sendto_menu_native');
+    return res;
+  } catch (err) {
+    console.warn('check_sendto_menu_native failed:', err);
+    return false;
+  }
+}

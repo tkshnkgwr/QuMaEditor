@@ -74,7 +74,7 @@ export const TabBar: React.FC<TabBarProps> = ({
       <div
         ref={scrollContainerRef}
         onWheel={handleWheel}
-        className="flex-1 flex items-center overflow-x-auto no-scrollbar h-full pl-1 pr-2 gap-1"
+        className="flex-1 flex items-center overflow-x-auto h-full pl-1 pr-2 gap-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {openTabIds.map((id) => {
           const doc = docMap.get(id);

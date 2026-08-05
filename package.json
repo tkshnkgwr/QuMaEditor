@@ -1,7 +1,7 @@
 {
   "name": "quma-editor",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "docs:frontend": "typedoc --skipErrorChecking --out docs/typedoc src/utils/tauriNative.ts src/types.ts",
+    "docs:frontend": "npx typedoc --skipErrorChecking --out docs/typedoc src/utils/tauriNative.ts src/types.ts",
     "gen:specta": "cargo run --bin gen_specta --manifest-path src-tauri/Cargo.toml",
     "tauri": "tauri"
   },

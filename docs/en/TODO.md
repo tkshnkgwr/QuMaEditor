@@ -6,6 +6,16 @@ Tracked tasks and completed features for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.2.0 Release (2026-08-05)
+- [x] **Direct File Overwrite (`Ctrl + S`) & Save As (`Ctrl + Shift + S`)**: Integrated Tauri `dialog` / `fs` plugins and Rust native reader (`read_file_native`). Retains actual `.md` file path (`filePath`) and directly overwrites disk files during manual or auto-save.
+- [x] **Windows Explorer Context Menu**: Automatically registers "Open with QuMaEditor" in Windows Explorer context menu on startup and installation.
+- [x] **Single Instance Enforcement**: Prevents duplicate app processes. Brings existing QuMaEditor window to focus and opens passed files as new tabs.
+- [x] **Preview Font Size Synchronization**: Real-time font size adjustment across both editor and preview panels.
+- [x] **Tab Bar Scrollbar Removal**: Clean CSS scrollbar hiding (`[scrollbar-width:none]`) for tab scroll area.
+- [x] **AppData Path & LocalStorage Metrics in Settings**: Path display with copy-to-clipboard, real-time KB/doc metrics, and cache cleanup/reset actions in `SettingsModal`.
+- [x] **Zero-Warning Vite Build via Code Splitting**: `manualChunks` in `vite.config.ts` (`vendor-react`, `vendor-icons`, `vendor-syntax`).
+- [x] **Installer Binary Packaging Fix**: Declared `[[bin]]` targets in `Cargo.toml` to ensure `QuMaEditor.exe` is bundled.
+
 ### v1.1.0 Release (2026-08-04)
 - [x] **Specta Auto TS Binding Export**: Auto-export type-safe TypeScript bindings (`src/bindings.ts`) from Rust DTOs.
 - [x] **TypeDoc Frontend API Docs**: Generated HTML API documentation for frontend IPC wrappers (`docs/typedoc/`).

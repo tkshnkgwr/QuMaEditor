@@ -5,7 +5,7 @@ Feature specifications and architecture overview for QuMaEditor.
 ---
 
 ## 1. Overview
-QuMaEditor is an ultra-lightweight and high-performance desktop Markdown editor built with Tauri v2, Rust backend, React, and TypeScript. (Current Version: v1.1.0)
+QuMaEditor is an ultra-fast, lightweight desktop Markdown editor built with Tauri v2 + Rust backend and React + TypeScript frontend. (Current Version: v1.2.0)
 
 ---
 
@@ -25,7 +25,13 @@ QuMaEditor is an ultra-lightweight and high-performance desktop Markdown editor 
 - **Direct PDF Export**: One-click instant `.pdf` file generation and saving from preview rendering without invoking the browser print dialog.
 - **A4 Full-Width Printing (`Ctrl + P`)**: All UI elements and editor panels are isolated using `print:hidden`, guaranteeing 100% page width printing of the rendered preview content.
 
-### 2.4 Rust Native Acceleration
+### 2.4 File Saving & OS Explorer Integration
+- **Direct File Overwrite (`Ctrl + S`) & Save As (`Ctrl + Shift + S`)**: Integrated Tauri `dialog` / `fs` plugins and Rust native reader (`read_file_native`). Retains actual `.md` file path (`filePath`) and directly overwrites disk files during manual or auto-save.
+- **Single Instance Enforcement**: Prevents duplicate app processes. Brings existing QuMaEditor window to focus and opens passed files as new tabs.
+- **Windows Explorer Context Menu**: Automatically registers "Open with QuMaEditor" in Windows Explorer right-click context menu.
+- **AppData Path & Storage Metrics**: Displays AppData path (with copy button), real-time KB/doc metrics, and one-click cache cleanup in `SettingsModal`.
+
+### 2.5 Rust Native Acceleration
 - **Chunked File Streaming**: Native streaming for 10MB+ files to prevent memory overload.
 - **Multi-Threaded Encoding Batch Conversion**: Rayon-powered batch conversion to UTF-8 / Shift_JIS.
 - **Text Diff Calculation**: Native line-by-line diff processing via `similar`.
@@ -33,5 +39,9 @@ QuMaEditor is an ultra-lightweight and high-performance desktop Markdown editor 
 ---
 
 ## 3. System Requirements
-- **OS**: Windows 10 / 11 (Tauri v2 Native Window)
-- **Runtime**: Rust Native Engine + WebKit / WebView2
+
+| Item | Details |
+| --- | --- |
+| Version | v1.2.0 |
+| OS | Windows 10 / 11 (Tauri v2 Native Window) |
+| Runtime | Rust Native Engine + WebView2 |

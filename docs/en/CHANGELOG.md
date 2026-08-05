@@ -2,6 +2,21 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.2.0] - 2026-08-05
+
+### 💾 Native Direct File Overwrite, Storage Metrics & Build Optimization (v1.2.0)
+
+- **Direct File Overwrite (`Ctrl + S`) & Save As (`Ctrl + Shift + S`)**: Integrated Tauri `dialog` / `fs` plugins and Rust native reader (`read_file_native`). Retains actual `.md` file path (`filePath`) and directly overwrites disk files during manual or auto-save.
+- **Windows Explorer Right-Click Context Menu**: Automatically registers "Open with QuMaEditor" in Windows Explorer context menu on startup and installation.
+- **Single Instance Enforcement**: Prevents duplicate app processes. Brings existing QuMaEditor window to focus and opens passed files as new tabs.
+- **Preview Font Size Synchronization**: Real-time font size adjustment across both editor and preview panels.
+- **Tab Bar Scrollbar Removal**: Clean CSS scrollbar hiding (`[scrollbar-width:none]`) for tab scroll area.
+- **AppData Path & LocalStorage Usage Metrics**: Added AppData directory path display with copy-to-clipboard, real-time KB/doc metrics, and cache cleanup/reset actions in `SettingsModal`.
+- **Zero-Warning Vite Build via Code Splitting**: Resolved 1.5MB bundle warning by introducing `manualChunks` in `vite.config.ts` (`vendor-react`, `vendor-icons`, `vendor-syntax`).
+- **Binary Target Pinning**: Fixed installer packaging issue by explicitly declaring `[[bin]]` targets in `Cargo.toml` so `QuMaEditor.exe` is always picked over utility binaries.
+
+---
+
 ## [1.1.0] - 2026-08-04
 
 ### 🛠️ Documentation, Specta TS Binding & Test Suite (v1.1.0)

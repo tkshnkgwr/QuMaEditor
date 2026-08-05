@@ -5,7 +5,7 @@ QuMaEditor (Quick & Minimal Markdown Editor) の機能仕様およびアーキ�
 ---
 
 ## 1. 概要 (Overview)
-QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript フロントエンドで構築された、超軽量・超高速なディスクトップ Markdown エディタです。(現在のバージョン: v1.1.0)
+QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript フロントエンドで構築された、超軽量・超高速なディスクトップ Markdown エディタです。(現在のバージョン: v1.2.0)
 
 ---
 
@@ -25,7 +25,13 @@ QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript 
 - **ダイレクト PDF エクスポート**: 印刷ダイアログを起動することなく、プレビュー画面のレイアウトスタイルそのままにワンクリックで `.pdf` ファイルを直接生成・保存。
 - **A4 フルサイズ印刷 (`Ctrl + P`)**: 印刷時、編集画面 (`Editor.tsx`) および全 UI パーツを `print:hidden` で完全に除外。プレビュー表示領域のみを用紙の左端から右端まで横幅 100% で美しく印刷。
 
-### 2.4 Rust ネイティブアクセラレーション (Rust Native Acceleration)
+### 2.4 ファイル保存 & OS エクスプローラー連携 (File Save & Explorer Integration)
+- **実ファイル直上書き保存 (`Ctrl + S`) ＆ 名前を付けて保存 (`Ctrl + Shift + S`)**: Tauri `dialog` / `fs` プラグインおよび Rust ネイティブ読込 (`read_file_native`) を統合。ローカル PC 上の実際の `.md` ファイルパス (`filePath`) を保持し、手動保存および打鍵後の自動保存で実ファイルへ直接上書き更新。
+- **二重起動防止 (Single Instance)**: 既に起動している場合は二重起動をブロックし、既存の QuMaEditor ウィンドウを前面化。受け取ったファイルパスを自動的に新タブでオープン。
+- **Windows エクスプローラー右クリック連携**: アプリ起動時およびインストール時に「QuMaEditorで開く」をエクスプローラーのコンテキストメニューに自動登録。
+- **内部ストレージ (AppData / LocalStorage) の可視化 & キャッシュ整理**: 設定画面 (`SettingsModal`) で AppData ディレクトリパスの表示・コピー、リアルタイム使用量 (KB/件数) の表示、不要な一時キャッシュのワンクリック整理に対応。
+
+### 2.5 Rust ネイティブアクセラレーション (Rust Native Acceleration)
 - **大容量ファイルチャンクストリーミング**: 10MB 超えテキストの段階的ストリーミング読み込み。
 - **マルチスレッドエンコーディング一括変換**: `rayon` を使用した複数ファイルの UTF-8 / Shift_JIS 高速一括変換。
 - **テキスト Diff 比較演算**: `similar` クレートによる高速な行単位差分抽出演算。
@@ -33,6 +39,9 @@ QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript 
 ---
 
 ## 3. システム動作環境
-- **バージョン**: v1.1.0
-- **OS**: Windows 10 / 11 (Tauri v2 Native Window)
-- **ランタイム**: Rust Native Engine + WebKit / WebView2
+
+| 項目 | 詳細 |
+| --- | --- |
+| バージョン | v1.2.0 |
+| OS | Windows 10 / 11 (Tauri v2 Native Window) |
+| ランタイム | Rust Native Engine + WebView2 |

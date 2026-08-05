@@ -2,7 +2,7 @@
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.1.0-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.2.0-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v18-61dafb?logo=react)](https://react.dev/)
@@ -36,20 +36,27 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 - **A4 Full-Width Printing (`Ctrl + P`)**: Complete UI isolation (`print:hidden`) guaranteeing 100% page width printing of preview content.
 - **GFM Table Text Alignment**: Full support for left `:---`, center `:---:`, and right `---:` Markdown table alignment.
 
+### 💾 Native File Saving & OS Explorer Integration (v1.2.0)
+- **Direct File Overwrite (`Ctrl + S`)**: Directly overwrites disk `.md` files on manual save and auto-save.
+- **Save As (`Ctrl + Shift + S`)**: Native dialog to export Markdown documents anywhere on disk.
+- **Explorer Context Menu**: Auto-registers "Open with QuMaEditor" in Windows Explorer context menu.
+- **Single Instance Enforcement**: Aggregates opened files into new tabs in the running instance.
+
 ---
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut           | Action                                 |
-| :----------------- | :------------------------------------- |
-| `Ctrl + N`         | Create new Markdown document           |
-| `Ctrl + O`         | Open local text file (.md, .txt)       |
-| `Ctrl + S`         | Manually trigger document save         |
-| `Ctrl + P`         | Open A4 Print / PDF dialog             |
-| `Ctrl + B`         | Bold text formatting (`**text**`)      |
-| `Ctrl + I`         | Italic text formatting (`*text*`)      |
-| `Ctrl + Shift + Z` | Toggle Zen focus writing mode          |
-| `F1`               | Open Keyboard Shortcuts Help Modal     |
+| Shortcut | Action |
+| :--- | :--- |
+| `Ctrl + N` | Create new Markdown document |
+| `Ctrl + O` | Open local text file (.md, .txt) |
+| `Ctrl + S` | Direct file overwrite save |
+| `Ctrl + Shift + S` | Save As (save to disk file) |
+| `Ctrl + P` | Open A4 Print / PDF dialog |
+| `Ctrl + B` | Bold text formatting (`**text**`) |
+| `Ctrl + I` | Italic text formatting (`*text*`) |
+| `Ctrl + Shift + Z` | Toggle Zen focus writing mode |
+| `F1` | Open Keyboard Shortcuts Help Modal |
 
 ---
 
