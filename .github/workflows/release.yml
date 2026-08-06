@@ -8,7 +8,6 @@ on:
 
 jobs:
   publish-tauri:
-    name: Build & Release Desktop App
     permissions:
       contents: write
     runs-on: windows-latest
@@ -26,22 +25,17 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Rust Cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
-
       - name: Install Frontend Dependencies
         run: npm ci
 
       - name: Build Desktop Release & Publish
-        uses: tauri-apps/tauri-action@v2
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
-          releaseName: 'QuMaEditor v__VERSION__'
+          tagName: ${{ github.ref_name }}
+          releaseName: 'QuMaEditor ${{ github.ref_name }}'
           releaseBody: 'QuMaEditor Desktop Application Release'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
-          args: --manifest-path src-tauri/Cargo.toml
+          projectPath: './src-tauri'
