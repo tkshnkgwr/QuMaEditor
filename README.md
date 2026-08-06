@@ -2,7 +2,7 @@
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.2.0-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.2.2-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v18-61dafb?logo=react)](https://react.dev/)
@@ -20,10 +20,12 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 - **Inverted Index Full-Text Search**: Fast word-based inverted index search using Rust `LazyLock<Mutex<Vec<DocSearchInput>>>`.
 - **Parallel Multi-Threaded Encoding**: Multi-file batch encoding conversion (`rayon`) to UTF-8 and Shift_JIS.
 - **Native Text Diff**: Ultra-fast line-by-line diff calculation powered by the Rust `similar` crate.
+- **Native Explorer Opening**: Open active file parent directories directly in Windows Explorer via `open_folder_native`.
 
 ### 🎨 Modern UI & Color Themes
 - **High-Contrast Themes**: Dynamic light/dark mode adaptation across all panels, modals, syntax highlighting, and scrollbars.
-- **Ultra-Bright Front Matter**: Enhanced YAML Front Matter protection panel (`bg-amber-50/60`) in light mode.
+- **Ctrl + Scroll Wheel Preview Zoom**: Zoom preview rendering between 50% ~ 300% via `Ctrl + Scroll Wheel` with a one-click reset badge.
+- **Selection-Aware & Line-Heading Toolbar**: Wrap highlighted text selections for bold/italic and insert `# ` heading markers at the beginning of the cursor line.
 - **Prism Code Highlighting**: Clean `prism` syntax highlighting style for multi-line code blocks in light mode.
 
 ### 🔍 Advanced Search & Tag System
@@ -36,8 +38,10 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 - **A4 Full-Width Printing (`Ctrl + P`)**: Complete UI isolation (`print:hidden`) guaranteeing 100% page width printing of preview content.
 - **GFM Table Text Alignment**: Full support for left `:---`, center `:---:`, and right `---:` Markdown table alignment.
 
-### 💾 Native File Saving & OS Explorer Integration (v1.2.0)
-- **Direct File Overwrite (`Ctrl + S`)**: Directly overwrites disk `.md` files on manual save and auto-save.
+### 💾 Native File Saving & Dual Protection Architecture (v1.2.2)
+- **Direct File Overwrite (`Ctrl + S`)**: Directly overwrites disk `.md` files via Rust native commands (`💾 Saved to file`).
+- **Crash Prevention (LocalStorage Safety)**: Automatically persists transient editing data into LocalStorage (`📦 Saved in-app (LocalStorage)`) to prevent data loss in case of unexpected OS shutdowns or crashes.
+- **Intuitive Status Badging**: TitleBar and StatusBar clearly distinguish between real disk saves (`💾 Saved to file`) and transient memory saves (`📦 Saved in-app`).
 - **Save As (`Ctrl + Shift + S`)**: Native dialog to export Markdown documents anywhere on disk.
 - **Explorer Context Menu**: Auto-registers "Open with QuMaEditor" in Windows Explorer context menu.
 - **Single Instance Enforcement**: Aggregates opened files into new tabs in the running instance.
@@ -46,17 +50,17 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut | Action |
-| :--- | :--- |
-| `Ctrl + N` | Create new Markdown document |
-| `Ctrl + O` | Open local text file (.md, .txt) |
-| `Ctrl + S` | Direct file overwrite save |
-| `Ctrl + Shift + S` | Save As (save to disk file) |
-| `Ctrl + P` | Open A4 Print / PDF dialog |
-| `Ctrl + B` | Bold text formatting (`**text**`) |
-| `Ctrl + I` | Italic text formatting (`*text*`) |
-| `Ctrl + Shift + Z` | Toggle Zen focus writing mode |
-| `F1` | Open Keyboard Shortcuts Help Modal |
+| Shortcut           | Action                                  |
+| :----------------- | :-------------------------------------- |
+| `Ctrl + N`         | Create new Markdown document            |
+| `Ctrl + O`         | Open local text file (.md, .txt)        |
+| `Ctrl + S`         | Direct file overwrite save              |
+| `Ctrl + Shift + S` | Save As (save to disk file)             |
+| `Ctrl + P`         | Open A4 Print / PDF dialog              |
+| `Ctrl + B`         | Bold text formatting / Wrap selection   |
+| `Ctrl + I`         | Italic text formatting / Wrap selection |
+| `Ctrl + Shift + Z` | Toggle Zen focus writing mode           |
+| `F1`               | Show keyboard shortcuts help modal      |
 
 ---
 
@@ -64,62 +68,63 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 
 ```
 +-------------------------------------------------------------------+
-|                        QuMaEditor Desktop                         |
+|                       QuMaEditor Desktop                          |
 +-------------------------------------------------------------------+
 |  Frontend (React 18 + TypeScript + Tailwind CSS)                  |
-|   - Real-time GFM Live Preview & Prism / VSC Syntax Highlighting  |
-|   - Multi-tab management & Floating Input Toolbar                 |
-|   - Keyword Highlighting (<mark>) & Tag Filtering                 |
+|   - Real-time GFM preview & Prism/VSC syntax highlighting         |
+|   - Multi-tab management & floating formatting toolbar            |
+|   - Keyword highlighting (<mark>) & #tag search                   |
 +-------------------------------------------------------------------+
-|                       Tauri v2 IPC Bridge                         |
+|                      Tauri v2 IPC Protocol                        |
 +-------------------------------------------------------------------+
 |  Backend (Rust Native Engine)                                     |
-|   - Chunk Streaming (10MB+) | Inverted Index Full-Text Search       |
-|   - Rayon Multi-threaded Batch Encoding | Native Text Diff        |
+|   - Chunked streaming (10MB+) | Inverted index full-text search   |
+|   - Rayon multi-threaded batch conversion | Native diff engine    |
+|   - Native open_folder_native command for Windows Explorer        |
 +-------------------------------------------------------------------+
 ```
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🚀 Quick Start & Local Setup
 
-### Prerequisites
-- [Rust](https://www.rust-lang.org/) (1.80 or higher)
-- [Node.js](https://nodejs.org/) (v18 or higher)
+### Requirements
+- [Rust](https://www.rust-lang.org/) (v1.80+)
+- [Node.js](https://nodejs.org/) (v18+)
 - [npm](https://www.npmjs.com/) or [bun](https://bun.sh/)
 
-### Build & Run Locally
+### Build & Execution
 
 ```bash
-# 1. Clone repository
+# 1. Clone the repository
 git clone https://github.com/tkshnkgwr/QuMaEditor.git
 cd QuMaEditor
 
 # 2. Install dependencies
 npm install
 
-# 3. Launch in Tauri dev mode
+# 3. Launch Tauri dev mode
 npm run tauri dev
 ```
 
 ---
 
-## 📁 Project Directory Structure
+## 📁 Directory Structure
 
 ```
 QuMaEditor/
-├── .agents/               # AI Agent Guidelines & Persona (AGENTS.md)
+├── .agents/               # AI Agent Development Guidelines (AGENTS.md)
 ├── docs/
-│   ├── ja/                # Japanese Specifications & Documentation
-│   └── en/                # English Specifications & Documentation
+│   ├── ja/                # Japanese Specifications & Operating Guides
+│   └── en/                # English Specifications & Operating Guides
 ├── src/                   # React Frontend Source Code
-│   ├── components/        # UI Components (Editor, Preview, Sidebar, Modals)
-│   ├── utils/             # Tauri Native IPC & Storage Helpers
+│   ├── components/        # UI Components (Editor, Preview, Modals)
+│   ├── utils/             # Tauri IPC & Storage Helpers
 │   └── App.tsx            # Main Application Workspace
 ├── src-tauri/             # Rust Native Backend (Tauri v2 Engine)
-│   ├── src/lib.rs         # Native Commands & Search Engines
-│   └── Cargo.toml         # Rust Dependencies
-├── package.json           # Single Source of Truth for Versioning (v1.0.0)
+│   ├── src/lib.rs         # Native Commands & Search Engine
+│   └── Cargo.toml         # Rust Dependency Definitions
+├── package.json           # Single Source of Truth Versioning (v1.2.2)
 └── LICENSE                # MIT License
 ```
 
@@ -127,4 +132,4 @@ QuMaEditor/
 
 ## 📄 License
 
-This project is licensed under the **[MIT License](LICENSE)** - see the LICENSE file for details.
+This project is licensed under the **[MIT License](LICENSE)**.

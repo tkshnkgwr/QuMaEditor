@@ -6,6 +6,21 @@ Tracked tasks and completed features for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.2.2 Release (2026-08-07)
+- [x] **Settings Modal Reset Button Relocation**: Moved dangerous "Full Data Reset" button to the bottom-left footer row in `SettingsModal`.
+- [x] **Ctrl + Scroll Wheel Preview Zoom**: Added interactive preview zooming (50%~300%) with reset badge in `Preview.tsx`.
+- [x] **Selection-Aware Toolbar Formatting**: Updated Bold, Italic, Underline, and Strikethrough buttons to wrap text selections or insert at cursor with focus restoration.
+- [x] **Cursor-Line Heading Insertion**: Modified H1/H2/H3 buttons to insert/replace `# ` markers at the start of the current line instead of appending at EOF.
+- [x] **Open Parent Folder in Explorer**: Added native command `open_folder_native` and File menu action to open disk file directories in Explorer.
+- [x] **LocalStorage Safety Explanation**: Added detailed LocalStorage dual-protection guide and comparison matrix in `AboutModal`.
+
+### v1.2.1 Release (2026-08-06)
+- [x] **Default Editor View on Startup**: Changed initial default view mode from `split` to `editor`.
+- [x] **Type-Safe File Opening**: Refactored native file loading using `tauri-specta` bindings (`commands.readFileNative`).
+- [x] **Windows Async Startup**: Offloaded PowerShell context menu registration to `spawn_blocking` threads to prevent freezes.
+- [x] **Code Base Cleanup & Doc Completeness**: Added complete RustDoc comments and TypeScript JSDoc documentation across codebase.
+- [x] **Rust Unit Test Suite Expansion**: Added unit tests covering file reading, diffing, index search, and encoding conversion (9/9 passed).
+
 ### v1.2.0 Release (2026-08-05)
 - [x] **Direct File Overwrite (`Ctrl + S`) & Save As (`Ctrl + Shift + S`)**: Integrated Tauri `dialog` / `fs` plugins and Rust native reader (`read_file_native`). Retains actual `.md` file path (`filePath`) and directly overwrites disk files during manual or auto-save.
 - [x] **Windows Explorer Context Menu**: Automatically registers "Open with QuMaEditor" in Windows Explorer context menu on startup and installation.

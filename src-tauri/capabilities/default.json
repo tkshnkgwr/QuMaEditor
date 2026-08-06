@@ -11,6 +11,12 @@
     "core:window:allow-close",
     "dialog:default",
     "fs:default",
+    "fs:allow-read-file",
+    "fs:allow-read-text-file",
+    "fs:allow-write-file",
+    "fs:allow-write-text-file",
+    "fs:allow-create",
+    "fs:allow-write",
     "http:default"
   ]
 }

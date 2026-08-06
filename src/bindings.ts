@@ -92,6 +92,22 @@ async readFileNative(filePath: string) : Promise<Result<ConvertedTextDto, string
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async writeFileNative(filePath: string, content: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("write_file_native", { filePath, content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async writeFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("write_file_bytes_native", { filePath, bytes }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

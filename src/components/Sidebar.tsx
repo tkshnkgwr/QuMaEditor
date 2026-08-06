@@ -14,9 +14,10 @@ import {
   Download,
   Globe,
   Zap,
+  FolderOpen,
 } from 'lucide-react';
 import { MarkdownDoc } from '../types';
-import { indexDocumentsNative, searchDocumentsNative, SearchHit } from '../utils/tauriNative';
+import { indexDocumentsNative, searchDocumentsNative, SearchHit, openFolderNative } from '../utils/tauriNative';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -259,6 +260,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    {doc.filePath && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (doc.filePath) {
+                            await openFolderNative(doc.filePath);
+                          }
+                        }}
+                        className="p-1 rounded hover:bg-emerald-500/20 text-slate-500 hover:text-emerald-400 transition-colors"
+                        title={`保存先フォルダをエクスプローラーで開く:\n${doc.filePath}`}
+                      >
+                        <FolderOpen className="w-3 h-3 text-emerald-400" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -269,18 +284,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <Star className={`w-3 h-3 ${doc.isFavorite ? 'fill-amber-400' : ''}`} />
                     </button>
-                    {docs.length > 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteDoc(doc.id);
-                        }}
-                        className="p-1 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition-colors"
-                        title="削除"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteDoc(doc.id);
+                      }}
+                      className="p-1 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition-colors"
+                      title="LocalStorage から削除 (下書き破棄)"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
 
@@ -292,12 +305,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                 </p>
 
-                {/* メタ情報 (日時・タグ) */}
+                {/* メタ情報 (日時・保存種別バッジ・タグ) */}
                 <div className={`flex items-center justify-between text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 opacity-70" />
-                    {formatDate(doc.updatedAt || doc.createdAt)}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 opacity-70" />
+                      {formatDate(doc.updatedAt || doc.createdAt)}
+                    </span>
+                    {/* 保存種別バッジ */}
+                    {doc.filePath ? (
+                      <span className={`px-1.5 py-0.2 text-[9px] rounded font-medium border ${
+                        isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      }`} title={`実ファイル: ${doc.filePath}`}>
+                        📁 PCファイル
+                      </span>
+                    ) : doc.isRemote ? (
+                      <span className={`px-1.5 py-0.2 text-[9px] rounded font-medium border ${
+                        isDark ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-800'
+                      }`} title="リモート取得ファイル">
+                        🌐 リモート
+                      </span>
+                    ) : (
+                      <span className={`px-1.5 py-0.2 text-[9px] rounded font-medium border ${
+                        isDark ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' : 'bg-cyan-50 border-cyan-200 text-cyan-800'
+                      }`} title="LocalStorage アプリ内保存のみ">
+                        📦 LocalStorage
+                      </span>
+                    )}
+                  </div>
 
                   {doc.tags && doc.tags.length > 0 && (
                     <div className="flex items-center gap-1 overflow-hidden max-w-[120px]">

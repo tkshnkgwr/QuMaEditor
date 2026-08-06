@@ -13,7 +13,6 @@
 - **他言語経験者への解説補足**:
   - React Hooks (useState / useEffect 等): 状態変数とイベントライフタイムの監視ハンドラーとして説明します。
   - Rust 所有権・参照 (Move / Borrow): メモリ管理と参照の安全貸し出しとして説明します。
-- **Markdown表の縦整列**: 生テキスト画面（gVim等）で一目で直感的に読めるよう、パイプ `|` の垂直整列を維持します。
 
 ---
 
@@ -31,6 +30,7 @@
   - `npm run lint`: TypeScript 型チェックエラーゼロを確認します。
   - `cargo check --manifest-path src-tauri/Cargo.toml`: Tauri バックエンド Rust の正常性を確認します。
 - **モジュール分割基準 (1,000行ルール)**: 単一ソースファイルが 1,000 行を超えた場合は、関心事の分離（Separation of Concerns）に基づき分割・抽出しリファクタリングを提示します。
+- **Markdown例外**: Markdownファイル (`*.md`) のみの修正時は事前検証・ドキュメント自動更新をスキップ可能。
 
 ---
 

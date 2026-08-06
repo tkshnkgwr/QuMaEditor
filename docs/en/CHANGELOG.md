@@ -2,6 +2,34 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.2.2] - 2026-08-07
+
+### ✨ UI & Usability Enhancements (v1.2.2)
+
+- **Relocated Full Reset Button in Settings**: Moved the "Full Reset Data & Settings" button in `SettingsModal` to the bottom-left footer row alongside the OK/Close button to prevent accidental clicks.
+- **Ctrl + Scroll Wheel Preview Zooming**: Implemented interactive preview zooming (50% ~ 300%) via `Ctrl + Scroll Wheel` in `Preview.tsx`, complete with a top-right 100% reset badge.
+- **Selection-Aware Text Formatting Toolbar**: Updated Bold, Italic, Underline, and Strikethrough buttons to wrap highlighted text selections or insert formatting at current cursor position while automatically restoring focus and cursor selection.
+- **Cursor-Line Heading Insertion**: Modified H1, H2, and H3 toolbar buttons to insert or replace heading markers (`# `, `## `, `### `) at the beginning of the current cursor line rather than appending text at the end of the file.
+- **"Open Containing Folder in Explorer" Action**: Added a File menu action powered by a native Rust command (`open_folder_native`) to open the parent directory of local disk files in Windows Explorer.
+- **"LocalStorage Protection Mechanism" Explanation in About Dialog**: Added detailed explanations and a comparison matrix in `AboutModal` detailing LocalStorage safety, crash prevention, and dual-protection workflows.
+
+---
+
+## [1.2.1] - 2026-08-06
+
+### 🐛 Native File Loading & SendTo Menu Fixes, Default Editor View (v1.2.1)
+
+- **Default Startup Mode Changed to Editor-Only**: Set initial startup view mode to Editor-only (`editor`) instead of split view (`split`).
+- **Type-Safe Native File Reading**: Refactored file opening to use `tauri-specta` bindings (`commands.readFileNative`) with improved error logging.
+- **Async PowerShell Execution for Startup**: Shifted Windows PowerShell context menu registration to asynchronous blocking threads (`spawn_blocking`) to prevent startup freezes.
+- **IPv4 Loopback Binding (`127.0.0.1`)**: Explicitly bound dev server host to `127.0.0.1` in `tauri.conf.json` and `vite.config.ts` to eliminate IPv6 resolution delays on Windows.
+- **Sidebar Storage Type Badges**: Added visual indicators in sidebar (`📁 Disk`, `🌐 Remote`, `📦 LocalStorage`) and updated delete tooltips to clarify LocalStorage removal vs disk file removal.
+- **Author Protection & UpdatedBy Auto-Tracking**: Protected `author` Front Matter property once set (only editable when `"Unknown"`), while auto-updating `updatedBy` and `updatedAt` properties. Visualized on titlebar (`👤 Author`, `✍️ UpdatedBy`, `🕒 UpdatedAt`).
+- **LocalStorage Automatic Garbage Collection & Memory Slimming**: Implemented disk-saved document slimming (`<!-- [STORAGE_SLIMMED_LOAD_FROM_DISK] -->`) to permanently prevent 5MB LocalStorage `QuotaExceededError` crashes, with transparent background restoration on tab activation.
+- **Expanded Rust Unit Test Suite (9/9 Passed)**: Added unit tests for `read_file_native`, `compute_text_diff_native`, index search, and encoding conversions.
+
+---
+
 ## [1.2.0] - 2026-08-05
 
 ### 💾 Native Direct File Overwrite, Storage Metrics & Build Optimization (v1.2.0)

@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use similar::{ChangeTag, TextDiff};
 use specta::Type;
 use std::fs::{self, File};
-use std::io::{BufWriter, Read, Seek, SeekFrom};
+use std::io::{BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::sync::{LazyLock, Mutex};
 use syntect::highlighting::ThemeSet;
@@ -472,11 +472,91 @@ pub mod tauri_commands {
     pub fn read_file_native(file_path: String) -> Result<ConvertedTextDto, String> {
         super::read_file_native(file_path)
     }
+
+    #[tauri::command]
+    #[specta::specta]
+    pub fn write_file_native(file_path: String, content: String) -> Result<bool, String> {
+        super::write_file_native(file_path, content)
+    }
+
+    #[tauri::command]
+    #[specta::specta]
+    pub fn write_file_bytes_native(file_path: String, bytes: Vec<u8>) -> Result<bool, String> {
+        super::write_file_bytes_native(file_path, bytes)
+    }
+
+    #[tauri::command]
+    pub fn open_folder_native(file_path: String) -> Result<bool, String> {
+        #[cfg(target_os = "windows")]
+        {
+            use std::process::Command;
+            let clean_path = file_path.trim_matches('"').to_string();
+            // ファイルパスの親ディレクトリを取得
+            let folder_path = std::path::Path::new(&clean_path)
+                .parent()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or(clean_path.clone());
+            // エクスプローラーでフォルダを開く
+            let _ = Command::new("explorer.exe")
+                .arg(&folder_path)
+                .spawn()
+                .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
+            Ok(true)
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            Ok(false)
+        }
+    }
+}
+
+/// パス指定でローカルファイルへ直接テキストを書き込んで保存します (Rust ネイティブ・パーミッションフリー)
+pub fn write_file_native(file_path: String, content: String) -> Result<bool, String> {
+    let clean_path = file_path.trim_matches('"');
+    let path = Path::new(clean_path);
+
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            let _ = fs::create_dir_all(parent);
+        }
+    }
+
+    let mut file = File::create(clean_path).map_err(|e| format!("ファイル作成・オープン失敗 ({}): {}", clean_path, e))?;
+    file.write_all(content.as_bytes()).map_err(|e| format!("書き込み失敗: {}", e))?;
+    Ok(true)
+}
+
+/// パス指定でローカルファイルへ直接生バイト配列を書き込んで保存します (非 UTF-8 対応)
+pub fn write_file_bytes_native(file_path: String, bytes: Vec<u8>) -> Result<bool, String> {
+    let clean_path = file_path.trim_matches('"');
+    let path = Path::new(clean_path);
+
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            let _ = fs::create_dir_all(parent);
+        }
+    }
+
+    let mut file = File::create(clean_path).map_err(|e| format!("ファイル作成・オープン失敗 ({}): {}", clean_path, e))?;
+    file.write_all(&bytes).map_err(|e| format!("書き込み失敗: {}", e))?;
+    Ok(true)
 }
 
 /// パス指定でローカルファイルを直接読み込み、文字コードを判別して UTF-8 テキストとして返します
 pub fn read_file_native(file_path: String) -> Result<ConvertedTextDto, String> {
-    let mut file = File::open(&file_path).map_err(|e| format!("Failed to open file ({}): {}", file_path, e))?;
+    let clean_path = file_path.trim_matches('"');
+    let path = Path::new(clean_path);
+
+    if !path.is_file() {
+        return Err(format!("指定されたパスは有効なファイルではありません: {}", clean_path));
+    }
+
+    let metadata = fs::metadata(path).map_err(|e| format!("メタデータ取得失敗: {}", e))?;
+    if metadata.len() > 20 * 1024 * 1024 {
+        return Err("ファイルサイズが 20MB を超えているため、安全のため自動読み込みを中断しました。".to_string());
+    }
+
+    let mut file = File::open(clean_path).map_err(|e| format!("Failed to open file ({}): {}", clean_path, e))?;
     let mut bytes = Vec::new();
     file.read_to_end(&mut bytes).map_err(|e| format!("Failed to read file: {}", e))?;
     detect_and_convert_to_utf8(bytes)
@@ -527,6 +607,8 @@ pub fn export_specta_types() {
         tauri_commands::generate_pdf_native,
         tauri_commands::highlight_code_native,
         tauri_commands::read_file_native,
+        tauri_commands::write_file_native,
+        tauri_commands::write_file_bytes_native,
     ]);
 
     #[cfg(debug_assertions)]
@@ -556,29 +638,57 @@ pub fn run() {
 
             // 二重起動・右クリック「QuMaEditorで開く」から渡されたコマンドライン引数 (ファイルパス) を送信
             if argv.len() > 1 {
+                let current_exe = std::env::current_exe().ok();
                 for arg in argv.iter().skip(1) {
                     if !arg.starts_with('-') {
-                        let _ = app.emit("open-file-from-cli", arg.clone());
+                        let clean_arg = arg.trim_matches('"').to_string();
+                        let path = Path::new(&clean_arg);
+                        if let Some(ref exe_path) = current_exe {
+                            if path == exe_path {
+                                continue;
+                            }
+                        }
+                        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                            let ext_lower = ext.to_lowercase();
+                            if ext_lower == "exe" || ext_lower == "dll" || ext_lower == "sys" || ext_lower == "pdb" {
+                                continue;
+                            }
+                        }
+                        if path.is_file() {
+                            let _ = app.emit("open-file-from-cli", clean_arg);
+                        }
                     }
                 }
             }
         }))
-        .setup(|app| {
-            // Windows エクスプローラー右クリックメニュー「QuMaEditorで開く」の自動登録
-            let _ = register_context_menu_native();
+        .setup(|_app| {
+            // Windows エクスプローラー右クリックメニュー登録は非同期で実行
+            // (PowerShell 起動の同期ブロックで setup が止まるのを防ぐ)
+            tauri::async_runtime::spawn_blocking(|| {
+                let _ = register_context_menu_native();
+            });
 
             // 1つ目のプロセス初回起動時のコマンドライン引数チェック
             let args: Vec<String> = std::env::args().collect();
             if args.len() > 1 {
-                let app_handle = app.handle().clone();
-                let first_arg = args[1].clone();
+                let app_handle = _app.handle().clone();
+                let first_arg = args[1].trim_matches('"').to_string();
                 if !first_arg.starts_with('-') {
-                    tauri::async_runtime::spawn(async move {
-                        std::thread::sleep(std::time::Duration::from_millis(800));
-                        let _ = app_handle.emit("open-file-from-cli", first_arg);
-                    });
+                    let path = Path::new(&first_arg);
+                    if path.is_file() {
+                        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                            let ext_lower = ext.to_lowercase();
+                            if ext_lower != "exe" && ext_lower != "dll" {
+                                tauri::async_runtime::spawn(async move {
+                                    std::thread::sleep(std::time::Duration::from_millis(800));
+                                    let _ = app_handle.emit("open-file-from-cli", first_arg);
+                                });
+                            }
+                        }
+                    }
                 }
             }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -593,6 +703,9 @@ pub fn run() {
             tauri_commands::generate_pdf_native,
             tauri_commands::highlight_code_native,
             tauri_commands::read_file_native,
+            tauri_commands::write_file_native,
+            tauri_commands::write_file_bytes_native,
+            tauri_commands::open_folder_native,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -654,5 +767,47 @@ mod tests {
         let hits = search_documents_native("Rust".to_string()).unwrap();
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].doc_id, "doc-1");
+    }
+
+    #[test]
+    fn test_read_file_native_not_found() {
+        let res = read_file_native("non_existent_file_xyz_12345.md".to_string());
+        assert!(res.is_err());
+        assert!(res.unwrap_err().contains("有効なファイルではありません"));
+    }
+
+    #[test]
+    fn test_read_file_native_valid_file() {
+        use std::io::Write;
+        let temp_dir = std::env::temp_dir();
+        let temp_file_path = temp_dir.join("quma_test_doc_sample.md");
+        {
+            let mut file = fs::File::create(&temp_file_path).unwrap();
+            file.write_all("--- \ntitle: テストノート\n---\n\n# テスト本文".as_bytes()).unwrap();
+        }
+
+        let res = read_file_native(temp_file_path.to_string_lossy().to_string()).unwrap();
+        assert_eq!(res.encoding, "UTF-8");
+        assert!(res.text.contains("# テスト本文"));
+
+        let _ = fs::remove_file(temp_file_path);
+    }
+
+    #[test]
+    fn test_convert_utf8_to_encoding_sjis() {
+        let text = "QuMaEditor テストデータ";
+        let bytes = convert_utf8_to_encoding(text.to_string(), "Shift_JIS".to_string()).unwrap();
+        assert!(!bytes.is_empty());
+        let (decoded, _, _) = SHIFT_JIS.decode(&bytes);
+        assert_eq!(decoded, text);
+    }
+
+    #[test]
+    fn test_convert_utf8_to_encoding_euc_jp() {
+        let text = "QuMaEditor EUCテスト";
+        let bytes = convert_utf8_to_encoding(text.to_string(), "EUC-JP".to_string()).unwrap();
+        assert!(!bytes.is_empty());
+        let (decoded, _, _) = EUC_JP.decode(&bytes);
+        assert_eq!(decoded, text);
     }
 }

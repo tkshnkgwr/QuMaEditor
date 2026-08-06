@@ -1,9 +1,10 @@
 [package]
 name = "QuMaEditor"
-version = "1.2.0"
+version = "1.2.2"
 description = "High Performance Native Markdown Editor Desktop Application"
 authors = ["you"]
 edition = "2021"
+default-run = "QuMaEditor"
 
 [lib]
 name = "quma_editor_lib"
@@ -43,7 +44,7 @@ tauri-specta = { version = "=2.0.0-rc.20", features = ["javascript", "typescript
 
 [profile.release]
 opt-level = 'z'     # サイズ最適化
-lto = true          # リンク時最適化
-codegen-units = 1   # コンパイル単位を1にして最適化を最大化
+lto = "thin"        # リンク時最適化 (thin によるビルド爆速化)
+codegen-units = 16  # マルチスレッド並列コンパイルでビルド大幅短縮
 panic = 'abort'     # パニック時の巻き戻しを無効化して軽量化
 strip = true        # シンボル情報を削除（サイズ大幅削減）

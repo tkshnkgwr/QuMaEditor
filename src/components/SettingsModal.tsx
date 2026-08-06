@@ -151,6 +151,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
+          {/* 既定の作成者名 */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>既定の作成者名 (Author)</div>
+              <div className="text-[10px] text-slate-400 font-sans">Front Matter 出力時のデフォルト名</div>
+            </div>
+            <input
+              type="text"
+              value={settings.defaultAuthor || ''}
+              placeholder="例: 山田 太郎"
+              onChange={(e) => onUpdateSettings({ defaultAuthor: e.target.value })}
+              className={`w-36 px-2.5 py-1 rounded border text-xs outline-none transition-colors ${
+                isDark ? 'bg-slate-800 border-slate-700 text-slate-100 focus:border-cyan-500' : 'bg-slate-50 border-slate-300 text-slate-900 focus:border-cyan-500'
+              }`}
+            />
+          </div>
+
           {/* 行番号 */}
           <div className="flex items-center justify-between">
             <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>行番号の表示</span>
@@ -274,8 +291,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
 
-            {/* キャッシュクリア ＆ リセットボタン群 */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* キャッシュクリアボタン */}
+            <div className="pt-1">
               <button
                 onClick={() => {
                   if (confirm('肥大化した一時キャッシュ・未保存データを削除してメモリをクリアしますか？\n(実ファイルパス付きのドキュメントは保持されます)')) {
@@ -292,29 +309,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <Trash2 className="w-3 h-3" />
                 一時キャッシュを整理
               </button>
+            </div>
 
-              <button
-                onClick={() => {
-                  if (confirm('ローカルストレージのすべてのデータを完全初期化しサンプル状態にリセットしますか？')) {
-                    onResetData();
-                    onClose();
-                  }
-                }}
-                className={`py-1.5 px-2 rounded border text-[11px] transition-colors flex items-center justify-center gap-1.5 ${
-                  isDark
-                    ? 'bg-rose-950/50 hover:bg-rose-900/70 border-rose-800/70 text-rose-300'
-                    : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-800 font-medium'
-                }`}
-                title="データを全初期化して再構築"
-              >
-                <RotateCcw className="w-3 h-3" />
-                初期状態にリセット
-              </button>
+            {/* キャッシュ整理の機能説明 */}
+            <div className={`text-[10px] leading-relaxed p-2 rounded border ${
+              isDark ? 'bg-slate-950/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
+            }`}>
+              💡 <strong>「一時キャッシュを整理」の動作説明</strong><br />
+              PC 上の実ファイルに保存済みのドキュメントについて、LocalStorage 内の重複テキストデータを安全にクリアして空き容量を確保します。<br />
+              <span className="text-emerald-500 font-semibold">※ PC 上の実際の `.md` ファイルは一切削除されず安全に保持されます。</span>
             </div>
           </div>
         </div>
 
-        <div className={`flex items-center justify-end pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+        <div className={`flex items-center justify-between pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+          <button
+            onClick={() => {
+              if (confirm('ローカルストレージのすべてのデータを完全初期化しサンプル状態にリセットしますか？')) {
+                onResetData();
+                onClose();
+              }
+            }}
+            className={`py-1.5 px-3 rounded border text-[11px] transition-colors flex items-center gap-1.5 ${
+              isDark
+                ? 'bg-rose-950/40 hover:bg-rose-900/60 border-rose-800/60 text-rose-300'
+                : 'bg-rose-50 hover:bg-rose-100 border-rose-300 text-rose-800 font-medium'
+            }`}
+            title="すべてのドキュメントデータを初期化"
+          >
+            <RotateCcw className="w-3 h-3" />
+            設定・データを完全初期化
+          </button>
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-xs shadow-md transition-colors"

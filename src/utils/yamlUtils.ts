@@ -1,14 +1,26 @@
 import { MarkdownDoc, SupportedEncoding } from '../types';
 
 /**
- * UPDATE 2026-08-04: MarkdownDoc から YAML Front Matter 文字列を生成する
+ * UPDATE 2026-08-06: MarkdownDoc から YAML Front Matter 文字列を生成する
+ * (doc.author が未設定の場合は defaultAuthor を使用)
  */
-export function buildYamlFrontMatter(doc: Partial<MarkdownDoc>): string {
+export function buildYamlFrontMatter(doc: Partial<MarkdownDoc>, defaultAuthor: string = 'Unknown'): string {
   const title = doc.title || '無題のドキュメント';
-  const author = doc.author || '作成者';
+
+  // 作成者 (author): 既存の author がセットされていて Unknown でなければそれを固定保持
+  const existingAuthor = doc.author && doc.author.trim() !== '' ? doc.author.trim() : '';
+  const author = (existingAuthor && existingAuthor !== 'Unknown')
+    ? existingAuthor
+    : (defaultAuthor.trim() ? defaultAuthor.trim() : 'Unknown');
+
   const created = doc.createdAt || new Date().toISOString();
   const updated = doc.updatedAt || new Date().toISOString();
-  const updatedBy = doc.updatedBy || author;
+
+  // 更新者 (updatedBy): 保存・変更時は settings.defaultAuthor または既存の updatedBy
+  const updatedBy = doc.updatedBy && doc.updatedBy.trim() !== ''
+    ? doc.updatedBy.trim()
+    : (defaultAuthor.trim() ? defaultAuthor.trim() : author);
+
   const encoding = doc.encoding || 'UTF-8';
   const tags = doc.tags && doc.tags.length > 0 ? doc.tags : [];
 
@@ -30,11 +42,10 @@ export function buildYamlFrontMatter(doc: Partial<MarkdownDoc>): string {
 }
 
 /**
- * UPDATE 2026-08-04: YAML Front Matter を含む完全な Markdown テキストを生成
- * Why: エクスポート時やファイル出力時にのみ Front Matter を付与し、かつ重複付与や空行の累積を防止するため。
+ * UPDATE 2026-08-06: YAML Front Matter を含む完全な Markdown テキストを生成
  */
-export function buildFullMarkdownWithFrontMatter(doc: MarkdownDoc): string {
-  const frontMatter = buildYamlFrontMatter(doc);
+export function buildFullMarkdownWithFrontMatter(doc: MarkdownDoc, defaultAuthor: string = ''): string {
+  const frontMatter = buildYamlFrontMatter(doc, defaultAuthor);
   // もし doc.content 内にすでに frontMatter がある場合は除去して本文のみを取り出す
   const { body } = parseYamlFrontMatter(doc.content || '');
   const cleanBody = body.trimStart();

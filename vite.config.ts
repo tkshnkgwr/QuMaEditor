@@ -12,9 +12,9 @@ export default defineConfig({
   },
   clearScreen: false,
   server: {
-    port: 3000,
+    port: 1420,
     strictPort: true,
-    host: true,
+    host: '127.0.0.1',
     watch: {
       ignored: ['**/src-tauri/**', '**/target/**'],
     },

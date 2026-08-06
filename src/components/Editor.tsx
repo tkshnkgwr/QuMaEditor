@@ -12,6 +12,8 @@ interface EditorProps {
   onImageDrop: (file: File) => void;
   doc?: MarkdownDoc;
   onUpdateTags?: (newTags: string[]) => void;
+  /** textareaRef を親コンポーネントへ公開するコールバック (フォーマット時の選択範囲取得に使用) */
+  onTextareaRef?: (ref: HTMLTextAreaElement | null) => void;
   isDark?: boolean;
 }
 
@@ -24,9 +26,18 @@ export const Editor: React.FC<EditorProps> = ({
   onImageDrop,
   doc,
   onUpdateTags,
+  onTextareaRef,
   isDark = true,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // textareaRef を親コンポーネントに公開 (useEffect でマウント/アンマウント時に通知)
+  React.useEffect(() => {
+    if (onTextareaRef) {
+      onTextareaRef(textareaRef.current);
+      return () => onTextareaRef(null);
+    }
+  }, [onTextareaRef]);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isFrontMatterOpen, setIsFrontMatterOpen] = useState(true);

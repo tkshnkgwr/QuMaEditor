@@ -43,7 +43,7 @@ export type ViewMode = 'split' | 'editor' | 'preview';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 
-export type SaveStatus = 'saved' | 'saving' | 'editing' | 'unsaved';
+export type SaveStatus = 'saved' | 'saved_file' | 'saved_local' | 'saving' | 'editing' | 'unsaved';
 
 // UPDATE 2026-08-04: 自動保存状態（編集中 'editing' を含む）の型定義を追加
 export interface EditorSettings {
@@ -53,6 +53,7 @@ export interface EditorSettings {
   syncScroll: boolean;
   autoSaveIntervalMs: number; // 最小1000ms, 最大10000ms
   theme: ThemeMode;
+  defaultAuthor?: string; // 既定の作成者名 (YAML Front Matter 自動付与用)
 }
 
 export interface TextStats {

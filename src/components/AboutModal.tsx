@@ -1,6 +1,5 @@
 import React from 'react';
-import { X, Info, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
-
+import { X, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import packageJson from '../../package.json';
 
 interface AboutModalProps {
@@ -13,41 +12,13 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, isDark 
   if (!isOpen) return null;
 
   const version = packageJson.version;
-  const releaseDate = '2026年8月';
-
-  const features = [
-    {
-      title: 'Tauri v2 ネイティブ Desktop アプリ',
-      description: 'Rust バックエンドによる超爆速・超軽量 (RAM ~35MB) アーキテクチャ構築。',
-    },
-    {
-      title: 'Rust ネイティブ爆速全文検索 & 並列エンコード',
-      description: '転置インデックスによるリアルタイム全文検索、rayon スレッドエンジンでの複数ファイル一括文字コード変換。',
-    },
-    {
-      title: 'キーボードショートカット確認＆ヘルプ',
-      description: 'ヘルプメニューまたは F1 キーで即座にショートカット一覧をカード確認。Ctrl+N/S/P 等の操作に対応。',
-    },
-    {
-      title: 'Yama YAML Front Matter & タグ編集',
-      description: 'YAMLフロントマターの保護・自動パース/付与。エディタ内誤消去を防止し、タグのみインタラクティブ設定。',
-    },
-    {
-      title: '文字コード自動判別＆文字コード別改行保存',
-      description: 'UTF-8, Shift_JIS, EUC-JP の Rust ネイティブ判定と、CRLF/LF 改行コード自動変換保存。',
-    },
-    {
-      title: 'SQL＆マルチ言語構文ハイライト',
-      description: 'SQLクエリをはじめ、TypeScript, Python, JSON等のリアルタイムハイライト。',
-    },
-  ];
 
   return (
     <div className={`fixed inset-0 z-50 backdrop-blur-xs flex items-center justify-center p-4 select-none transition-colors ${
       isDark ? 'bg-black/60' : 'bg-slate-900/30'
     }`}>
       <div
-        className={`rounded-xl border shadow-2xl w-full max-w-md overflow-hidden transition-colors ${
+        className={`rounded-xl border shadow-2xl w-full max-w-sm overflow-hidden transition-colors ${
           isDark ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -64,10 +35,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, isDark 
             </div>
             <div>
               <h2 className={`font-semibold text-sm leading-none ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                QuMaEditor (Markdown Editor)
+                QuMaEditor
               </h2>
               <span className={`text-[11px] font-mono ${isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}`}>
-                Version {version}
+                Markdown Editor
               </span>
             </div>
           </div>
@@ -81,59 +52,54 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, isDark 
           </button>
         </div>
 
-        {/* モーダルコンテンツ */}
-        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
-          {/* バージョン基本情報カード */}
+        {/* モーダルコンテンツ: バージョンと正常稼働表示のみ */}
+        <div className="p-6 space-y-4 text-xs">
+          {/* バージョンカード */}
           <div
-            className={`p-3.5 rounded-lg border flex items-center justify-between ${
+            className={`p-4 rounded-xl border text-center space-y-1 ${
               isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-cyan-50/60 border-cyan-200'
             }`}
           >
-            <div>
-              <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>現在のバージョン</div>
-              <div className={`text-base font-bold font-mono ${isDark ? 'text-cyan-300' : 'text-cyan-800'}`}>v{version}</div>
+            <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>
+              現在のバージョン
             </div>
-            <div className="text-right">
-              <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>ビルド日時</div>
-              <div className={`font-mono font-medium ${isDark ? 'text-slate-300' : 'text-slate-800'}`}>{releaseDate}</div>
+            <div className={`text-2xl font-bold font-mono ${isDark ? 'text-cyan-300' : 'text-cyan-800'}`}>
+              v{version}
             </div>
           </div>
 
-          {/* 主な機能＆仕様一覧 */}
-          <div>
-            <h3
-              className={`font-semibold mb-2.5 flex items-center gap-1.5 text-[11px] uppercase tracking-wider ${
-                isDark ? 'text-cyan-400' : 'text-cyan-700'
-              }`}
-            >
-              <Info className="w-3.5 h-3.5" />
-              主な機能仕様
-            </h3>
-            <div className="space-y-2">
-              {features.map((feat, index) => (
-                <div
-                  key={index}
-                  className={`p-2.5 rounded-lg border ${
-                    isDark ? 'bg-slate-800/50 border-slate-800/80' : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className={`font-medium flex items-center gap-1.5 mb-0.5 ${isDark ? 'text-slate-200' : 'text-slate-900 font-semibold'}`}>
-                    <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                    {feat.title}
-                  </div>
-                  <p className={`text-[11px] pl-5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{feat.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ステータスバッジ */}
-          <div className={`pt-2 border-t flex items-center justify-between text-[11px] ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'}`}>
-            <span className={`flex items-center gap-1 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-              <ShieldCheck className="w-3.5 h-3.5" />
+          {/* 稼働ステータス */}
+          <div
+            className={`p-3.5 rounded-xl border flex items-center justify-between ${
+              isDark ? 'bg-emerald-950/30 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            }`}
+          >
+            <span className="flex items-center gap-2 font-medium text-xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               正常動作中 (Tauri v2 + Rust)
             </span>
-            <span className="font-mono text-[10px]">Tauri Native</span>
+            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+              Active
+            </span>
+          </div>
+
+          {/* 万が一正常に動作しない場合の対処法 */}
+          <div
+            className={`p-3 rounded-xl border space-y-1.5 ${
+              isDark ? 'bg-slate-950/60 border-slate-800/80 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-600'
+            }`}
+          >
+            <div className={`font-semibold flex items-center gap-1.5 text-[11px] ${
+              isDark ? 'text-amber-400' : 'text-amber-700'
+            }`}>
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              万が一正常に動作しない場合
+            </div>
+            <ul className="text-[10px] space-y-1 pl-4 list-disc leading-relaxed">
+              <li><strong>アプリの再起動</strong>: 一度アプリを閉じて再起動をお試しください。</li>
+              <li><strong>キャッシュ整理</strong>: 「設定」画面 ➔ 「一時キャッシュを整理」を実行。</li>
+              <li><strong>動作ログ確認</strong>: 「ヘルプ」 ➔ 「動作ログ表示」からログを確認できます。</li>
+            </ul>
           </div>
         </div>
 

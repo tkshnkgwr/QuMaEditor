@@ -1,6 +1,7 @@
 import { MarkdownDoc, EditorSettings, CustomTemplate } from '../types';
 
-const STORAGE_KEYS = {
+/** LocalStorage のキー名マッピング定数 */
+export const STORAGE_KEYS = {
   DOCS: 'markdown_editor_docs_v1',
   ACTIVE_ID: 'markdown_editor_active_id_v1',
   OPEN_TABS: 'markdown_editor_open_tabs_v1',
@@ -8,7 +9,7 @@ const STORAGE_KEYS = {
   CUSTOM_TEMPLATES: 'markdown_editor_custom_templates_v1',
 };
 
-// UPDATE 2026-08-04: 自動保存待機時間を最小1秒(1000ms)、最大10秒(10000ms)、デフォルト3秒(3000ms)に設定
+/** デフォルトのエディタ設定値 */
 export const DEFAULT_SETTINGS: EditorSettings = {
   fontSize: 15,
   wordWrap: true,
@@ -16,67 +17,36 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   syncScroll: true,
   autoSaveIntervalMs: 3000,
   theme: 'dark',
+  defaultAuthor: '',
 };
 
+/** サンプルドキュメントの初期データ */
 const SAMPLE_DOCS: MarkdownDoc[] = [
   {
     id: 'doc-welcome',
     title: '👋 WinMarkdown Editor へようこそ',
     content: `# WinMarkdown Editor
 
-Windows 11のモダンなデザインをイメージした、暗色モード対応のフル機能Markdownエディタです。
+Windows 11 のモダンなデザインイメージ・暗色モード対応のフル機能 Markdown エディタです。
 
 ---
 
-## 🔥 主な機能
+## 📌 主な機能
 
-1. **リアルタイム・ライブプレビュー**
-   - 入力と同時に美しくレンダリングされます。
-   - 分割表示、エディタのみ、プレビューのみのモード切替対応。
+1. **リアルタイムプレビュー**
+   - 入力と同時にレンダリングされます。
+   - 分割、エディタのみ、プレビューのみのモード切り替え対応。
 
 2. **ローカルストレージへの自動保存**
-   - 入力中にバックグラウンドでリアルタイム自動保存。
-   - 複数ドキュメントの管理・作成・検索が可能。
-
-3. **入力補助ツールバー & ショートカットキー**
-   - **太字** (\`Ctrl + B\`)、*斜体* (\`Ctrl + I\`)、<u>下線</u> (\`Ctrl + U\`)、~~打ち消し線~~
-   - **箇条書きリスト** / **項番付きリスト** / **タスクリスト**
-   - テーブル作成ウィザード
-
-4. **画像ドラッグ＆ドロップ UI**
-   - 画像ファイルを直接ドラッグ＆ドロップして即座にインライン挿入！
+   - 入力停止時にバックグラウンドでリアルタイム保存。
+   - ドキュメントの管理・作成・検索が可能。
 
 ---
 
-## 📝 入力要素のサンプル
-
-### 1. タスクリスト (Task List)
+## 📝 サンプルタスク
 - [x] 暗色モードデザインの構築
 - [x] リアルタイムプレビューと同期スクロール
-- [x] 画像ドラッグ＆ドロップ対応
 - [ ] プレゼンテーションモード機能
-
-### 2. 表組 (Tables)
-| 機能 | 対応状況 | 備考 |
-| --- | :---: | --- |
-| 太字・斜体 | ✅ | ショートカットキー対応 |
-| 下線 / 消し線 | ✅ | HTML / GFM対応 |
-| リスト自動補全 | ✅ | Enterキーで自動継続 |
-| 表組ウィザード | ✅ | 行・列数の自由指定 |
-
-### 3. コードブロック (Code Highlight)
-\`\`\`typescript
-interface UserSetting {
-  theme: 'dark' | 'light';
-  autoSave: boolean;
-}
-
-function initEditor(): void {
-  console.log("WinMarkdown Editor Initialized.");
-}
-\`\`\`
-
-> 💡 **ヒント**: ツールバーの各種ボタンを使って、ワンクリックでMarkdown記法を挿入できます。
 `,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -85,8 +55,8 @@ function initEditor(): void {
   },
   {
     id: 'doc-meeting-notes',
-    title: '📝 アプリ企画ミーティング議事録',
-    content: `# 📝 アプリ企画ミーティング議事録
+    title: '📝 アプリミーティング議事録',
+    content: `# 📝 アプリミーティング議事録
 
 **日時**: ${new Date().toLocaleDateString('ja-JP')} 14:00 - 15:00
 **参加者**: 山田, 佐藤, 鈴木
@@ -94,57 +64,21 @@ function initEditor(): void {
 ---
 
 ## 📌 議題
-1. 次期バージョンのUI改善案
+1. 次期バージョンUI改善
 2. ダークモード仕様の確定
-3. 開発スケジュール確認
-
-## 💡 決定事項
-- [x] ウィンドウ風タイトルバーとステータスバーを採用
-- [x] ドラッグ＆ドロップによる画像挿入機能を実装
-- [ ] プレビュー表示の印刷・PDF出力ボタンを追加
-
-## 📊 スケジュール案
-| フェーズ | 担当者 | 期限 | 状態 |
-| --- | --- | --- | --- |
-| 要件定義 | 山田 | 8/10 | 完了 |
-| デザイン設計 | 佐藤 | 8/18 | 進行中 |
-| 実装・テスト | 鈴木 | 8/28 | 未着手 |
 `,
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     updatedAt: new Date(Date.now() - 86400000).toISOString(),
     isFavorite: false,
     tags: ['議事録', '仕事'],
   },
-  {
-    id: 'doc-remote-sample',
-    title: '🌐 [リモート] 外部参照仕様ドキュメント (自動保存OFF)',
-    content: `# 🌐 [リモートファイル] 仕様動作サンプル
-
-このドキュメントは **リモートサーバー/外部URLを参照しているドキュメント** のサンプルです。
-
----
-
-### 🔒 リモートファイルの自動保存仕様
-- **ローカルファイル**: 入力後1〜10秒（設定値）のキー入力停止後に、LocalStorageへ自動保存されます。
-- **リモートファイル**: 意図しない上書きや競合を防ぐため、**自動保存は無効化**されています。
-- タイトルバーには \`[リモート (自動保存OFF)]\` バッジが表示され、編集を行っても自動保存されず、ヘッダーの「動作ログ」にてスキップ履歴が自動で記録されます。
-
----
-
-### 📝 テスト方法
-1. ここで文章を編集してみてください。
-2. タイトルバー右上のステータスに \`[リモート (自動保存OFF)]\` と表示されます。
-3. ヘルプメニュー ➔ **「動作ログ表示」** を開くと、自動保存スキップログを確認できます。
-`,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isFavorite: false,
-    tags: ['リモート', '仕様'],
-    isRemote: true,
-    remoteUrl: 'https://raw.githubusercontent.com/example/remote-doc.md',
-  },
 ];
 
+/**
+ * LocalStorage から保存されたドキュメント一覧を取得します。データが存在しない場合は初期サンプルを返します。
+ *
+ * @returns MarkdownDoc 配列
+ */
 export function loadStoredDocs(): MarkdownDoc[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.DOCS);
@@ -160,14 +94,70 @@ export function loadStoredDocs(): MarkdownDoc[] {
   }
 }
 
+/**
+ * ドキュメント一覧を LocalStorage に永続化保存します。
+ * (実ファイルパスが存在し保存済みのドキュメントは、LocalStorage 肥大化防止のため
+ *  本文データを自動スリム化して保存し、QuotaExceededError や容量限界を根本防止します)
+ *
+ * @param docs 保存対象の MarkdownDoc 配列
+ */
 export function saveStoredDocs(docs: MarkdownDoc[]): void {
   try {
-    localStorage.setItem(STORAGE_KEYS.DOCS, JSON.stringify(docs));
+    // 実ファイルが存在するドキュメントで本文が 5KB を超えている場合、LocalStorage 上はスリム化
+    const optimizedDocs = docs.map((doc) => {
+      if (doc.filePath && !doc.isRemote && doc.content.length > 5000) {
+        return {
+          ...doc,
+          content: doc.content.substring(0, 1000) + '\n\n<!-- [STORAGE_SLIMMED_LOAD_FROM_DISK] -->',
+        };
+      }
+      return doc;
+    });
+
+    const serialized = JSON.stringify(optimizedDocs);
+
+    // 全体サイズが 2MB を超える場合の自動ガベージコレクション (GC)
+    if (serialized.length > 2 * 1024 * 1024) {
+      const gcDocs = docs.map((doc) => {
+        if (doc.filePath && !doc.isRemote) {
+          return {
+            ...doc,
+            content: doc.content.substring(0, 500) + '\n\n<!-- [STORAGE_SLIMMED_LOAD_FROM_DISK] -->',
+          };
+        }
+        return doc;
+      });
+      localStorage.setItem(STORAGE_KEYS.DOCS, JSON.stringify(gcDocs));
+      console.log('[Storage Optimizer] LocalStorage の肥大化を検知し、保存済み実ファイルのバックアップ用キャッシュを自動スリム化しました。');
+      return;
+    }
+
+    localStorage.setItem(STORAGE_KEYS.DOCS, serialized);
   } catch (e) {
-    console.error('Failed to save docs to localStorage:', e);
+    console.error('Failed to save docs to localStorage, applying emergency cleanup:', e);
+    // QuotaExceededError 発生時の緊急クリーンアップ (全保存済み実ファイルドキュメントのキャッシュ解放)
+    try {
+      const emergencyDocs = docs.map((doc) => {
+        if (doc.filePath) {
+          return {
+            ...doc,
+            content: doc.content.substring(0, 200) + '\n\n<!-- [STORAGE_SLIMMED_LOAD_FROM_DISK] -->',
+          };
+        }
+        return doc;
+      });
+      localStorage.setItem(STORAGE_KEYS.DOCS, JSON.stringify(emergencyDocs));
+    } catch (innerErr) {
+      console.error('Emergency storage cleanup failed:', innerErr);
+    }
   }
 }
 
+/**
+ * 現在アクティブなドキュメント ID を LocalStorage から読み込みます。
+ *
+ * @returns アクティブドキュメント ID 文字列
+ */
 export function loadActiveDocId(): string {
   try {
     const id = localStorage.getItem(STORAGE_KEYS.ACTIVE_ID);
@@ -178,6 +168,11 @@ export function loadActiveDocId(): string {
   return SAMPLE_DOCS[0].id;
 }
 
+/**
+ * アクティブなドキュメント ID を LocalStorage に保存します。
+ *
+ * @param id アクティブドキュメント ID
+ */
 export function saveActiveDocId(id: string): void {
   try {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_ID, id);
@@ -186,13 +181,17 @@ export function saveActiveDocId(id: string): void {
   }
 }
 
+/**
+ * エディタ設定を LocalStorage から読み込みます。
+ *
+ * @returns EditorSettings オブジェクト
+ */
 export function loadSettings(): EditorSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
     if (raw) {
       const parsed = JSON.parse(raw);
       const loadedInterval = typeof parsed.autoSaveIntervalMs === 'number' ? parsed.autoSaveIntervalMs : 3000;
-      // UPDATE 2026-08-04: 設定の読み込み時に自動保存待機時間が1000ms〜10000msの範囲内に収まるよう補正
       const clampedInterval = Math.max(1000, Math.min(10000, loadedInterval));
       return { ...DEFAULT_SETTINGS, ...parsed, autoSaveIntervalMs: clampedInterval };
     }
@@ -202,6 +201,11 @@ export function loadSettings(): EditorSettings {
   return DEFAULT_SETTINGS;
 }
 
+/**
+ * エディタ設定を LocalStorage に保存します。
+ *
+ * @param settings 保存対象の EditorSettings オブジェクト
+ */
 export function saveSettings(settings: EditorSettings): void {
   try {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
@@ -210,6 +214,12 @@ export function saveSettings(settings: EditorSettings): void {
   }
 }
 
+/**
+ * 現在開いているタブ ID の一覧を LocalStorage から取得します。
+ *
+ * @param defaultDocs デフォルトのドキュメント配列
+ * @returns タブ ID 文字列の配列
+ */
 export function loadOpenTabIds(defaultDocs: MarkdownDoc[]): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.OPEN_TABS);
@@ -225,6 +235,11 @@ export function loadOpenTabIds(defaultDocs: MarkdownDoc[]): string[] {
   return defaultDocs.map((d) => d.id);
 }
 
+/**
+ * 開いているタブ ID の一覧を LocalStorage に保存します。
+ *
+ * @param ids タブ ID 文字列の配列
+ */
 export function saveOpenTabIds(ids: string[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.OPEN_TABS, JSON.stringify(ids));
@@ -233,7 +248,11 @@ export function saveOpenTabIds(ids: string[]): void {
   }
 }
 
-// UPDATE 2026-08-04: カスタムテンプレートのローカルストレージ永続化管理
+/**
+ * カスタムテンプレート一覧を LocalStorage から読み込みます。
+ *
+ * @returns CustomTemplate 配列
+ */
 export function loadCustomTemplates(): CustomTemplate[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_TEMPLATES);
@@ -246,6 +265,11 @@ export function loadCustomTemplates(): CustomTemplate[] {
   return [];
 }
 
+/**
+ * カスタムテンプレート一覧を LocalStorage に保存します。
+ *
+ * @param templates 保存対象の CustomTemplate 配列
+ */
 export function saveCustomTemplates(templates: CustomTemplate[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.CUSTOM_TEMPLATES, JSON.stringify(templates));
@@ -253,4 +277,3 @@ export function saveCustomTemplates(templates: CustomTemplate[]): void {
     console.error('Failed to save custom templates:', e);
   }
 }
-

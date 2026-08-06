@@ -104,6 +104,7 @@ export const Preview: React.FC<PreviewProps> = ({
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [nativeHtml, setNativeHtml] = useState<string | null>(null);
   const [isNativeUsed, setIsNativeUsed] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
 
   const { body, metadata } = parseYamlFrontMatter(content);
   const hasFrontmatter = Object.keys(metadata).length > 0;
@@ -136,13 +137,35 @@ export const Preview: React.FC<PreviewProps> = ({
   return (
     <div
       ref={onScrollRef}
-      style={{ fontSize: fontSize ? `${fontSize}px` : undefined }}
-      className={`flex-1 h-full p-6 overflow-y-auto preview-markdown transition-colors print:block print:w-full print:h-auto print:p-0 print:m-0 print:border-none ${
+      style={{ fontSize: fontSize ? `${fontSize * zoomLevel}px` : `${16 * zoomLevel}px` }}
+      onWheel={(e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? -0.1 : 0.1;
+          setZoomLevel((prev) => Math.max(0.5, Math.min(3.0, parseFloat((prev + delta).toFixed(1)))));
+        }
+      }}
+      className={`relative flex-1 h-full p-6 overflow-y-auto preview-markdown transition-colors print:block print:w-full print:h-auto print:p-0 print:m-0 print:border-none ${
         isDark
           ? 'bg-slate-900/80 text-slate-200 border-l border-slate-800/80 selection:bg-cyan-800 selection:text-slate-100'
           : 'bg-white text-slate-900 border-l border-slate-200 selection:bg-cyan-200 selection:text-slate-900'
       }`}
     >
+      {zoomLevel !== 1.0 && (
+        <div className="sticky top-2 right-2 float-right z-10 flex items-center gap-1 print:hidden">
+          <button
+            onClick={() => setZoomLevel(1.0)}
+            className={`px-2 py-0.5 rounded text-[10px] font-mono border shadow-sm transition-colors flex items-center gap-1 ${
+              isDark
+                ? 'bg-slate-800 border-slate-700 text-cyan-400 hover:bg-slate-700'
+                : 'bg-white border-slate-200 text-cyan-700 hover:bg-slate-50'
+            }`}
+            title="ズームをリセット"
+          >
+            🔍 {Math.round(zoomLevel * 100)}% (クリックでリセット)
+          </button>
+        </div>
+      )}
       {content.trim() === '' ? (
         <div className={`h-full flex flex-col items-center justify-center select-none ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
           <p className="text-sm">プレビュー表示エリア</p>
