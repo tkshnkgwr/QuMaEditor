@@ -12,7 +12,7 @@ on:
 jobs:
   lint-and-test:
     name: Lint TypeScript & Run Rust Unit Tests
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -31,6 +31,8 @@ jobs:
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri -> target"
 
       - name: Install Frontend Dependencies
         run: npm install
@@ -43,6 +45,3 @@ jobs:
 
       - name: Run Rust Unit Tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
-
-      - name: Cargo Check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
