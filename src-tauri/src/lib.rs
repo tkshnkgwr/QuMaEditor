@@ -153,15 +153,14 @@ pub fn detect_and_convert_to_utf8(bytes: Vec<u8>) -> Result<ConvertedTextDto, St
 }
 
 /// 指定された UTF-8 テキストをターゲットエンコーディング (Shift_JIS 等) にエンコードして保存用バイト列を出力します。
-pub fn convert_utf8_to_encoding(
-    text: String,
-    target_encoding: String,
-) -> Result<Vec<u8>, String> {
+pub fn convert_utf8_to_encoding(text: String, target_encoding: String) -> Result<Vec<u8>, String> {
     match target_encoding.to_uppercase().as_str() {
         "SHIFT_JIS" | "SJIS" => {
             let (encoded_bytes, _, had_errors) = SHIFT_JIS.encode(&text);
             if had_errors {
-                return Err("Shift_JIS へのエンコード中に文字化けエラーが発生しました。".to_string());
+                return Err(
+                    "Shift_JIS へのエンコード中に文字化けエラーが発生しました。".to_string()
+                );
             }
             Ok(encoded_bytes.into_owned())
         }
@@ -521,8 +520,10 @@ pub fn write_file_native(file_path: String, content: String) -> Result<bool, Str
         }
     }
 
-    let mut file = File::create(clean_path).map_err(|e| format!("ファイル作成・オープン失敗 ({}): {}", clean_path, e))?;
-    file.write_all(content.as_bytes()).map_err(|e| format!("書き込み失敗: {}", e))?;
+    let mut file = File::create(clean_path)
+        .map_err(|e| format!("ファイル作成・オープン失敗 ({}): {}", clean_path, e))?;
+    file.write_all(content.as_bytes())
+        .map_err(|e| format!("書き込み失敗: {}", e))?;
     Ok(true)
 }
 
@@ -537,8 +538,10 @@ pub fn write_file_bytes_native(file_path: String, bytes: Vec<u8>) -> Result<bool
         }
     }
 
-    let mut file = File::create(clean_path).map_err(|e| format!("ファイル作成・オープン失敗 ({}): {}", clean_path, e))?;
-    file.write_all(&bytes).map_err(|e| format!("書き込み失敗: {}", e))?;
+    let mut file = File::create(clean_path)
+        .map_err(|e| format!("ファイル作成・オープン失敗 ({}): {}", clean_path, e))?;
+    file.write_all(&bytes)
+        .map_err(|e| format!("書き込み失敗: {}", e))?;
     Ok(true)
 }
 
@@ -548,17 +551,25 @@ pub fn read_file_native(file_path: String) -> Result<ConvertedTextDto, String> {
     let path = Path::new(clean_path);
 
     if !path.is_file() {
-        return Err(format!("指定されたパスは有効なファイルではありません: {}", clean_path));
+        return Err(format!(
+            "指定されたパスは有効なファイルではありません: {}",
+            clean_path
+        ));
     }
 
     let metadata = fs::metadata(path).map_err(|e| format!("メタデータ取得失敗: {}", e))?;
     if metadata.len() > 20 * 1024 * 1024 {
-        return Err("ファイルサイズが 20MB を超えているため、安全のため自動読み込みを中断しました。".to_string());
+        return Err(
+            "ファイルサイズが 20MB を超えているため、安全のため自動読み込みを中断しました。"
+                .to_string(),
+        );
     }
 
-    let mut file = File::open(clean_path).map_err(|e| format!("Failed to open file ({}): {}", clean_path, e))?;
+    let mut file = File::open(clean_path)
+        .map_err(|e| format!("Failed to open file ({}): {}", clean_path, e))?;
     let mut bytes = Vec::new();
-    file.read_to_end(&mut bytes).map_err(|e| format!("Failed to read file: {}", e))?;
+    file.read_to_end(&mut bytes)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
     detect_and_convert_to_utf8(bytes)
 }
 
@@ -595,26 +606,28 @@ pub fn register_context_menu_native() -> Result<bool, String> {
 
 /// Specta により TypeScript 型定義ファイル (src/bindings.ts) を自動エクスポートするハンドラー
 pub fn export_specta_types() {
-    let _builder = tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
-        tauri_commands::detect_and_convert_to_utf8,
-        tauri_commands::convert_utf8_to_encoding,
-        tauri_commands::read_file_chunk_native,
-        tauri_commands::index_documents_native,
-        tauri_commands::search_documents_native,
-        tauri_commands::batch_convert_files_native,
-        tauri_commands::compute_text_diff_native,
-        tauri_commands::parse_markdown_native,
-        tauri_commands::generate_pdf_native,
-        tauri_commands::highlight_code_native,
-        tauri_commands::read_file_native,
-        tauri_commands::write_file_native,
-        tauri_commands::write_file_bytes_native,
-    ]);
+    let _builder =
+        tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
+            tauri_commands::detect_and_convert_to_utf8,
+            tauri_commands::convert_utf8_to_encoding,
+            tauri_commands::read_file_chunk_native,
+            tauri_commands::index_documents_native,
+            tauri_commands::search_documents_native,
+            tauri_commands::batch_convert_files_native,
+            tauri_commands::compute_text_diff_native,
+            tauri_commands::parse_markdown_native,
+            tauri_commands::generate_pdf_native,
+            tauri_commands::highlight_code_native,
+            tauri_commands::read_file_native,
+            tauri_commands::write_file_native,
+            tauri_commands::write_file_bytes_native,
+        ]);
 
     #[cfg(debug_assertions)]
     _builder
         .export(
-            specta_typescript::Typescript::default().bigint(specta_typescript::BigIntExportBehavior::Number),
+            specta_typescript::Typescript::default()
+                .bigint(specta_typescript::BigIntExportBehavior::Number),
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/bindings.ts"),
         )
         .expect("Failed to export Specta TypeScript bindings");
@@ -650,7 +663,11 @@ pub fn run() {
                         }
                         if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                             let ext_lower = ext.to_lowercase();
-                            if ext_lower == "exe" || ext_lower == "dll" || ext_lower == "sys" || ext_lower == "pdb" {
+                            if ext_lower == "exe"
+                                || ext_lower == "dll"
+                                || ext_lower == "sys"
+                                || ext_lower == "pdb"
+                            {
                                 continue;
                             }
                         }
@@ -783,7 +800,8 @@ mod tests {
         let temp_file_path = temp_dir.join("quma_test_doc_sample.md");
         {
             let mut file = fs::File::create(&temp_file_path).unwrap();
-            file.write_all("--- \ntitle: テストノート\n---\n\n# テスト本文".as_bytes()).unwrap();
+            file.write_all("--- \ntitle: テストノート\n---\n\n# テスト本文".as_bytes())
+                .unwrap();
         }
 
         let res = read_file_native(temp_file_path.to_string_lossy().to_string()).unwrap();
