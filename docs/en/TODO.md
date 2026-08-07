@@ -6,6 +6,12 @@ Tracked tasks and completed features for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.2.3 Release (2026-08-07)
+- [x] **Complete Suppression of PowerShell Console Window**: Added `CREATE_NO_WINDOW` (`0x08000000`) flag to Windows PowerShell command invocations for "Open with QuMaEditor" context menu registration, preventing black console windows from popping up at app startup.
+- [x] **Separated Help Guide & About Modals**: Introduced a dedicated `HelpGuideModal` accessible from the top bar for quick-start instructions, while slimming down `AboutModal` to version, status badge, and troubleshooting tips.
+- [x] **"Open Folder in Explorer" in Sidebar Items**: Extended "Open Containing Folder in Explorer" button to individual file items in the left sidebar.
+- [x] **CI-Guarded GitHub Actions Release Pipeline**: Established CI workflow (`ci.yml`) covering TypeScript type checking, `cargo fmt` verification, and Rust unit tests (9/9 passing), linked to a Release workflow (`release.yml`) that safely builds and publishes NSIS installers (`.exe`) only upon CI green pass.
+
 ### v1.2.2 Release (2026-08-07)
 - [x] **Settings Modal Reset Button Relocation**: Moved dangerous "Full Data Reset" button to the bottom-left footer row in `SettingsModal`.
 - [x] **Ctrl + Scroll Wheel Preview Zoom**: Added interactive preview zooming (50%~300%) with reset badge in `Preview.tsx`.

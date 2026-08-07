@@ -2,6 +2,17 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.2.3] - 2026-08-07
+
+### 🐛 Bug Fixes & Infrastructure Pipeline (v1.2.3)
+
+- **Complete Suppression of PowerShell Console Window**: Added `CREATE_NO_WINDOW` (`0x08000000`) flag to Windows PowerShell command invocations for "Open with QuMaEditor" context menu registration, preventing black console windows from popping up at app startup.
+- **Separated Help Guide & About Modals**: Introduced a dedicated `HelpGuideModal` accessible from the top bar for quick-start instructions, while slimming down `AboutModal` to version, status badge, and troubleshooting tips.
+- **"Open Folder in Explorer" in Sidebar Items**: Extended "Open Containing Folder in Explorer" button to individual file items in the left sidebar.
+- **CI-Guarded GitHub Actions Release Pipeline**: Established CI workflow (`ci.yml`) covering TypeScript type checking, `cargo fmt` verification, and Rust unit tests (9/9 passing), linked to a Release workflow (`release.yml`) that safely builds and publishes NSIS installers (`.exe`) only upon CI green pass.
+
+---
+
 ## [1.2.2] - 2026-08-07
 
 ### ✨ UI & Usability Enhancements (v1.2.2)
