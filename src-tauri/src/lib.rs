@@ -592,7 +592,11 @@ pub fn register_context_menu_native() -> Result<bool, String> {
             exe_path, exe_path
         );
 
+        #[cfg(target_os = "windows")]
+        use std::os::windows::process::CommandExt;
+
         let _ = Command::new("powershell")
+            .creation_flags(0x08000000)
             .args(["-NoProfile", "-Command", &ps_script])
             .output();
 

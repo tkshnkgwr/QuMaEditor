@@ -1,11 +1,10 @@
 name: Release - Build & Publish Tauri App
 
-# ボスの指示によりRelease自動起動を停止中
-# on:
-#   push:
-#     tags:
-#       - 'v*'
-#   workflow_dispatch:
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   publish-tauri:
