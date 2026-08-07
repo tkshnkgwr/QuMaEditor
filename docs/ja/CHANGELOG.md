@@ -9,7 +9,7 @@ QuMaEditor の主要な変更点およびリリース履歴です。
 - **Windows PowerShell コンソール画面の完全非表示化**: アプリ起動時および「QuMaEditorで開く」コンテキストメニュー登録時に、Windows 固有の `CREATE_NO_WINDOW` (`0x08000000`) フラグを付与。起動時に PowerShell の黒いコンソールウィンドウがポップアップ表示される問題を完全解消。
 - **ヘルプガイドとバージョン情報の分離・最適化**: クイックガイド専用の `HelpGuideModal` を新設しヘッダーから直接呼び出し可能に。`AboutModal` はバージョン番号・正常稼働中ステータスバッジ・トラブルシューティング対処法のみにスリム化。
 - **サイドバー項目への「エクスプローラーで開く」ボタン配置**: TitleBar のファイルメニューに加え、サイドバーの各ファイル項目ホバー時にも「対象フォルダをエクスプローラーで開く」ボタンを配置。
-- **CI ガード型 GitHub Actions リリリースパイプラインの構築**: TypeScript 型チェック (`tsc --noEmit`)・Rust コード自動整形検証 (`cargo fmt --check`)・Rust ユニットテスト（全9件）を自律実行する CI (`ci.yml`)、および CI 合格時のみ安全に Windows NSIS インストーラー (`.exe`) をビルド・発行する Release パイプライン (`release.yml`) を完成。
+- **Rust バックエンドの全機能モジュール分割リファクタリング**: `src-tauri/src/lib.rs` (約750行) を機能単一責任原則に基づき `commands.rs`, `encoding.rs`, `file_io.rs`, `search.rs`, `diff.rs` の 5 つのモジュール構造へ再構築。`lib.rs` を約100行へ超スリム化し、保守性・可読性・ビルド性能を劇的改善。
 
 ---
 

@@ -9,7 +9,7 @@ All notable changes to QuMaEditor will be documented in this file.
 - **Complete Suppression of PowerShell Console Window**: Added `CREATE_NO_WINDOW` (`0x08000000`) flag to Windows PowerShell command invocations for "Open with QuMaEditor" context menu registration, preventing black console windows from popping up at app startup.
 - **Separated Help Guide & About Modals**: Introduced a dedicated `HelpGuideModal` accessible from the top bar for quick-start instructions, while slimming down `AboutModal` to version, status badge, and troubleshooting tips.
 - **"Open Folder in Explorer" in Sidebar Items**: Extended "Open Containing Folder in Explorer" button to individual file items in the left sidebar.
-- **CI-Guarded GitHub Actions Release Pipeline**: Established CI workflow (`ci.yml`) covering TypeScript type checking, `cargo fmt` verification, and Rust unit tests (9/9 passing), linked to a Release workflow (`release.yml`) that safely builds and publishes NSIS installers (`.exe`) only upon CI green pass.
+- **Rust Backend Modular Refactoring**: Split monolithic `src-tauri/src/lib.rs` (~750 lines) into 5 focused modules (`commands.rs`, `encoding.rs`, `file_io.rs`, `search.rs`, `diff.rs`) according to Single Responsibility Principle, slimming down `lib.rs` to ~100 lines for superior maintainability, readability, and parallel compilation performance.
 
 ---
 

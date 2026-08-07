@@ -57,8 +57,24 @@ Tracked tasks and completed features for QuMaEditor.
 
 ---
 
-## 🔮 Future Roadmap
+## 🔥 Next Priority Roadmap & Feature Candidates
 
-- [ ] **Plugin & Extension System Research**
+The following table tracks proposed features and enhancements for future QuMaEditor releases.
+
+| # | Target Component | Feature & Task Description | Priority | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | `StatsModal / Editor` | **Document Statistics Dashboard Modal** — Dedicated modal rendering real-time character count, word count, line count, estimated reading time, heading count, and link counts | Medium | 🔲 Proposed |
+| 2 | `Sidebar / Navigation`| **Heading Outline (Table of Contents) Navigation Tree** — Auto-extract `# H1` ~ `### H3` headings from active document for instant smart jumping | Medium | 🔲 Proposed |
+| 3 | `Editor / DragDrop` | **Drag & Drop Local File Opening** — Direct drag & drop support for external `.md` / `.txt` files onto the editor canvas to open as new tabs | Medium | 🔲 Proposed |
+| 4 | `SettingsModal / UI` | **Enhanced Editor Typography Controls** — Configurable line-height, editor font family (Monospace vs Sans-serif), and tab size options in settings | Low | 🔲 Proposed |
+| 5 | `Editor / Toolbar` | **One-Click Format Insertion Helper** — Quick insertion buttons for tables, code blocks, blockquotes (`> `), and task checkboxes (`- [ ] `) | Low | 🔲 Proposed |
+
+---
+
+## 🔮 Long-Term Roadmap
+
+- [ ] **Plugin & Extension Architecture Research**
 - [ ] **Cloud Storage Sync Prototype (Google Drive / OneDrive)**
-- [ ] **Multi-Window Support Exploration**
+- [ ] **Multi-Window & Detachable Tab Exploration**
+- [ ] **Rust Native YAML Front Matter Parsing & Validation**
+

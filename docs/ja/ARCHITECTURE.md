@@ -95,3 +95,17 @@
 | `write_file_native` | ダイアログ許可範囲外の元ファイルパスへの直接上書き保存を実行 |
 | `open_folder_native` | 対象ファイルの親フォルダを Windows エクスプローラー (`explorer.exe`) で直接オープン |
 | `search_documents_native` | メモリ上転置インデックスを用いた Rust 高速全文検索 |
+
+## 5. バックエンドモジュール構造 (Modular Architecture)
+
+`src-tauri/src/` 配下は機能単一責任原則 (Single Responsibility Principle) に基づき以下の通り独立したモジュールへ分割されています。
+
+| モジュール名 | ファイルパス | 役割・概要 |
+| :--- | :--- | :--- |
+| `lib` | [`src-tauri/src/lib.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/lib.rs) | アプリケーションのエントリポイント、プラグイン登録、Specta型自動バインディング出力ハンドラー |
+| `commands` | [`src-tauri/src/commands.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/commands.rs) | フロントエンド (IPC) から受け取る全 Tauri コマンドハンドラーおよび Specta マッピング定義 |
+| `encoding` | [`src-tauri/src/encoding.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/encoding.rs) | `encoding_rs` を用いた多言語文字コード (UTF-8, Shift_JIS, EUC-JP) 自動判定および相互変換 |
+| `file_io` | [`src-tauri/src/file_io.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/file_io.rs) | ネイティブファイル直接読込・大容量チャンク部分読込・バイト直保存・エクスプローラー起動 |
+| `search` | [`src-tauri/src/search.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/search.rs) | `LazyLock<Mutex<Vec<DocSearchInput>>>` を用いたメモリ内転置インデックス爆速全文検索 |
+| `diff` | [`src-tauri/src/diff.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/diff.rs) | `similar` クレートを用いた行単位 Text Diff 計算および `pulldown-cmark` ネイティブ Markdown パース |
+

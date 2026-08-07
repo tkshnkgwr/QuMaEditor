@@ -5,9 +5,12 @@ import { LogEntry, LogLevel } from '../types';
 const MAX_LOG_ENTRIES = 100; // ログ肥大化防止のローテーション閾値件数
 const STORAGE_KEY = 'app_system_logs_v1';
 
-type LogListener = (logs: LogEntry[]) => void;
+export type LogListener = (logs: LogEntry[]) => void;
 
-class LoggerService {
+/**
+ * アプリケーションシステムログ管理サービス
+ */
+export class LoggerService {
   private logs: LogEntry[] = [];
   private listeners: Set<LogListener> = new Set();
 
