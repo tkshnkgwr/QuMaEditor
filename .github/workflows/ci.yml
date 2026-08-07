@@ -3,6 +3,8 @@ name: CI - Quality Check & Unit Tests
 on:
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
