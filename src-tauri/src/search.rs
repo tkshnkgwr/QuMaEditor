@@ -92,7 +92,7 @@ pub fn search_documents_native(query: String) -> Result<Vec<SearchResult>, Strin
         }
     }
 
-    results.sort_by(|a, b| b.score.cmp(&a.score));
+    results.sort_by_key(|b| std::cmp::Reverse(b.score));
     Ok(results)
 }
 
