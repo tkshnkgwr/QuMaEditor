@@ -1,13 +1,12 @@
 name: CI - Quality Check & Unit Tests
 
-on:
-  push:
-    branches: [ main, master ]
-    paths-ignore:
-      - '**.md'
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+# ボスの指示によりCI自動起動を停止中
+# on:
+#   push:
+#     branches: [ main, master ]
+#   pull_request:
+#     branches: [ main, master ]
+#   workflow_dispatch:
 
 jobs:
   lint-and-test:
