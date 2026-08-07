@@ -7,7 +7,45 @@ on:
   workflow_dispatch:
 
 jobs:
+  # 1. まず CI (型チェック & ユニットテスト) を実行
+  lint-and-test:
+    name: 1. CI Quality Check & Unit Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Install Frontend Dependencies
+        run: npm install
+
+      - name: Check Rust Formatting
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+
+      - name: TypeScript Lint & Type Check
+        run: npm run lint
+
+      - name: Run Rust Unit Tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Cargo Check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+
+  # 2. CI が 100% 成功した場合のみ、Release ビルド＆発行を実行！
   publish-tauri:
+    name: 2. Build Desktop Release & Publish
+    needs: lint-and-test
     permissions:
       contents: write
     runs-on: windows-latest
