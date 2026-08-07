@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. まず CI (型チェック & ユニットテスト) を実行
   lint-and-test:
     name: 1. CI Quality Check & Unit Tests
     runs-on: windows-latest
@@ -25,7 +24,12 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: rustfmt, clippy
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri -> target"
 
       - name: Install Frontend Dependencies
         run: npm install
@@ -42,7 +46,6 @@ jobs:
       - name: Cargo Check
         run: cargo check --manifest-path src-tauri/Cargo.toml
 
-  # 2. CI が 100% 成功した場合のみ、Release ビルド＆発行を実行！
   publish-tauri:
     name: 2. Build Desktop Release & Publish
     needs: lint-and-test
@@ -62,6 +65,11 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri -> target"
 
       - name: Install Frontend Dependencies
         run: npm install
