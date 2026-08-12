@@ -6,6 +6,14 @@ Tracked tasks and completed features for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.3.1 Release (2026-08-12)
+- [x] **Drag & Drop Local File Opening**: Direct drag & drop support for external `.md` / `.txt` files onto the editor canvas to open as new tabs, image auto-embedding, multi-file drop, and overlay UI refresh.
+- [x] **Ctrl + Scroll Wheel Preview Zoom**: Added interactive preview zooming (50%~300%) with reset badge in `Preview.tsx`.
+- [x] **Selection-Aware Toolbar Formatting**: Updated Bold, Italic, Underline, and Strikethrough buttons to wrap text selections or insert at cursor with focus restoration.
+- [x] **Cursor-Line Heading Insertion**: Modified H1/H2/H3 buttons to insert/replace `# ` markers at the start of the current line instead of appending at EOF.
+- [x] **Open Parent Folder in Explorer**: Added native command `open_folder_native` and File menu action to open disk file directories in Explorer.
+- [x] **LocalStorage Safety Explanation**: Added detailed LocalStorage dual-protection guide and comparison matrix in `AboutModal`.
+
 ### v1.2.3 Release (2026-08-07)
 - [x] **Complete Suppression of PowerShell Console Window**: Added `CREATE_NO_WINDOW` (`0x08000000`) flag to Windows PowerShell command invocations for "Open with QuMaEditor" context menu registration, preventing black console windows from popping up at app startup.
 - [x] **Separated Help Guide & About Modals**: Introduced a dedicated `HelpGuideModal` accessible from the top bar for quick-start instructions, while slimming down `AboutModal` to version, status badge, and troubleshooting tips.

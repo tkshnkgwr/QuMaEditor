@@ -2,9 +2,9 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
-## [1.3.0] - 2026-08-12
+## [1.3.1] - 2026-08-12
 
-### 🚀 Drag & Drop File Opening & UI/UX Refresh (v1.3.0)
+### 🚀 Drag & Drop File Opening Support (v1.3.1)
 
 - **Drag & Drop Local File Opening Support**:
   - Drag and drop `.md` or `.txt` files directly from Windows File Explorer to open as new tabs with disk file path bindings for direct saving.
