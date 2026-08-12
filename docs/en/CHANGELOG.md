@@ -2,6 +2,19 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.3.2] - 2026-08-12
+
+### 🐛 Editor Area & Window-Wide Drag & Drop Fix (v1.3.2)
+
+- **Tauri Native Window Drag&Drop API Integration**:
+  - Resolved Windows WebView2 HTML5 drop event suppression by subscribing directly to Tauri native window events (`getCurrentWebviewWindow().onDragDropEvent`).
+  - Guaranteed 100% reliable file opening and image embedding across the entire application window, including editor textarea fields.
+- **Global `dropEffect = 'copy'` & Full-Screen Overlay**:
+  - Expressly set `e.dataTransfer.dropEffect = 'copy'` to clear drop restriction cursors.
+  - Added full-screen drop visual overlay with clear instructions.
+
+---
+
 ## [1.3.1] - 2026-08-12
 
 ### 🚀 Drag & Drop File Opening Support (v1.3.1)

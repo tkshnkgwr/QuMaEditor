@@ -27,7 +27,7 @@ import { Toolbar } from './components/Toolbar';
 import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
 import { StatusBar } from './components/StatusBar';
-import { Minimize2 } from 'lucide-react';
+import { Minimize2, Upload } from 'lucide-react';
 import { TableModal } from './components/TableModal';
 import { TemplateModal } from './components/TemplateModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -401,6 +401,108 @@ export default function App() {
     };
   }, [handleAddOpenedDoc]);
 
+  // アプリ全体でのドラッグオーバーレイ状態管理
+  const [isAppDraggingOver, setIsAppDraggingOver] = useState(false);
+
+  // パス指定でのファイルドロップ処理 (Tauri ネイティブ Window Drag&Drop 用)
+  const handleDroppedPaths = useCallback(
+    async (paths: string[]) => {
+      if (!paths || paths.length === 0) return;
+
+      for (const path of paths) {
+        const cleanPath = path.trim().replace(/^"|"$/g, '');
+        if (!cleanPath) continue;
+
+        const ext = cleanPath.split('.').pop()?.toLowerCase() || '';
+        const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif'].includes(ext);
+
+        if (isImage) {
+          try {
+            const nativeRes = await commands.readFileNative(cleanPath);
+            if (nativeRes.status === 'ok') {
+              const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+              const dataUrl = `data:${mimeType};utf8,${encodeURIComponent(nativeRes.data.text)}`;
+              handleFormat('image', dataUrl);
+            } else {
+              const { readFile } = await import('@tauri-apps/plugin-fs');
+              const fileBytes = await readFile(cleanPath);
+              let binary = '';
+              const bytes = new Uint8Array(fileBytes);
+              for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+              }
+              const base64 = btoa(binary);
+              const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+              const dataUrl = `data:${mimeType};base64,${base64}`;
+              handleFormat('image', dataUrl);
+            }
+          } catch (e) {
+            console.error('Failed to read image path:', cleanPath, e);
+          }
+        } else {
+          // テキストファイルドロップ
+          const openResult = await openNativeFileFromPath(cleanPath);
+          if (openResult && openResult.doc) {
+            handleAddOpenedDoc(openResult.doc);
+          }
+        }
+      }
+    },
+    [handleAddOpenedDoc]
+  );
+
+  // Tauri ネイティブ Window Drag & Drop イベントリスナー
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    const setupDragDropListener = async () => {
+      try {
+        const win = getCurrentWebviewWindow();
+        unlisten = await win.onDragDropEvent(async (event) => {
+          const payload = event.payload;
+          if (payload.type === 'drop') {
+            setIsAppDraggingOver(false);
+            if (payload.paths && payload.paths.length > 0) {
+              await handleDroppedPaths(payload.paths);
+            }
+          } else if (payload.type === 'enter' || payload.type === 'over') {
+            setIsAppDraggingOver(true);
+          } else if (payload.type === 'leave') {
+            setIsAppDraggingOver(false);
+          }
+        });
+      } catch (e) {
+        console.log('Tauri dragDropEvent listen error:', e);
+      }
+    };
+
+    setupDragDropListener();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [handleDroppedPaths]);
+
+  // ブラウザ（HTML5）レベルでのデフォルト動作防止
+  useEffect(() => {
+    const handleWindowDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+
+    const handleWindowDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsAppDraggingOver(false);
+    };
+
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('drop', handleWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, []);
+
   // スクロール連動
   const handleScrollSync = useCallback((percentage: number) => {
     if (previewScrollRef.current) {
@@ -511,10 +613,53 @@ export default function App() {
     setIsTableModalOpen(false);
   };
 
+  const handleAppDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    setIsAppDraggingOver(true);
+  };
+
+  const handleAppDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsAppDraggingOver(false);
+    }
+  };
+
+  const handleAppDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsAppDraggingOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleDroppedFiles(Array.from(files));
+    }
+  };
+
   return (
-    <div className={`h-screen w-screen flex flex-col overflow-hidden font-sans ${
-      isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
-    }`}>
+    <div
+      className={`relative h-screen w-screen flex flex-col overflow-hidden font-sans ${
+        isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
+      }`}
+      onDragOver={handleAppDragOver}
+      onDragLeave={handleAppDragLeave}
+      onDrop={handleAppDrop}
+    >
+      {/* アプリ画面全体ドロップのビジュアルオーバーレイ */}
+      {isAppDraggingOver && (
+        <div className="fixed inset-0 z-[100] bg-cyan-950/90 border-4 border-dashed border-cyan-400 rounded-xl flex flex-col items-center justify-center text-cyan-100 backdrop-blur-md transition-all pointer-events-none">
+          <div className="p-6 bg-cyan-900/80 rounded-full mb-4 shadow-2xl animate-bounce">
+            <Upload className="w-12 h-12 text-cyan-300" />
+          </div>
+          <p className="text-2xl font-bold tracking-wide">ファイルまたは画像をアプリ上にドロップ</p>
+          <p className="text-sm text-cyan-300 mt-2">📄 テキストファイル：新しいタブで開く ／ 🖼️ 画像：カーソル位置に挿入</p>
+        </div>
+      )}
       {/* 非表示のファイル選択インプット */}
       <input
         type="file"
