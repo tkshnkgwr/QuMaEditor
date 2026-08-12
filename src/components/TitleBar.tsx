@@ -12,6 +12,8 @@ import {
   Settings,
   ChevronDown,
   Check,
+  Minus,
+  Square,
   Minimize2,
   Maximize2,
   X,
@@ -275,212 +277,11 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                 {currentDoc.title || '無題のドキュメント'}
               </button>
             )}
-            {/* Remote File Indicator Badge */}
-            {currentDoc.isRemote && (
-              <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded shrink-0 border bg-indigo-500/15 border-indigo-500/30 text-indigo-400 flex items-center gap-1">
-                <Globe className="w-3 h-3 text-indigo-400" />
-                リモート
-              </span>
-            )}
-            {/* Document Encoding & Line Ending Badges */}
-            <div className="flex items-center gap-1 shrink-0">
-              <span
-                className={`px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 border ${
-                  isDark
-                    ? 'bg-slate-800 border-slate-700 text-amber-300'
-                    : 'bg-amber-50 border-amber-200 text-amber-800'
-                }`}
-                title="文字コード"
-              >
-                {currentDoc.encoding || 'UTF-8'}
-              </span>
-              <span
-                className={`px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 border ${
-                  isDark
-                    ? 'bg-slate-800 border-slate-700 text-cyan-300'
-                    : 'bg-cyan-50 border-cyan-200 text-cyan-800'
-                }`}
-                title="改行コード (Line Ending)"
-              >
-                {detectLineEnding(currentDoc.content)}
-              </span>
-
-              {/* 作成者 (Author - Unknownのときのみ設定・変更可能) */}
-              {isEditingAuthor ? (
-                <input
-                  type="text"
-                  value={authorInput}
-                  onChange={(e) => setAuthorInput(e.target.value)}
-                  onBlur={handleAuthorSubmit}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAuthorSubmit()}
-                  autoFocus
-                  placeholder="作成者名"
-                  className={`border text-[10px] px-1.5 py-0.5 rounded focus:outline-none w-24 ${
-                    isDark
-                      ? 'bg-slate-950 border-cyan-500 text-slate-100'
-                      : 'bg-white border-cyan-600 text-slate-900'
-                  }`}
-                />
-              ) : isAuthorUnknown ? (
-                <button
-                  onClick={() => setIsEditingAuthor(true)}
-                  className={`px-1.5 py-0.5 text-[10px] font-sans rounded shrink-0 border flex items-center gap-1 transition-colors ${
-                    isDark
-                      ? 'bg-slate-800/90 border-slate-700 text-amber-300 hover:border-amber-500'
-                      : 'bg-amber-50 border-amber-200 text-amber-800 hover:border-amber-600'
-                  }`}
-                  title="クリックして作成者名 (Author) を設定"
-                >
-                  <User className="w-3 h-3 text-amber-400" />
-                  <span>作成: Unknown (クリック設定)</span>
-                </button>
-              ) : (
-                <span
-                  className={`px-1.5 py-0.5 text-[10px] font-sans rounded shrink-0 border flex items-center gap-1 ${
-                    isDark
-                      ? 'bg-slate-800/90 border-slate-700 text-slate-300'
-                      : 'bg-slate-100 border-slate-300 text-slate-700'
-                  }`}
-                  title="作成者 (一度設定されたため変更不可)"
-                >
-                  <User className="w-3 h-3 text-slate-400" />
-                  <span>作成: {currentDoc.author}</span>
-                </span>
-              )}
-
-              {/* 更新者 (UpdatedBy - インライン編集) */}
-              {isEditingUpdatedBy ? (
-                <input
-                  type="text"
-                  value={updatedByInput}
-                  onChange={(e) => setUpdatedByInput(e.target.value)}
-                  onBlur={handleUpdatedBySubmit}
-                  onKeyDown={(e) => e.key === 'Enter' && handleUpdatedBySubmit()}
-                  autoFocus
-                  placeholder="更新者名"
-                  className={`border text-[10px] px-1.5 py-0.5 rounded focus:outline-none w-24 ${
-                    isDark
-                      ? 'bg-slate-950 border-cyan-500 text-slate-100'
-                      : 'bg-white border-cyan-600 text-slate-900'
-                  }`}
-                />
-              ) : (
-                <button
-                  onClick={() => setIsEditingUpdatedBy(true)}
-                  className={`px-1.5 py-0.5 text-[10px] font-sans rounded shrink-0 border flex items-center gap-1 transition-colors ${
-                    isDark
-                      ? 'bg-slate-800/90 border-slate-700 text-cyan-300 hover:border-cyan-500'
-                      : 'bg-cyan-50 border-cyan-200 text-cyan-800 hover:border-cyan-600'
-                  }`}
-                  title="クリックして更新者名 (UpdatedBy) を変更"
-                >
-                  <UserCheck className="w-3 h-3 text-cyan-400" />
-                  <span>更新者: {currentDoc.updatedBy || currentDoc.author || (defaultAuthor.trim() ? defaultAuthor.trim() : 'Unknown')}</span>
-                </button>
-              )}
-
-              {/* 更新日時 (UpdatedAt) */}
-              {currentDoc.updatedAt && (
-                <span
-                  className={`px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 border flex items-center gap-1 hidden lg:flex ${
-                    isDark
-                      ? 'bg-slate-800/90 border-slate-700 text-slate-400'
-                      : 'bg-slate-100 border-slate-300 text-slate-500'
-                  }`}
-                  title="更新日時"
-                >
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  <span>{new Date(currentDoc.updatedAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="ml-2 flex items-center gap-1 text-[11px] shrink-0">
-            {currentDoc.isRemote ? (
-              <span className="text-indigo-400 flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-medium">
-                <Globe className="w-3 h-3 text-indigo-400" />
-                リモート (保存OFF)
-              </span>
-            ) : (
-              <>
-                {saveStatus === 'editing' && (
-                  <span className="text-cyan-400 flex items-center gap-1 bg-cyan-400/10 px-2 py-0.5 rounded border border-cyan-400/20 font-medium animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                    編集中...
-                  </span>
-                )}
-                {saveStatus === 'saving' && (
-                  <span className="text-amber-400 flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                    保存中...
-                  </span>
-                )}
-                {saveStatus === 'saved_file' && (
-                  <span className="text-emerald-400 flex items-center gap-1 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 font-medium" title="PC上の実ファイル(.md)に保存済み">
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>実ファイルに保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
-                  </span>
-                )}
-                {saveStatus === 'saved_local' && (
-                  <span className="text-sky-400 flex items-center gap-1 bg-sky-500/15 px-2 py-0.5 rounded border border-sky-500/30 font-medium" title="アプリ内部(LocalStorage)に保護保存済み">
-                    <Check className="w-3.5 h-3.5 text-sky-400" />
-                    <span>アプリ内(LocalStorage)に保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
-                  </span>
-                )}
-                {saveStatus === 'saved' && (
-                  <span className="text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                    <Check className="w-3 h-3 text-emerald-400" />
-                    <span>保存完了 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
-                  </span>
-                )}
-                {saveStatus === 'unsaved' && (
-                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded ${isDark ? 'text-slate-400 bg-slate-800' : 'text-slate-500 bg-slate-200'}`}>
-                    <Save className="w-3 h-3" />
-                    未保存の変更
-                  </span>
-                )}
-              </>
-            )}
-
-            {/* PC上の実ファイルがある場合、一目で見つかるダイレクト「フォルダを開く」ボタン */}
-            {currentDoc.filePath ? (
-              <button
-                onClick={async () => {
-                  if (currentDoc.filePath) {
-                    await openFolderNative(currentDoc.filePath);
-                  }
-                }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-medium transition-colors shadow-2xs ${
-                  isDark
-                    ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300 hover:bg-emerald-900/80 hover:text-emerald-200'
-                    : 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
-                }`}
-                title={`エクスプローラーで保存先フォルダを開く:\n${currentDoc.filePath}`}
-              >
-                <FolderOpen className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span className="hidden sm:inline">フォルダを開く</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  if (onSaveFile) {
-                    onSaveFile({ forceSaveAs: true });
-                  }
-                }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] transition-colors opacity-75 ${
-                  isDark
-                    ? 'bg-slate-800/50 border-slate-700/60 text-slate-400 hover:opacity-100 hover:text-slate-200'
-                    : 'bg-slate-100 border-slate-300 text-slate-600 hover:opacity-100 hover:text-slate-900'
-                }`}
-                title="PC上の実ファイルとして保存すると、エクスプローラーでフォルダを開けるようになります"
-              >
-                <FolderOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="hidden sm:inline text-[10px]">フォルダを開く (未保存)</span>
-              </button>
-            )}
           </div>
         </div>
+
+        {/* 中央の広大なドラッグ移動領域 (つかむ場所) */}
+        <div className="flex-1 h-full min-w-[20px]" data-tauri-drag-region />
 
         {/* 右側: ウィンドウコントロール (pointer-events-auto) */}
         <div className="flex items-center gap-1 shrink-0 pointer-events-auto">
@@ -595,14 +396,14 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             className={`p-1.5 rounded transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'}`}
             title="最小化"
           >
-            <Minimize2 className="w-3.5 h-3.5" />
+            <Minus className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleWindowMaximize}
             className={`p-1.5 rounded transition-colors ${isDark ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-200 text-slate-600 hover:text-slate-900'}`}
             title="最大化 / 元に戻す"
           >
-            <Maximize2 className="w-3.5 h-3.5" />
+            <Square className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={handleWindowClose}
@@ -653,33 +454,9 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                   className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
-                  ファイルを開く (Ctrl+O)
+                  ファイルを開く...
                 </button>
-                {/* ファイルメニュー内でも常時表示 (filePathの有無に応じて切り替え) */}
-                <button
-                  onClick={async () => {
-                    if (currentDoc.filePath) {
-                      await openFolderNative(currentDoc.filePath);
-                    } else if (onSaveFile) {
-                      onSaveFile({ forceSaveAs: true });
-                    }
-                    setActiveMenu(null);
-                  }}
-                  className={`w-full px-3 py-1.5 text-left flex items-center justify-between gap-2 ${
-                    currentDoc.filePath
-                      ? isDark ? 'hover:bg-slate-800 text-emerald-300' : 'hover:bg-slate-100 text-emerald-800 font-medium'
-                      : isDark ? 'hover:bg-slate-800/60 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
-                  }`}
-                  title={currentDoc.filePath ? `親フォルダを開く:\n${currentDoc.filePath}` : 'PC上のファイルとして保存後に開けます'}
-                >
-                  <span className="flex items-center gap-2">
-                    <FolderOpen className={`w-3.5 h-3.5 ${currentDoc.filePath ? 'text-emerald-400' : 'text-slate-500'}`} />
-                    対象フォルダをエクスプローラーで開く
-                  </span>
-                  {!currentDoc.filePath && (
-                    <span className="text-[9px] opacity-60 font-sans">(要実ファイル保存)</span>
-                  )}
-                </button>
+                <div className={`my-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}></div>
                 {onSaveFile && (
                   <>
                     <button
@@ -690,8 +467,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                       className={`w-full px-3 py-1.5 text-left flex items-center justify-between gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
                     >
                       <span className="flex items-center gap-2">
-                        <Save className="w-3.5 h-3.5 text-emerald-400" />
-                        直上書き保存
+                        <Save className="w-3.5 h-3.5 text-emerald-500" />
+                        上書き保存
                       </span>
                       <span className="text-[10px] opacity-40 font-mono">Ctrl+S</span>
                     </button>
@@ -720,30 +497,6 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                   <Copy className="w-3.5 h-3.5 text-blue-500" />
                   複製を作成
                 </button>
-                {onOpenDiffModal && (
-                  <button
-                    onClick={() => {
-                      onOpenDiffModal();
-                      setActiveMenu(null);
-                    }}
-                    className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
-                  >
-                    <GitCompare className="w-3.5 h-3.5 text-cyan-500" />
-                    タブ差分を比較...
-                  </button>
-                )}
-                {onOpenBatchConvert && (
-                  <button
-                    onClick={() => {
-                      onOpenBatchConvert();
-                      setActiveMenu(null);
-                    }}
-                    className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
-                    一括文字コード変換 (Rust並列)...
-                  </button>
-                )}
                 <div className={`my-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}></div>
                 <button
                   onClick={() => {
@@ -765,18 +518,6 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                   <FileCode className="w-3.5 h-3.5 text-purple-500" />
                   HTML ファイルとして出力
                 </button>
-                {onExportPdfDirect && (
-                  <button
-                    onClick={() => {
-                      onExportPdfDirect();
-                      setActiveMenu(null);
-                    }}
-                    className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
-                  >
-                    <Download className="w-3.5 h-3.5 text-rose-500" />
-                    PDFとして直接保存 (Rustネイティブ生成)
-                  </button>
-                )}
                 <button
                   onClick={() => {
                     onPrint();
@@ -873,59 +614,148 @@ export const TitleBar: React.FC<TitleBarProps> = ({
           </div>
         </div>
 
-        {/* 表示モード切替 */}
-        <div className={`flex items-center gap-0.5 p-0.5 rounded border ${
-          isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-200 border-slate-300'
-        }`}>
-          <button
-            onClick={() => onChangeViewMode('split')}
-            className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
-              viewMode === 'split'
-                ? 'bg-cyan-600 text-white shadow'
-                : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            分割表示
-          </button>
-          <button
-            onClick={() => onChangeViewMode('editor')}
-            className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
-              viewMode === 'editor'
-                ? 'bg-cyan-600 text-white shadow'
-                : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            編集のみ
-          </button>
-          <button
-            onClick={() => onChangeViewMode('preview')}
-            className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
-              viewMode === 'preview'
-                ? 'bg-cyan-600 text-white shadow'
-                : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            プレビューのみ
-          </button>
-        </div>
+        {/* 右側領域: 表示モード切替, 保存ステータス情報, Zenモード */}
+        <div className="flex items-center gap-2">
+          {/* 表示モード切替 */}
+          <div className={`flex items-center gap-0.5 p-0.5 rounded border ${
+            isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-200 border-slate-300'
+          }`}>
+            <button
+              onClick={() => onChangeViewMode('split')}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                viewMode === 'split'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              分割表示
+            </button>
+            <button
+              onClick={() => onChangeViewMode('editor')}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                viewMode === 'editor'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              編集のみ
+            </button>
+            <button
+              onClick={() => onChangeViewMode('preview')}
+              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                viewMode === 'preview'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              プレビューのみ
+            </button>
+          </div>
 
-        {/* Zen集中モード切替 */}
-        {onToggleZenMode && (
-          <button
-            onClick={onToggleZenMode}
-            className={`px-2.5 py-1 rounded border text-[11px] font-medium transition-all flex items-center gap-1.5 ${
-              isZenMode
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
-                : isDark
-                  ? 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-cyan-400'
-                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-cyan-700 shadow-2xs'
-            }`}
-            title="Zen集中執筆モードに切り替え (Ctrl+Shift+Z)"
-          >
-            {isZenMode ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" /> : <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />}
-            <span className="hidden sm:inline">Zenモード</span>
-          </button>
-        )}
+          {/* 保存ステータス情報 (表示モードの右、Zenモードの左) */}
+          <div className="flex items-center gap-1 text-[11px] shrink-0">
+            {currentDoc.isRemote ? (
+              <span className="text-indigo-400 flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-medium">
+                <Globe className="w-3 h-3 text-indigo-400" />
+                リモート (保存OFF)
+              </span>
+            ) : (
+              <>
+                {saveStatus === 'editing' && (
+                  <span className="text-cyan-400 flex items-center gap-1 bg-cyan-400/10 px-2 py-0.5 rounded border border-cyan-400/20 font-medium animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                    編集中...
+                  </span>
+                )}
+                {saveStatus === 'saving' && (
+                  <span className="text-amber-400 flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                    保存中...
+                  </span>
+                )}
+                {saveStatus === 'saved_file' && (
+                  <span className="text-emerald-400 flex items-center gap-1 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 font-medium" title="PC上の実ファイル(.md)に保存済み">
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>実ファイルに保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
+                  </span>
+                )}
+                {saveStatus === 'saved_local' && (
+                  <span className="text-sky-400 flex items-center gap-1 bg-sky-500/15 px-2 py-0.5 rounded border border-sky-500/30 font-medium" title="アプリ内部(LocalStorage)に保護保存済み">
+                    <Check className="w-3.5 h-3.5 text-sky-400" />
+                    <span>アプリ内(LocalStorage)に保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
+                  </span>
+                )}
+                {saveStatus === 'saved' && (
+                  <span className="text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    <Check className="w-3 h-3 text-emerald-400" />
+                    <span>保存完了 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
+                  </span>
+                )}
+                {saveStatus === 'unsaved' && (
+                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded ${isDark ? 'text-slate-400 bg-slate-800' : 'text-slate-500 bg-slate-200'}`}>
+                    <Save className="w-3 h-3" />
+                    未保存の変更
+                  </span>
+                )}
+              </>
+            )}
+
+            {/* PC上の実ファイルがある場合、フォルダを開くボタン */}
+            {currentDoc.filePath ? (
+              <button
+                onClick={async () => {
+                  if (currentDoc.filePath) {
+                    await openFolderNative(currentDoc.filePath);
+                  }
+                }}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-medium transition-colors shadow-2xs ${
+                  isDark
+                    ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300 hover:bg-emerald-900/80 hover:text-emerald-200'
+                    : 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
+                }`}
+                title={`エクスプローラーで保存先フォルダを開く:\n${currentDoc.filePath}`}
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="hidden sm:inline">フォルダを開く</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (onSaveFile) {
+                    onSaveFile({ forceSaveAs: true });
+                  }
+                }}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] transition-colors opacity-75 ${
+                  isDark
+                    ? 'bg-slate-800/50 border-slate-700/60 text-slate-400 hover:opacity-100 hover:text-slate-200'
+                    : 'bg-slate-100 border-slate-300 text-slate-600 hover:opacity-100 hover:text-slate-900'
+                }`}
+                title="PC上の実ファイルとして保存すると、エクスプローラーでフォルダを開けるようになります"
+              >
+                <FolderOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="hidden sm:inline text-[10px]">フォルダを開く (未保存)</span>
+              </button>
+            )}
+          </div>
+
+          {/* Zen集中モード切替 */}
+          {onToggleZenMode && (
+            <button
+              onClick={onToggleZenMode}
+              className={`px-2.5 py-1 rounded border text-[11px] font-medium transition-all flex items-center gap-1.5 ${
+                isZenMode
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
+                  : isDark
+                    ? 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800 hover:text-cyan-400'
+                    : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-cyan-700 shadow-2xs'
+              }`}
+              title="Zen集中執筆モードに切り替え (Ctrl+Shift+Z)"
+            >
+              {isZenMode ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" /> : <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />}
+              <span className="hidden sm:inline">Zenモード</span>
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

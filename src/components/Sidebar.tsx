@@ -30,6 +30,8 @@ interface SidebarProps {
   onToggleFavorite: (id: string) => void;
   onOpenTemplates: () => void;
   isDark?: boolean;
+  width?: number;
+  onWidthChange?: (width: number) => void;
 }
 
 /**
@@ -68,10 +70,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleFavorite,
   onOpenTemplates,
   isDark = true,
+  width = 288,
+  onWidthChange,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'favorites'>('all');
   const [nativeHits, setNativeHits] = useState<SearchHit[] | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // マウスドラッグによる幅変更処理
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // 最小200px, 最大600px
+      const newWidth = Math.max(200, Math.min(600, e.clientX));
+      onWidthChange?.(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, onWidthChange]);
 
   // Rust 転置インデックスへのドキュメント群（本文＋タグ情報）登録
   useEffect(() => {
@@ -125,9 +157,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className={`w-64 md:w-72 border-r flex flex-col h-full shrink-0 select-none z-20 transition-colors print:hidden ${
-      isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
-    }`}>
+    <aside
+      style={{ width: `${width}px` }}
+      className={`relative border-r flex flex-col h-full shrink-0 select-none z-20 transition-colors print:hidden ${
+        isDark ? 'bg-slate-950 border-slate-800 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-800'
+      }`}
+    >
+      {/* 幅リサイズドラッグハンドル */}
+      <div
+        onMouseDown={handleMouseDown}
+        className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize z-30 group hover:bg-cyan-500/50 ${
+          isResizing ? 'bg-cyan-500' : ''
+        }`}
+        title="ドラッグしてドキュメント一覧の幅を変更"
+      >
+        <div className="w-0.5 h-full bg-transparent group-hover:bg-cyan-400 mx-auto transition-colors" />
+      </div>
       {/* サイドバーヘッダー */}
       <div className={`p-3 border-b flex items-center justify-between gap-2 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
         <div className="flex items-center gap-2">

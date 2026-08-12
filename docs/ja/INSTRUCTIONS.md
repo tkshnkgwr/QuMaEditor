@@ -25,12 +25,15 @@
 
 ---
 
-## 3. 品質管理・検証手順
-- **コード品質チェック**:
-  - `npm run lint`: TypeScript 型チェックエラーゼロを確認します。
-  - `cargo check --manifest-path src-tauri/Cargo.toml`: Tauri バックエンド Rust の正常性を確認します。
+## 3. 品質管理・事前強制検証手順
+- **コミット前事前強制検証コマンド（全必須）**:
+  - `cargo fmt --manifest-path src-tauri/Cargo.toml --check`: コード自動整形の完全合格を確認。
+  - `cargo check --manifest-path src-tauri/Cargo.toml`: Tauri バックエンド Rust のコンパイル正常性を確認。
+  - `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`: Clippy プロレベル品質警告ゼロを確認。
+  - `cargo test --manifest-path src-tauri/Cargo.toml`: Rust ユニットテスト全件 PASS を確認。
+  - `npm run lint`: TypeScript 型チェックエラーゼロを確認。
 - **モジュール分割基準 (1,000行ルール)**: 単一ソースファイルが 1,000 行を超えた場合は、関心事の分離（Separation of Concerns）に基づき分割・抽出しリファクタリングを提示します。
-- **Markdown例外**: Markdownファイル (`*.md`) のみの修正時は事前検証・ドキュメント自動更新をスキップ可能。
+- **Markdown例外**: Markdownファイル (`*.md`) のみの修正時は、`paths-ignore` により CI は起動しません。
 
 ---
 

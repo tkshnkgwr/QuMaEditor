@@ -34,6 +34,9 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm install
 
+      - name: Generate Specta TypeScript Bindings
+        run: npm run gen:specta
+
       - name: Check Rust Formatting
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
 
@@ -73,6 +76,9 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: npm install
+
+      - name: Generate Specta TypeScript Bindings
+        run: npm run gen:specta
 
       - name: Build Desktop Release & Publish
         uses: tauri-apps/tauri-action@v0

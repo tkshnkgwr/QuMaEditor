@@ -66,8 +66,14 @@ The following table tracks proposed features and enhancements for future QuMaEdi
 | 1 | `StatsModal / Editor` | **Document Statistics Dashboard Modal** — Dedicated modal rendering real-time character count, word count, line count, estimated reading time, heading count, and link counts | Medium | 🔲 Proposed |
 | 2 | `Sidebar / Navigation`| **Heading Outline (Table of Contents) Navigation Tree** — Auto-extract `# H1` ~ `### H3` headings from active document for instant smart jumping | Medium | 🔲 Proposed |
 | 3 | `Editor / DragDrop` | **Drag & Drop Local File Opening** — Direct drag & drop support for external `.md` / `.txt` files onto the editor canvas to open as new tabs | Medium | 🔲 Proposed |
-| 4 | `SettingsModal / UI` | **Enhanced Editor Typography Controls** — Configurable line-height, editor font family (Monospace vs Sans-serif), and tab size options in settings | Low | 🔲 Proposed |
-| 5 | `Editor / Toolbar` | **One-Click Format Insertion Helper** — Quick insertion buttons for tables, code blocks, blockquotes (`> `), and task checkboxes (`- [ ] `) | Low | 🔲 Proposed |
+| 4 | `ZenMode / Editor` | **Zen Mode Audio Mute Feature** — Automatically mute all system and application sound notifications when entering Zen mode | Medium | 🔲 Proposed |
+| 5 | `ZenMode / Editor` | **Zen Mode Notification Silencer** — Completely disable all in-app toasts and non-essential popups during Zen writing sessions | Medium | 🔲 Proposed |
+| 6 | `ZenMode / Editor` | **Current Line Focus Mode** — Dim all text lines except the currently active cursor line for maximum concentration | Medium | 🔲 Proposed |
+| 7 | `ZenMode / Editor` | **Typewriter Scrolling** — Keep active typing line locked at vertical center of screen to minimize eye and neck movement | Low | 🔲 Proposed |
+| 8 | `ZenMode / Editor` | **Pomodoro Focus Timer** | Subtle, minimal 25min work + 5min break timer displayed inside Zen mode | Low | 🔲 Proposed |
+| 9 | `ZenMode / Editor` | **Ambient BGM / White Noise Player** — Optional ambient sound generator (rain, cafe, white noise) for deep focus | Low | 🔲 Proposed |
+| 10 | `SettingsModal / UI` | **Enhanced Editor Typography Controls** — Configurable line-height, editor font family (Monospace vs Sans-serif), and tab size options in settings | Low | 🔲 Proposed |
+| 11 | `Editor / Toolbar` | **One-Click Format Insertion Helper** — Quick insertion buttons for tables, code blocks, blockquotes (`> `), and task checkboxes (`- [ ] `) | Low | 🔲 Proposed |
 
 ---
 

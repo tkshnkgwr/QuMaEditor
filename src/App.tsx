@@ -6,24 +6,17 @@ import {
   TextStats,
   SupportedEncoding,
   ThemeMode,
-  SaveStatus,
 } from './types';
 import {
-  loadStoredDocs,
   saveStoredDocs,
-  loadActiveDocId,
-  saveActiveDocId,
-  loadOpenTabIds,
-  saveOpenTabIds,
   loadSettings,
   saveSettings,
-  DEFAULT_SETTINGS
 } from './utils/storage';
-import { calculateTextStats, insertFormatting, toggleTaskInMarkdown } from './utils/markdownUtils';
-import { decodeFileContent, prepareEncodedBlob } from './utils/encodingUtils';
-import { parseYamlFrontMatter, buildFullMarkdownWithFrontMatter } from './utils/yamlUtils';
-import { generatePdfNative, parseMarkdownNative } from './utils/tauriNative';
-import { openNativeFileDialog, saveNativeFile, openNativeFileFromPath } from './utils/fileSystem';
+import { calculateTextStats, insertFormatting } from './utils/markdownUtils';
+import { decodeFileContent } from './utils/encodingUtils';
+import { parseYamlFrontMatter } from './utils/yamlUtils';
+import { parseMarkdownNative } from './utils/tauriNative';
+import { openNativeFileFromPath } from './utils/fileSystem';
 import { commands } from './bindings';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -34,7 +27,7 @@ import { Toolbar } from './components/Toolbar';
 import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
 import { StatusBar } from './components/StatusBar';
-import { Minimize2, Eye } from 'lucide-react';
+import { Minimize2 } from 'lucide-react';
 import { TableModal } from './components/TableModal';
 import { TemplateModal } from './components/TemplateModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -43,32 +36,65 @@ import { HelpGuideModal } from './components/HelpGuideModal';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { DiffModal } from './components/DiffModal';
 import { BatchConvertModal } from './components/BatchConvertModal';
-
 import { LogModal } from './components/LogModal';
 import { logger } from './utils/logger';
 
+// リファクタリング用に分離したカスタムフック
+import { useModalState } from './hooks/useModalState';
+import { useDocumentManager } from './hooks/useDocumentManager';
+import { useFileOperations } from './hooks/useFileOperations';
+
 export default function App() {
-  // ドキュメント一覧の状態
-  const [docs, setDocs] = useState<MarkdownDoc[]>(loadStoredDocs);
-  const [activeDocId, setActiveDocId] = useState<string>(loadActiveDocId);
-  const [previousDocId, setPreviousDocId] = useState<string | undefined>(undefined);
-  const [openTabIds, setOpenTabIds] = useState<string[]>(() => loadOpenTabIds(docs));
+  // ドキュメント一覧・タブ状態の管理 (useDocumentManager)
+  const {
+    docs,
+    setDocs,
+    activeDocId,
+    setActiveDocId,
+    previousDocId,
+    openTabIds,
+    setOpenTabIds,
+    currentDoc,
+    handleSelectTab,
+    handleSelectDoc,
+    handleCloseTab,
+    handleCloseOtherTabs,
+    handleNewDoc,
+    handleAddOpenedDoc,
+    handleDeleteDoc,
+    handleToggleFavorite,
+    handleUpdateTitle,
+    handleUpdateUpdatedBy,
+    handleUpdateTags,
+  } = useDocumentManager();
+
+  // モーダルおよび Zen モード開閉状態の管理 (useModalState)
+  const {
+    isZenMode,
+    setIsZenMode,
+    toggleZenMode,
+    isTableModalOpen,
+    setIsTableModalOpen,
+    isTemplateModalOpen,
+    setIsTemplateModalOpen,
+    isSettingsModalOpen,
+    setIsSettingsModalOpen,
+    isAboutModalOpen,
+    setIsAboutModalOpen,
+    isHelpGuideModalOpen,
+    setIsHelpGuideModalOpen,
+    isShortcutsModalOpen,
+    setIsShortcutsModalOpen,
+    isDiffModalOpen,
+    setIsDiffModalOpen,
+    isBatchConvertModalOpen,
+    setIsBatchConvertModalOpen,
+    isLogModalOpen,
+    setIsLogModalOpen,
+  } = useModalState();
+
+  // 基本設定 state
   const [settings, setSettings] = useState<EditorSettings>(loadSettings);
-
-
-  // activeDocId が openTabIds に含まれていなければ自動追加
-  useEffect(() => {
-    if (activeDocId && !openTabIds.includes(activeDocId)) {
-      setOpenTabIds((prev) => {
-        if (!prev.includes(activeDocId)) {
-          const next = [...prev, activeDocId];
-          saveOpenTabIds(next);
-          return next;
-        }
-        return prev;
-      });
-    }
-  }, [activeDocId, openTabIds]);
 
   // OSのシステムダークモード設定の検出
   const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() => {
@@ -89,13 +115,11 @@ export default function App() {
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     } else if (mediaQuery.addListener) {
-      // 古いブラウザ用の互換性
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
   }, []);
 
-  // 適用する実際のテーマモード
   const effectiveTheme: 'dark' | 'light' =
     settings.theme === 'system' ? systemTheme : settings.theme || 'dark';
   const isDark = effectiveTheme === 'dark';
@@ -104,56 +128,62 @@ export default function App() {
     handleUpdateSettings({ theme: newTheme });
   };
 
-  // アクティブな表示状態
+  // 表示レイアウト＆サイドバー幅
   const [viewMode, setViewMode] = useState<ViewMode>('editor');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    const saved = localStorage.getItem('quma_sidebar_width');
+    return saved ? parseInt(saved, 10) : 288;
+  });
 
-  // UPDATE 2026-08-04: 自動保存ステータスに編集中 ('editing') を追加
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+  const handleSidebarWidthChange = (newWidth: number) => {
+    setSidebarWidth(newWidth);
+    localStorage.setItem('quma_sidebar_width', newWidth.toString());
+  };
+
+  // 自動保存ステータス
+  const [saveStatus, setSaveStatus] = useState<import('./types').SaveStatus>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
-  // カーソル位置・統計情報
+  // カーソル位置
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
-
-  // モーダルダイアログ & Zenモードの状態
-  const [isZenMode, setIsZenMode] = useState(false);
-  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
-  const [isHelpGuideModalOpen, setIsHelpGuideModalOpen] = useState(false);
-  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
-  const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
-  const [isBatchConvertModalOpen, setIsBatchConvertModalOpen] = useState(false);
-  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-
 
   // 参照 (Refs)
   const previewScrollRef = useRef<HTMLDivElement | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  /** Editor コンポーネント内の textarea DOM 参照 (ツールバーフォーマット時の選択範囲取得に使用) */
   const editorTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // 現在アクティブなドキュメントの取得
-  const currentDoc = docs.find((d) => d.id === activeDocId) || docs[0] || {
-    id: 'default',
-    title: '無題のドキュメント',
-    content: '',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  // ファイル操作アクションの管理 (useFileOperations)
+  const {
+    handleOpenLocalFile,
+    handleSaveCurrentDoc,
+    handleExportMarkdown,
+    handleExportHtml,
+    handleExportPdfDirect,
+    handlePrint,
+  } = useFileOperations({
+    currentDoc,
+    settings,
+    setDocs,
+    setSaveStatus,
+    setLastSavedTime,
+    handleAddOpenedDoc,
+    fileInputRef,
+  });
 
   // テキスト統計情報
   const stats: TextStats = calculateTextStats(currentDoc.content);
 
-  // UPDATE 2026-08-04: リモートファイルの場合は自動保存をスキップし、ローカルファイルのみ最長10秒のキー入力停止後に自動保存する制御とログ記録
+  // 前回のドキュメント情報（差分比較用）
+  const previousDoc = docs.find((d) => d.id === previousDocId);
+
+  // テキスト内容の更新＆自動保存タイマー
   const updateDocContent = (newContent: string) => {
     const nowISO = new Date().toISOString();
     const updaterName = settings.defaultAuthor?.trim() || currentDoc.updatedBy || currentDoc.author || 'Unknown';
 
-    // メモリ内テキスト状態を即時更新 (本文変更時のみ updatedAt と updatedBy を更新。author は変更せず保持)
     setDocs((prevDocs) =>
       prevDocs.map((doc) =>
         doc.id === currentDoc.id
@@ -168,34 +198,26 @@ export default function App() {
       )
     );
 
-    // タイピング継続中のため既存の自動保存タイマーを即時キャンセル＆リセット
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
 
-    // キー入力中（打鍵中）は「編集中」ステータスにし、一切の保存処理を実行しない
     setSaveStatus('editing');
-
-    // キー入力が完全にストップして指定時間（最小2000ms、デフォルト3000ms）経過後に保存を実行
     const delayMs = Math.max(2000, Math.min(10000, settings.autoSaveIntervalMs || 3000));
 
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      // リモートファイルの場合: 仕様に基づき自動保存を行わない
       if (currentDoc.isRemote) {
         setSaveStatus('unsaved');
         logger.info(
-          `[自動保存スキップ] リモートファイル "${currentDoc.title}" (ID: ${currentDoc.id}) はリモート仕様に基づき自動保存されません。`,
-          `URL: ${currentDoc.remoteUrl || 'N/A'}`
+          `[自動保存スキップ] リモートファイル "${currentDoc.title}" (ID: ${currentDoc.id}) はリモート仕様に基づき自動保存されません。`
         );
         return;
       }
 
-      // 入力完全停止後の保存実行
       setSaveStatus('saving');
-
       let savedToFile = false;
-      // 実ファイルパスが存在する場合は実ファイルにもバックグラウンド直上書き
       if (currentDoc.filePath) {
+        const { saveNativeFile } = await import('./utils/fileSystem');
         const res = await saveNativeFile(currentDoc, { forceSaveAs: false, defaultAuthor: settings.defaultAuthor });
         if (res.success) {
           savedToFile = true;
@@ -212,191 +234,13 @@ export default function App() {
 
       if (savedToFile) {
         setSaveStatus('saved_file');
-        logger.info(
-          `[実ファイル自動保存完了] 打鍵停止後、"${currentDoc.title}" を実ファイルへ自動保存しました (${timeStr})`,
-          `ファイルパス: ${currentDoc.filePath}`
-        );
       } else {
         setSaveStatus('saved_local');
-        logger.info(
-          `[アプリ内保護保存完了] 打鍵停止後、"${currentDoc.title}" をアプリ内(LocalStorage)へ保存しました (${timeStr})`,
-          `ドキュメントID: ${currentDoc.id}`
-        );
       }
     }, delayMs);
   };
 
-  // UPDATE 2026-08-04: プレビュー側からのタスク変更機能の中止
-  // Why: ユーザー指示に基づき、プレビュー側での操作によるMarkdown書き換え・トグル動作を無効化し表示専用に戻すため。
-  /* handleToggleTaskItem は中止されました */
-
-  // タイトルの更新
-  const handleUpdateTitle = (newTitle: string) => {
-    setDocs((prevDocs) => {
-      const updated = prevDocs.map((doc) =>
-        doc.id === currentDoc.id
-          ? { ...doc, title: newTitle, updatedAt: new Date().toISOString() }
-          : doc
-      );
-      saveStoredDocs(updated);
-      return updated;
-    });
-    setSaveStatus('saved');
-  };
-
-  // 更新者名 (updatedBy) の更新
-  const handleUpdateUpdatedBy = (newUpdatedBy: string) => {
-    setDocs((prevDocs) => {
-      const updated = prevDocs.map((doc) =>
-        doc.id === currentDoc.id
-          ? { ...doc, updatedBy: newUpdatedBy, updatedAt: new Date().toISOString() }
-          : doc
-      );
-      saveStoredDocs(updated);
-      return updated;
-    });
-    setSaveStatus('saved_local');
-    logger.info(`[更新者名変更] "${currentDoc.title}" の更新者を "${newUpdatedBy}" に変更しました`);
-  };
-
-  // タブの選択
-  const handleSelectTab = (id: string) => {
-    if (id !== activeDocId) {
-      setPreviousDocId(activeDocId);
-    }
-    setActiveDocId(id);
-    saveActiveDocId(id);
-    if (!openTabIds.includes(id)) {
-      setOpenTabIds((prev) => {
-        const next = [...prev, id];
-        saveOpenTabIds(next);
-        return next;
-      });
-    }
-  };
-
-
-  // タブを閉じる
-  const handleCloseTab = (idToClose: string) => {
-    const nextOpen = openTabIds.filter((id) => id !== idToClose);
-
-    // すべてのタブが閉じられた場合、新規作成
-    if (nextOpen.length === 0) {
-      const newDoc: MarkdownDoc = {
-        id: `doc-${Date.now()}`,
-        title: '新規ドキュメント',
-        content: '# 新規ドキュメント\n\nここから記述を開始してください。',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isFavorite: false,
-      };
-      const updatedDocs = [newDoc, ...docs];
-      setDocs(updatedDocs);
-      saveStoredDocs(updatedDocs);
-      setActiveDocId(newDoc.id);
-      saveActiveDocId(newDoc.id);
-      setOpenTabIds([newDoc.id]);
-      saveOpenTabIds([newDoc.id]);
-      return;
-    }
-
-    setOpenTabIds(nextOpen);
-    saveOpenTabIds(nextOpen);
-
-    // 閉じたタブがアクティブだった場合、隣のタブをアクティブ化
-    if (activeDocId === idToClose) {
-      const currentIndex = openTabIds.indexOf(idToClose);
-      const nextActiveIndex = Math.max(0, currentIndex - 1);
-      const nextActiveId = nextOpen[nextActiveIndex] || nextOpen[0];
-      setActiveDocId(nextActiveId);
-      saveActiveDocId(nextActiveId);
-    }
-  };
-
-  // 他のタブをすべて閉じる
-  const handleCloseOtherTabs = (keepId: string) => {
-    const nextOpen = [keepId];
-    setOpenTabIds(nextOpen);
-    saveOpenTabIds(nextOpen);
-    setActiveDocId(keepId);
-    saveActiveDocId(keepId);
-  };
-
-  // ドキュメントの選択
-  const handleSelectDoc = (id: string) => {
-    handleSelectTab(id);
-  };
-
-  // 新規ドキュメントの作成
-  const handleNewDoc = () => {
-    const now = new Date().toISOString();
-    const defaultTitle = '新規ドキュメント';
-    const bodyContent = `# ${defaultTitle}\n\nここから記述を開始してください。\n\n- [ ] 未完了タスク\n- [/] 進行中タスク\n- [x] 完了済みタスク`;
-
-    const newDoc: MarkdownDoc = {
-      id: `doc-${Date.now()}`,
-      title: defaultTitle,
-      content: bodyContent,
-      author: '作成者',
-      createdAt: now,
-      updatedAt: now,
-      updatedBy: '作成者',
-      encoding: 'UTF-8',
-      tags: ['新規ノート'],
-      isFavorite: false,
-    };
-
-    const updated = [newDoc, ...docs];
-    setDocs(updated);
-    saveStoredDocs(updated);
-    setActiveDocId(newDoc.id);
-    saveActiveDocId(newDoc.id);
-    setOpenTabIds((prev) => {
-      const next = prev.includes(newDoc.id) ? prev : [...prev, newDoc.id];
-      saveOpenTabIds(next);
-      return next;
-    });
-  };
-
-  // 開いたドキュメントのリスト追加＆アクティブ化処理（共通ロジック）
-  const handleAddOpenedDoc = useCallback((openedDoc: MarkdownDoc) => {
-    setDocs((prevDocs) => {
-      const existing = prevDocs.find((d) => d.filePath === openedDoc.filePath && d.filePath);
-      if (existing) {
-        return prevDocs;
-      }
-      const updated = [openedDoc, ...prevDocs];
-      saveStoredDocs(updated);
-      return updated;
-    });
-
-    setActiveDocId(openedDoc.id);
-    saveActiveDocId(openedDoc.id);
-    setOpenTabIds((prev) => {
-      const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
-      saveOpenTabIds(next);
-      return next;
-    });
-  }, []);
-
-  // PC/ファイルサーバーのローカルファイルを開く (Tauri ネイティブダイアログ優先)
-  const handleOpenLocalFile = async () => {
-    // まず Tauri ネイティブダイアログでのファイルオープンを試行
-    const nativeResult = await openNativeFileDialog();
-    if (nativeResult) {
-      const { doc: openedDoc } = nativeResult;
-      handleAddOpenedDoc(openedDoc);
-      logger.info(
-        `[ファイルオープン成功] ファイルを開きました: "${openedDoc.title}"`,
-        `パス: ${openedDoc.filePath}`
-      );
-      return;
-    }
-
-    // Web ブラウザ環境等のフォールバック
-    fileInputRef.current?.click();
-  };
-
+  // ファイル選択ダイアログからのフォールバック読み込み
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -410,7 +254,6 @@ export default function App() {
       const { text, encoding } = decodeFileContent(uint8Array);
       const defaultTitle = file.name.replace(/\.[^/.]+$/, '') || '無題のドキュメント';
 
-      // YAML Front Matter の解釈
       const { body, metadata } = parseYamlFrontMatter(text);
 
       const openedDoc: MarkdownDoc = {
@@ -424,93 +267,13 @@ export default function App() {
         isFavorite: false,
       };
 
-      setDocs((prevDocs) => {
-        const updated = [openedDoc, ...prevDocs];
-        saveStoredDocs(updated);
-        return updated;
-      });
-      setActiveDocId(openedDoc.id);
-      saveActiveDocId(openedDoc.id);
-      setOpenTabIds((prev) => {
-        const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
-        saveOpenTabIds(next);
-        return next;
-      });
+      handleAddOpenedDoc(openedDoc);
     };
     reader.readAsArrayBuffer(file);
-    // 同じファイル名を再選択できるように値をリセット
     e.target.value = '';
   };
 
-  // 実ファイルへの保存（直上書き保存 または 名前を付けて保存）
-  const handleSaveCurrentDoc = async (options: { forceSaveAs?: boolean } = {}) => {
-    setSaveStatus('saving');
-
-    // Tauri ネイティブ保存の試行
-    const res = await saveNativeFile(currentDoc, { defaultAuthor: settings.defaultAuthor, ...options });
-
-    if (res.success && res.filePath) {
-      const updatedDocPath = res.filePath;
-      const fileNameWithExt = updatedDocPath.split(/[/\\]/).pop() || currentDoc.title;
-      const newTitle = res.isSaveAs ? (fileNameWithExt.replace(/\.[^/.]+$/, '') || currentDoc.title) : currentDoc.title;
-
-      setDocs((prevDocs) => {
-        const updated = prevDocs.map((doc) =>
-          doc.id === currentDoc.id
-            ? {
-                ...doc,
-                filePath: updatedDocPath,
-                title: newTitle,
-                isRemote: false, // リモートからローカル保存された場合はリモートフラグ解除
-                updatedAt: new Date().toISOString(),
-              }
-            : doc
-        );
-        saveStoredDocs(updated);
-        return updated;
-      });
-
-      setSaveStatus('saved_file');
-      const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setLastSavedTime(timeStr);
-
-      logger.info(
-        res.isSaveAs
-          ? `[名前を付けて保存完了] "${newTitle}" を実ファイルへ保存しました (${timeStr})`
-          : `[実ファイル上書き保存完了] "${newTitle}" を実ファイルへ直上書き保存しました (${timeStr})`,
-        `パス: ${updatedDocPath}`
-      );
-      return;
-    }
-
-    if (res.error && res.error !== 'Canceled by user') {
-      logger.error(`[ファイル保存エラー] 保存処理に失敗しました`, res.error);
-      alert(`ファイルの保存に失敗しました:\n${res.error}`);
-      setSaveStatus('unsaved');
-    } else if (!res.success && res.error === 'Canceled by user') {
-      setSaveStatus('saved');
-    } else {
-      // フォールバック（Web環境ブラウザダウンロード）
-      handleExportMarkdown();
-      setSaveStatus('saved');
-    }
-  };
-
-  // ドキュメントのタグ変更 (Yama YAML Front Matter用)
-  const handleUpdateTags = (newTags: string[]) => {
-    setDocs((prevDocs) => {
-      const updated = prevDocs.map((doc) =>
-        doc.id === currentDoc.id
-          ? { ...doc, tags: newTags, updatedAt: new Date().toISOString() }
-          : doc
-      );
-      saveStoredDocs(updated);
-      return updated;
-    });
-    setSaveStatus('saved');
-  };
-
-  // ドキュメントの文字コード変更
+  // 文字コードの変更
   const handleChangeEncoding = (newEncoding: SupportedEncoding) => {
     setDocs((prevDocs) => {
       const updated = prevDocs.map((doc) =>
@@ -524,7 +287,7 @@ export default function App() {
     setSaveStatus('saved');
   };
 
-  // ドキュメントの複製
+  // 複製作成
   const handleDuplicateDoc = () => {
     const dupDoc: MarkdownDoc = {
       id: `doc-${Date.now()}`,
@@ -536,45 +299,7 @@ export default function App() {
       updatedAt: new Date().toISOString(),
       isFavorite: false,
     };
-    const updated = [dupDoc, ...docs];
-    setDocs(updated);
-    saveStoredDocs(updated);
-    setActiveDocId(dupDoc.id);
-    saveActiveDocId(dupDoc.id);
-    setOpenTabIds((prev) => {
-      const next = prev.includes(dupDoc.id) ? prev : [...prev, dupDoc.id];
-      saveOpenTabIds(next);
-      return next;
-    });
-  };
-
-  // ドキュメントの削除
-  const handleDeleteDoc = (id: string) => {
-    if (docs.length <= 1) return;
-    const filtered = docs.filter((d) => d.id !== id);
-    setDocs(filtered);
-    saveStoredDocs(filtered);
-
-    // タブからも削除
-    const nextOpen = openTabIds.filter((tabId) => tabId !== id);
-    const validNextOpen = nextOpen.length > 0 ? nextOpen : [filtered[0].id];
-    setOpenTabIds(validNextOpen);
-    saveOpenTabIds(validNextOpen);
-
-    if (activeDocId === id) {
-      const nextActiveId = validNextOpen[0] || filtered[0].id;
-      setActiveDocId(nextActiveId);
-      saveActiveDocId(nextActiveId);
-    }
-  };
-
-  // お気に入り切替
-  const handleToggleFavorite = (id: string) => {
-    setDocs((prev) => {
-      const updated = prev.map((d) => (d.id === id ? { ...d, isFavorite: !d.isFavorite } : d));
-      saveStoredDocs(updated);
-      return updated;
-    });
+    handleAddOpenedDoc(dupDoc);
   };
 
   // テンプレート選択
@@ -588,388 +313,85 @@ export default function App() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    const updated = [tplDoc, ...docs];
-    setDocs(updated);
-    saveStoredDocs(updated);
-    setActiveDocId(tplDoc.id);
-    saveActiveDocId(tplDoc.id);
+    handleAddOpenedDoc(tplDoc);
+    setIsTemplateModalOpen(false);
   };
-
-  // Markdown (.md) ファイルの出力 (YAML Front Matter付与、文字コード＆改行コード変換適用)
-  const handleExportMarkdown = () => {
-    const encoding = currentDoc.encoding || 'UTF-8';
-    const fullMarkdownText = buildFullMarkdownWithFrontMatter(currentDoc);
-    const blob = prepareEncodedBlob(fullMarkdownText, encoding);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${currentDoc.title || 'document'}.md`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // HTML ファイルの出力 (Rust parseMarkdownNative による完全変換)
-  const handleExportHtml = async () => {
-    try {
-      const { body } = parseYamlFrontMatter(currentDoc.content);
-      const parsedBodyHtml = (await parseMarkdownNative(body)) || body;
-
-      const htmlContent = `<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${currentDoc.title || '無題のドキュメント'}</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Meiryo", "Yu Gothic", sans-serif;
-      line-height: 1.7;
-      max-width: 860px;
-      margin: 40px auto;
-      padding: 0 24px;
-      color: #1e293b;
-      background-color: #ffffff;
-    }
-    h1, h2, h3, h4 { color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-top: 24px; }
-    h1 { font-size: 2em; }
-    h2 { font-size: 1.5em; }
-    h3 { font-size: 1.25em; color: #0284c7; }
-    p { margin: 16px 0; }
-    code { background: #f1f5f9; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; border: 1px solid #e2e8f0; }
-    pre { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    pre code { background: transparent; color: inherit; border: none; padding: 0; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em; }
-    th, td { border: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; }
-    th { bg-color: #f8fafc; background: #f1f5f9; font-weight: bold; color: #0f172a; }
-    tr:nth-child(even) { background: #f8fafc; }
-    blockquote { border-left: 4px solid #0284c7; margin: 20px 0; padding: 8px 16px; color: #475569; background: #f0f9ff; border-radius: 0 4px 4px 0; }
-    ul, ol { padding-left: 24px; }
-    li { margin: 6px 0; }
-    a { color: #0284c7; text-decoration: underline; }
-    hr { border: none; border-top: 1px solid #e2e8f0; margin: 32px 0; }
-  </style>
-</head>
-<body>
-  <h1>${currentDoc.title || '無題のドキュメント'}</h1>
-  ${parsedBodyHtml}
-</body>
-</html>`;
-      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${currentDoc.title || 'document'}.html`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('HTML export failed:', err);
-      alert('HTMLのエクスポート中にエラーが発生しました。');
-    }
-  };
-
-  // PDF直接生成状態
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
-
-  // プレビュー画面から印刷 / PDF出力
-  const triggerPreviewPrint = () => {
-    // 表示モードが「エディタのみ」の場合は一時的に分割表示にし、プレビュー画面から確実にPDFを作成
-    if (viewMode === 'editor') {
-      setViewMode('split');
-      setTimeout(() => {
-        window.print();
-      }, 100);
-    } else {
-      window.print();
-    }
-  };
-
-  // 印刷 / PDF保存 (プレビュー表示から直接作成)
-  const handlePrint = () => {
-    triggerPreviewPrint();
-  };
-
-  // ワンクリック・ダイレクト PDF ファイル直接出力・保存 (印刷ダイアログ非経由)
-  const handleExportPdfDirect = async () => {
-    setIsExportingPdf(true);
-    try {
-      // プレビュー表示エリアのパース済み HTML とスタイルを取り出してスタンドアロン HTML/PDF ドキュメントを作成
-      const previewEl = previewScrollRef.current || document.querySelector('.preview-markdown');
-      const innerHtml = previewEl ? previewEl.innerHTML : '';
-      
-      // 完全な A4 印刷スタイリングを含む HTML 構造をパッケージ化
-      const standaloneHtml = `<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>${currentDoc.title || 'ドキュメント'}</title>
-  <style>
-    @page { size: A4 portrait; margin: 15mm; }
-    body { font-family: "Meiryo", "Yu Gothic", "Segoe UI", sans-serif; font-size: 11pt; line-height: 1.6; color: #0f172a; background: #ffffff; padding: 0; margin: 0; }
-    h1, h2, h3 { color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-    th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
-    th { background: #f1f5f9; font-weight: bold; }
-    pre { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 12px; font-family: monospace; white-space: pre-wrap; word-break: break-all; }
-    code { background: #f1f5f9; color: #0369a1; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
-    blockquote { border-left: 4px solid #0284c7; background: #f0f9ff; margin: 16px 0; padding: 8px 16px; color: #334155; }
-    .no-print { display: none !important; }
-  </style>
-</head>
-<body>
-  ${innerHtml}
-</body>
-</html>`;
-
-      // 直接ファイルダウンロード保存 (印刷ダイアログ非起動)
-      const blob = new Blob([standaloneHtml], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${currentDoc.title || 'document'}_preview.html`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Direct PDF export failed:', err);
-      alert('PDFの直接保存中にエラーが発生しました。');
-    } finally {
-      setIsExportingPdf(false);
-    }
-  };
-
-  // フォーマット補助 — textarea の現在のカーソル位置・選択範囲を使ってフォーマットを挿入
-  const handleFormat = (type: any) => {
-    const textarea = editorTextareaRef.current;
-    const content = currentDoc.content;
-
-    let selStart = content.length;
-    let selEnd = content.length;
-
-    if (textarea) {
-      selStart = textarea.selectionStart ?? content.length;
-      selEnd   = textarea.selectionEnd   ?? content.length;
-    }
-
-    // 見出し (h1/h2/h3) はカーソル行の行頭にプレフィックスを挿入する特殊処理
-    const isHeading = ['h1', 'h2', 'h3'].includes(type);
-    if (isHeading && textarea) {
-      const headingPrefix = type === 'h1' ? '# ' : type === 'h2' ? '## ' : '### ';
-      const lineStart = content.lastIndexOf('\n', selStart - 1) + 1;
-      const lineEnd   = content.indexOf('\n', selStart);
-      const lineEndPos = lineEnd === -1 ? content.length : lineEnd;
-      const currentLine = content.slice(lineStart, lineEndPos);
-
-      // 既に同じ見出しがある場合は取り除き、ない場合は追加
-      const headingPattern = /^#{1,6}\s/;
-      let newLine: string;
-      let newCursor: number;
-      if (headingPattern.test(currentLine)) {
-        newLine = currentLine.replace(/^#{1,6}\s/, headingPrefix);
-      } else {
-        newLine = headingPrefix + currentLine;
-      }
-      const delta = newLine.length - currentLine.length;
-      const newText = content.slice(0, lineStart) + newLine + content.slice(lineEndPos);
-      newCursor = Math.max(lineStart + headingPrefix.length, selStart + delta);
-      updateDocContent(newText);
-      // カーソル復元
-      setTimeout(() => {
-        if (textarea) {
-          textarea.focus();
-          textarea.setSelectionRange(newCursor, newCursor);
-        }
-      }, 0);
-      return;
-    }
-
-    const res = insertFormatting(content, selStart, selEnd, type);
-    updateDocContent(res.newText);
-    // フォーマット後にカーソル位置を復元してフォーカスを維持
-    setTimeout(() => {
-      if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(res.newCursorStart, res.newCursorEnd);
-      }
-    }, 0);
-  };
-
-  // 表組 (テーブル) の挿入
-  const handleInsertTable = (tableMd: string) => {
-    const newContent = currentDoc.content + '\n\n' + tableMd + '\n\n';
-    updateDocContent(newContent);
-  };
-
-  // 現在日時の挿入
-  const handleInsertDate = () => {
-    const dateStr = `\n\n**日時**: ${new Date().toLocaleString('ja-JP')}\n\n`;
-    updateDocContent(currentDoc.content + dateStr);
-  };
-
-  // ドロップされたファイル全体のスマート判定ハンドラー (画像 ➔ インライン挿入 / テキスト ➔ タブで開く)
-  const handleDroppedFile = async (file: File) => {
-    // 画像ファイルの場合
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        const imageName = file.name.replace(/\.[^/.]+$/, '');
-        const imageMd = `\n\n![${imageName}](${dataUrl})\n\n`;
-        updateDocContent(currentDoc.content + imageMd);
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
-
-    // Markdown / テキストファイルの場合
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const arrayBuffer = e.target?.result as ArrayBuffer;
-      if (!arrayBuffer) return;
-
-      const uint8Array = new Uint8Array(arrayBuffer);
-      const { text, encoding } = decodeFileContent(uint8Array);
-      const defaultTitle = file.name.replace(/\.[^/.]+$/, '') || '無題のドキュメント';
-      const { body, metadata } = parseYamlFrontMatter(text);
-      const nativePath = (file as any).path || undefined;
-
-      const openedDoc: MarkdownDoc = {
-        id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        title: metadata.title || defaultTitle,
-        content: body,
-        encoding: (metadata.encoding as SupportedEncoding) || encoding,
-        createdAt: metadata.created || new Date().toISOString(),
-        updatedAt: metadata.updated || new Date().toISOString(),
-        tags: metadata.tags || [],
-        filePath: nativePath,
-        isFavorite: false,
-      };
-
-      setDocs((prevDocs) => {
-        const updated = [openedDoc, ...prevDocs];
-        saveStoredDocs(updated);
-        return updated;
-      });
-      setActiveDocId(openedDoc.id);
-      saveActiveDocId(openedDoc.id);
-      setOpenTabIds((prev) => {
-        const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
-        saveOpenTabIds(next);
-        return next;
-      });
-    };
-    reader.readAsArrayBuffer(file);
-  };
-
-  // Tauri ネイティブ全画面ドラッグ＆ドロップの待機
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    const setupFileDrop = async () => {
-      try {
-        const appWindow = getCurrentWebviewWindow();
-        unlisten = await appWindow.onDragDropEvent(async (event) => {
-          if (event.payload.type === 'drop') {
-            const paths = event.payload.paths;
-            for (const filePath of paths) {
-              if (/\.(md|markdown|txt|mdown|mkd)$/i.test(filePath) || !/\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(filePath)) {
-                const res = await openNativeFileFromPath(filePath);
-                if (res) {
-                  const { doc: openedDoc } = res;
-                  setDocs((prevDocs) => {
-                    const existing = prevDocs.find((d) => d.filePath === openedDoc.filePath && d.filePath);
-                    if (existing) {
-                      setActiveDocId(existing.id);
-                      saveActiveDocId(existing.id);
-                      setOpenTabIds((prev) => (prev.includes(existing.id) ? prev : [...prev, existing.id]));
-                      return prevDocs;
-                    }
-                    const updated = [openedDoc, ...prevDocs];
-                    saveStoredDocs(updated);
-                    return updated;
-                  });
-                  setActiveDocId(openedDoc.id);
-                  saveActiveDocId(openedDoc.id);
-                  setOpenTabIds((prev) => {
-                    const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
-                    saveOpenTabIds(next);
-                    return next;
-                  });
-                }
-              }
-            }
-          }
-        });
-      } catch (e) {
-        console.log('DragDropEvent listener not active in Web mode');
-      }
-    };
-
-    setupFileDrop();
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, []);
-
-  // スクロール同期処理
-  const handleScrollSync = useCallback(
-    (scrollTop: number, scrollHeight: number, clientHeight: number) => {
-      if (!settings.syncScroll || !previewScrollRef.current) return;
-      const scrollRatio = scrollTop / (scrollHeight - clientHeight || 1);
-      const targetScrollTop = scrollRatio * (previewScrollRef.current.scrollHeight - previewScrollRef.current.clientHeight);
-      previewScrollRef.current.scrollTop = targetScrollTop;
-    },
-    [settings.syncScroll]
-  );
 
   // 設定の更新
   const handleUpdateSettings = (newSettings: Partial<EditorSettings>) => {
-    const updated = { ...settings, ...newSettings };
-    setSettings(updated);
-    saveSettings(updated);
+    setSettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      saveSettings(updated);
+      return updated;
+    });
   };
 
-  // データを初期サンプルにリセット
-  const handleResetData = () => {
-    localStorage.clear();
-    const freshDocs = loadStoredDocs();
-    setDocs(freshDocs);
-    setActiveDocId(freshDocs[0].id);
-    setSettings(DEFAULT_SETTINGS);
-  };
-
-  // LocalStorage 上でスリム化された実ファイルドキュメントの自動全復元
+  // キーボードショートカット
   useEffect(() => {
-    if (currentDoc && currentDoc.filePath && currentDoc.content.includes('<!-- [STORAGE_SLIMMED_LOAD_FROM_DISK] -->')) {
-      const targetPath = currentDoc.filePath;
-      openNativeFileFromPath(targetPath).then((res) => {
-        if (res && res.doc.content) {
-          setDocs((prevDocs) =>
-            prevDocs.map((d) => (d.id === currentDoc.id ? { ...d, content: res.doc.content } : d))
-          );
-        }
-      });
-    }
-  }, [activeDocId, currentDoc]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        setIsShortcutsModalOpen(true);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'Z' || e.key === 'z')) {
+        e.preventDefault();
+        toggleZenMode();
+        return;
+      }
+      if (isZenMode && e.key === 'Escape') {
+        e.preventDefault();
+        setIsZenMode(false);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        handleSaveCurrentDoc({ forceSaveAs: e.shiftKey });
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) {
+        e.preventDefault();
+        handleOpenLocalFile();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        handleNewDoc();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        handlePrint();
+        return;
+      }
+    };
 
-  // コマンドライン引数（二重起動時およびエクスプローラー「送る」）からのファイルオープンイベント待機
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isZenMode, handleSaveCurrentDoc, handleOpenLocalFile, handleNewDoc, handlePrint, toggleZenMode, setIsZenMode, setIsShortcutsModalOpen]);
+
+  // 起動時のファイルオープンイベントリスナー
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     const setupListener = async () => {
       try {
-        const { listen } = await import('@tauri-apps/api/event');
-        unlisten = await listen<string>('open-file-from-cli', async (event) => {
-          const targetPath = event.payload;
-          if (!targetPath) return;
-
-          const res = await openNativeFileFromPath(targetPath);
-          if (res) {
-            handleAddOpenedDoc(res.doc);
-            logger.info(
-              `[CLI/送るファイルオープン] 外部からファイルを開きました: "${res.doc.title}"`,
-              `パス: ${res.doc.filePath}`
-            );
+        unlisten = await listen<string>('open-file', async (event) => {
+          const filePath = event.payload;
+          if (!filePath) return;
+          const openResult = await openNativeFileFromPath(filePath);
+          if (openResult && openResult.doc) {
+            handleAddOpenedDoc(openResult.doc);
+            try {
+              const win = getCurrentWebviewWindow();
+              await win.unminimize();
+              await win.setFocus();
+            } catch (e) {
+              console.log('Window focus error:', e);
+            }
           }
         });
       } catch (e) {
-        console.log('Tauri event listen not available:', e);
+        console.log('Tauri listen error:', e);
       }
     };
 
@@ -979,92 +401,77 @@ export default function App() {
     };
   }, [handleAddOpenedDoc]);
 
-  // グローバルキーボードショートカットのリスナー
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // F1 キーでショートカットヘルプを表示
-      if (e.key === 'F1') {
-        e.preventDefault();
-        setIsShortcutsModalOpen((prev) => !prev);
-        return;
+  // スクロール連動
+  const handleScrollSync = useCallback((percentage: number) => {
+    if (previewScrollRef.current) {
+      const el = previewScrollRef.current;
+      const maxScroll = el.scrollHeight - el.clientHeight;
+      el.scrollTop = maxScroll * percentage;
+    }
+  }, []);
+
+  // 画像/ファイルのドロップ処理
+  const handleDroppedFile = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        if (dataUrl) {
+          handleFormat('image', dataUrl);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // ツールバー各種フォーマット挿入
+  const handleFormat = (type: string, value?: string) => {
+    const textarea = editorTextareaRef.current;
+    const { newText, newCursorStart, newCursorEnd } = insertFormatting(
+      currentDoc.content,
+      textarea?.selectionStart || 0,
+      textarea?.selectionEnd || 0,
+      type,
+      value
+    );
+
+    updateDocContent(newText);
+
+    setTimeout(() => {
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(newCursorStart, newCursorEnd);
       }
+    }, 0);
+  };
 
-      // EscキーでZenモードを解除
-      if (e.key === 'Escape' && isZenMode) {
-        e.preventDefault();
-        setIsZenMode(false);
-        return;
-      }
+  // 日付挿入
+  const handleInsertDate = () => {
+    const dateStr = new Date().toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'short',
+    });
+    handleFormat('text', dateStr);
+  };
 
-      const isMod = e.ctrlKey || e.metaKey;
-
-      if (isMod) {
-        // Ctrl/Cmd + Shift + Z : Zen集中執筆モード切り替え
-        if (e.key.toLowerCase() === 'z' && e.shiftKey) {
-          e.preventDefault();
-          setIsZenMode((prev) => !prev);
-        }
-        // Ctrl/Cmd + N : 新規ドキュメント
-        else if (e.key.toLowerCase() === 'n') {
-          e.preventDefault();
-          handleNewDoc();
-        }
-        // Ctrl/Cmd + W : 現在のタブを閉じる
-        else if (e.key.toLowerCase() === 'w') {
-          e.preventDefault();
-          handleCloseTab(activeDocId);
-        }
-        // Ctrl/Cmd + O : ファイルを開く
-        else if (e.key.toLowerCase() === 'o') {
-          e.preventDefault();
-          handleOpenLocalFile();
-        }
-        // Ctrl/Cmd + S : 手動直上書き保存
-        else if (e.key.toLowerCase() === 's' && !e.shiftKey) {
-          e.preventDefault();
-          handleSaveCurrentDoc({ forceSaveAs: false });
-        }
-        // Ctrl/Cmd + Shift + S : 名前を付けて保存
-        else if (e.key.toLowerCase() === 's' && e.shiftKey) {
-          e.preventDefault();
-          handleSaveCurrentDoc({ forceSaveAs: true });
-        }
-        // Ctrl/Cmd + Shift + D : 差分比較モーダルを開く
-        else if (e.key.toLowerCase() === 'd' && e.shiftKey) {
-          e.preventDefault();
-          setIsDiffModalOpen(true);
-        }
-        // Ctrl/Cmd + Shift + L : 動作ログ表示モーダルを開く
-        else if (e.key.toLowerCase() === 'l' && e.shiftKey) {
-          e.preventDefault();
-          setIsLogModalOpen((prev) => !prev);
-        }
-        // Ctrl/Cmd + P : 印刷 / PDF
-        else if (e.key.toLowerCase() === 'p') {
-          e.preventDefault();
-          handlePrint();
-        }
-
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [docs, activeDocId, openTabIds, isZenMode, handleNewDoc, handleOpenLocalFile, handleExportMarkdown]);
+  // テーブル挿入
+  const handleInsertTable = (markdownTable: string) => {
+    handleFormat('text', `\n${markdownTable}\n`);
+    setIsTableModalOpen(false);
+  };
 
   return (
-    <div
-      className={`flex flex-col h-screen w-screen overflow-hidden font-sans transition-colors ${
-        isDark ? 'dark bg-slate-950 text-slate-100' : 'light bg-slate-50 text-slate-900'
-      }`}
-      style={{ colorScheme: isDark ? 'dark' : 'light' }}
-    >
-      {/* ローカル/ネットワークファイルを開くための非表示ファイル入力 */}
+    <div className={`h-screen w-screen flex flex-col overflow-hidden font-sans ${
+      isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
+    }`}>
+      {/* 非表示のファイル選択インプット */}
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileSelected}
-        accept=".md,.markdown,.txt,.text,text/plain"
+        accept=".md,.txt,.markdown"
         className="hidden"
       />
 
@@ -1104,7 +511,7 @@ export default function App() {
           onOpenBatchConvert={() => setIsBatchConvertModalOpen(true)}
           onOpenLogModal={() => setIsLogModalOpen(true)}
           isZenMode={isZenMode}
-          onToggleZenMode={() => setIsZenMode(!isZenMode)}
+          onToggleZenMode={toggleZenMode}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           viewMode={viewMode}
@@ -1130,6 +537,8 @@ export default function App() {
             onToggleFavorite={handleToggleFavorite}
             onOpenTemplates={() => setIsTemplateModalOpen(true)}
             isDark={isDark}
+            width={sidebarWidth}
+            onWidthChange={handleSidebarWidthChange}
           />
         )}
 
@@ -1233,6 +642,7 @@ export default function App() {
           settings={settings}
           onUpdateSettings={handleUpdateSettings}
           saveStatus={saveStatus}
+          updatedAt={currentDoc.updatedAt}
           encoding={currentDoc.encoding || 'UTF-8'}
           onChangeEncoding={handleChangeEncoding}
           isDark={isDark}
@@ -1250,7 +660,6 @@ export default function App() {
         isOpen={isTemplateModalOpen}
         onClose={() => setIsTemplateModalOpen(false)}
         onSelectTemplate={handleSelectTemplate}
-        currentDoc={currentDoc}
         isDark={isDark}
       />
 
@@ -1259,7 +668,10 @@ export default function App() {
         onClose={() => setIsSettingsModalOpen(false)}
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
-        onResetData={handleResetData}
+        onResetData={() => {
+          localStorage.clear();
+          window.location.reload();
+        }}
         isDark={isDark}
       />
 
@@ -1285,7 +697,7 @@ export default function App() {
         isOpen={isDiffModalOpen}
         onClose={() => setIsDiffModalOpen(false)}
         activeDoc={currentDoc}
-        previousDoc={docs.find((d) => d.id === previousDocId)}
+        previousDoc={previousDoc}
         allDocs={docs}
         openTabIds={openTabIds}
         isDark={isDark}
@@ -1302,18 +714,6 @@ export default function App() {
         onClose={() => setIsLogModalOpen(false)}
         isDark={isDark}
       />
-
-      {/* PDF生成中ローディング表示 */}
-      {isExportingPdf && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-xs select-none">
-          <div className="bg-slate-900 border border-slate-700 text-slate-100 p-6 rounded-xl shadow-2xl flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-3 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-semibold">PDFファイルを直接生成中...</p>
-            <p className="text-xs text-slate-400">ダイアログなしでそのままブラウザにダウンロードされます</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
-

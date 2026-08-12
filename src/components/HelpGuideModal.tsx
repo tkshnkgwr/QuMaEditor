@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, BookOpen, Edit3, ZoomIn, FolderOpen, Tag, Database, HardDrive, Lock, RefreshCw, FileText } from 'lucide-react';
+import { X, BookOpen, Edit3, ZoomIn, FolderOpen, Tag, Database, HardDrive, Lock, RefreshCw, FileText, Sparkles } from 'lucide-react';
 
 interface HelpGuideModalProps {
   isOpen: boolean;
@@ -51,6 +51,39 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose,
 
         {/* モーダルコンテンツ */}
         <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
+          {/* アプリの概要・特徴 */}
+          <div className={`p-3.5 rounded-xl border ${
+            isDark ? 'bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/40 border-cyan-500/30' : 'bg-gradient-to-r from-cyan-50 via-white to-amber-50 border-cyan-200 shadow-xs'
+          }`}>
+            <div className={`font-bold text-xs flex items-center gap-1.5 mb-1.5 ${
+              isDark ? 'text-cyan-300' : 'text-cyan-800'
+            }`}>
+              <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+              QuMaEditor（キュマエディタ）とは？
+            </div>
+            <p className={`text-[11px] leading-relaxed mb-2.5 ${
+              isDark ? 'text-slate-300' : 'text-slate-700'
+            }`}>
+              このアプリは<strong>リアルタイムにプレビューを見ながら快適に執筆・編集できるMarkdownエディタ</strong>です。
+            </p>
+            <div className={`grid grid-cols-2 gap-1.5 text-[10px] ${
+              isDark ? 'text-slate-400' : 'text-slate-600'
+            }`}>
+              <div className="flex items-center gap-1">
+                <span className="text-cyan-400 font-bold">✓</span> リアルタイム分割＆同期スクロール
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-emerald-400 font-bold">✓</span> 自動保護保存 (LocalStorage)
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-amber-400 font-bold">✓</span> Zen集中執筆モード対応
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-purple-400 font-bold">✓</span> 超高速インデックス全文検索
+              </div>
+            </div>
+          </div>
+
           {/* 基本操作ガイドステップ */}
           <div>
             <h3
@@ -144,9 +177,9 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose,
               <p className={`text-[11px] pl-5 leading-relaxed ${
                 isDark ? 'text-slate-400' : 'text-slate-600'
               }`}>
-                ブラウザ（このアプリ）が提供する「アプリ内部の永続記憶領域」です。
-                PCを再起動してもデータが消えず、インターネットなしにローカルに完結した状態で保存されます。
-                QuMaEditor はキー入力のたびに自動でここに書き込むため、<strong>電源断やクラッシュでもデータが安全</strong>です。
+                本アプリ（QuMaEditor）が内部に保持する「安全な自動保存領域」です。
+                PCを再起動してもデータが消えず、外部通信なしでローカルに完結した状態で保護されます。
+                QuMaEditor はキー入力のたびに自動でここに書き込むため、<strong>突然の電源断やアプリ終了でもデータが安全</strong>です。
               </p>
             </div>
 

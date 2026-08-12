@@ -22,11 +22,14 @@ export function insertFormatting(
     | 'image'
     | 'table'
     | 'hr'
+    | 'text'
+    | string,
+  value?: string
 ): { newText: string; newCursorStart: number; newCursorEnd: number } {
   const selectedText = text.slice(selectionStart, selectionEnd);
   let prefix = '';
   let suffix = '';
-  let replacement = '';
+  let replacement = value || '';
   let cursorOffsetStart = 0;
   let cursorOffsetEnd = 0;
 

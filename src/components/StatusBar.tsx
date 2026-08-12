@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextStats, EditorSettings, SupportedEncoding, SaveStatus } from '../types';
-import { ZoomIn, ZoomOut, HardDrive, FileText } from 'lucide-react';
+import { ZoomIn, ZoomOut, HardDrive, FileText, Clock } from 'lucide-react';
 
 interface StatusBarProps {
   stats: TextStats;
@@ -10,6 +10,7 @@ interface StatusBarProps {
   onUpdateSettings: (newSettings: Partial<EditorSettings>) => void;
   // UPDATE 2026-08-04: saveStatus の型を SaveStatus に統一
   saveStatus: SaveStatus;
+  updatedAt?: string;
   encoding?: SupportedEncoding;
   onChangeEncoding?: (encoding: SupportedEncoding) => void;
   isDark?: boolean;
@@ -22,6 +23,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   settings,
   onUpdateSettings,
   saveStatus,
+  updatedAt,
   encoding = 'UTF-8',
   onChangeEncoding,
   isDark = true,
@@ -34,11 +36,28 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   // 文字コードごとのデフォルト改行コード
   const newlineType = encoding === 'Shift_JIS' ? 'CRLF' : 'LF';
 
+  const formatUpdatedAt = (isoString?: string) => {
+    if (!isoString) return null;
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleString('ja-JP', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  const formattedTime = formatUpdatedAt(updatedAt);
+
   return (
     <footer className={`h-7 border-t px-3 text-[11px] select-none flex items-center justify-between shrink-0 z-20 font-sans transition-colors print:hidden ${
       isDark ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
     }`}>
-      {/* 左側情報: 行/列およびドキュメント統計 */}
+      {/* 左側情報: 行/列およびドキュメント統計・更新日時 */}
       <div className="flex items-center gap-3">
         <span className={`flex items-center gap-1 font-mono ${isDark ? 'text-slate-300' : 'text-slate-800'}`}>
           行 {cursorLine}, 列 {cursorCol}
@@ -50,6 +69,18 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </span>
         <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'} hidden md:inline`}>|</span>
         <span className="hidden md:inline">読了目安: 約 {stats.readingTimeMinutes} 分</span>
+        {formattedTime && (
+          <>
+            <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'} hidden lg:inline`}>|</span>
+            <span
+              className="hidden lg:flex items-center gap-1 font-mono text-[10px]"
+              title="更新日時"
+            >
+              <Clock className="w-3 h-3 text-slate-400" />
+              <span>更新: {formattedTime}</span>
+            </span>
+          </>
+        )}
       </div>
 
       {/* 右側情報: 文字コード・改行コード・保存・ズーム */}
