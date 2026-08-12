@@ -19,6 +19,10 @@ The Markdown Editor features an intuitive Windows dark-themed desktop layout:
 
 ### Opening Files
 - Click **File > Open (Ctrl+O)** or use the Sidebar file importer. Local `.md` or `.txt` files will automatically have their character encodings detected to prevent garbled text.
+- **Drag & Drop Support**:
+  - Drag and drop `.md` or `.txt` files directly from Windows File Explorer onto the editor workspace to open them as new tabs.
+  - Drop image files (`.png`, `.jpg`, `.gif`, `.svg`, etc.) to automatically embed them at the cursor position as Markdown image tags.
+  - Supports dragging and dropping multiple files simultaneously.
 
 ### Saving / Exporting Files
 - Select your target encoding (`UTF-8`, `Shift_JIS`, or `EUC-JP`) from the status bar dropdown menu.

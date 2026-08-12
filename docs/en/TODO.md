@@ -65,7 +65,7 @@ The following table tracks proposed features and enhancements for future QuMaEdi
 | :--- | :--- | :--- | :--- | :--- |
 | 1 | `StatsModal / Editor` | **Document Statistics Dashboard Modal** — Dedicated modal rendering real-time character count, word count, line count, estimated reading time, heading count, and link counts | Medium | 🔲 Proposed |
 | 2 | `Sidebar / Navigation`| **Heading Outline (Table of Contents) Navigation Tree** — Auto-extract `# H1` ~ `### H3` headings from active document for instant smart jumping | Medium | 🔲 Proposed |
-| 3 | `Editor / DragDrop` | **Drag & Drop Local File Opening** — Direct drag & drop support for external `.md` / `.txt` files onto the editor canvas to open as new tabs | Medium | 🔲 Proposed |
+| 3 | `Editor / DragDrop` | **Drag & Drop Local File Opening** — Direct drag & drop support for external `.md` / `.txt` files onto the editor canvas to open as new tabs | Medium | ✅ Done |
 | 4 | `ZenMode / Editor` | **Zen Mode Audio Mute Feature** — Automatically mute all system and application sound notifications when entering Zen mode | Medium | 🔲 Proposed |
 | 5 | `ZenMode / Editor` | **Zen Mode Notification Silencer** — Completely disable all in-app toasts and non-essential popups during Zen writing sessions | Medium | 🔲 Proposed |
 | 6 | `ZenMode / Editor` | **Current Line Focus Mode** — Dim all text lines except the currently active cursor line for maximum concentration | Medium | 🔲 Proposed |

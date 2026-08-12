@@ -9,7 +9,8 @@ interface EditorProps {
   settings: EditorSettings;
   onCursorChange: (line: number, col: number) => void;
   onScrollSync?: (scrollTop: number, scrollHeight: number, clientHeight: number) => void;
-  onImageDrop: (file: File) => void;
+  onImageDrop?: (file: File) => void;
+  onDropFiles?: (files: File[]) => void;
   doc?: MarkdownDoc;
   onUpdateTags?: (newTags: string[]) => void;
   /** textareaRef を親コンポーネントへ公開するコールバック (フォーマット時の選択範囲取得に使用) */
@@ -24,6 +25,7 @@ export const Editor: React.FC<EditorProps> = ({
   onCursorChange,
   onScrollSync,
   onImageDrop,
+  onDropFiles,
   doc,
   onUpdateTags,
   onTextareaRef,
@@ -154,9 +156,14 @@ export const Editor: React.FC<EditorProps> = ({
 
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type.startsWith('image/')) {
-        onImageDrop(file);
+      const fileList = Array.from(files);
+      if (onDropFiles) {
+        onDropFiles(fileList);
+      } else if (onImageDrop) {
+        const firstImage = fileList.find((f) => f.type.startsWith('image/'));
+        if (firstImage) {
+          onImageDrop(firstImage);
+        }
       }
     }
   };
@@ -176,8 +183,8 @@ export const Editor: React.FC<EditorProps> = ({
           <div className="p-4 bg-cyan-900/60 rounded-full mb-3 shadow-lg animate-bounce">
             <Upload className="w-10 h-10 text-cyan-300" />
           </div>
-          <p className="text-lg font-semibold tracking-wide">画像をここにドロップして挿入</p>
-          <p className="text-xs text-cyan-400 mt-1">Markdown形式 `![alt](data:...)` で自動配置されます</p>
+          <p className="text-lg font-semibold tracking-wide">ファイルや画像をここにドロップ</p>
+          <p className="text-xs text-cyan-400 mt-1">📄 テキストファイル：新しいタブで開きます ／ 🖼️ 画像ファイル：カーソル位置に挿入されます</p>
         </div>
       )}
 

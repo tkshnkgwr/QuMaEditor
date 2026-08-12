@@ -130,10 +130,10 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose,
               >
                 <div className={`font-medium flex items-center gap-1.5 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-900 font-semibold'}`}>
                   <FolderOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  3. 保存とエクスプローラーでのフォルダオープン
+                  3. 保存とエクスプローラーからのドラッグ＆ドロップ
                 </div>
                 <p className={`text-[11px] pl-5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  入力内容は 3 秒ごとに LocalStorage に自動保護保存されます。<kbd className="px-1 py-0.2 rounded bg-slate-800 font-mono text-[10px] text-amber-300">Ctrl + S</kbd> で PC 上の実ファイルへ上書き保存でき、保存後は最上部の <span className="text-emerald-400 font-medium font-mono">📁 フォルダを開く</span> ボタンから保存先フォルダを直接開けます。
+                  入力内容は 3 秒ごとに LocalStorage に自動保護保存されます。<kbd className="px-1 py-0.2 rounded bg-slate-800 font-mono text-[10px] text-amber-300">Ctrl + S</kbd> で PC 上の実ファイルへ上書き保存でき、保存後は最上部の <span className="text-emerald-400 font-medium font-mono">📁 フォルダを開く</span> ボタンから保存先フォルダを直接開けます。また、エクスプローラーから <span className="text-cyan-300 font-semibold">.md / .txt ファイル</span> をドロップすると新規タブで開き、<span className="text-cyan-300 font-semibold">画像ファイル</span>をドロップすると自動で挿入されます。
                 </p>
               </div>
 

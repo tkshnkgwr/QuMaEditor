@@ -2,6 +2,22 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.3.0] - 2026-08-12
+
+### 🚀 Drag & Drop File Opening & UI/UX Refresh (v1.3.0)
+
+- **Drag & Drop Local File Opening Support**:
+  - Drag and drop `.md` or `.txt` files directly from Windows File Explorer to open as new tabs with disk file path bindings for direct saving.
+  - Automatic classification for image files (`.png`, `.jpg`, etc.) to convert and embed as Data URL Markdown image tags at current cursor position.
+  - Multi-file drop handling and updated visual drop overlay UI with clear action guidance.
+- **App.tsx Modular Refactoring**:
+  - Split `App.tsx` (~1,200 lines) into custom hooks (`useModalState`, `useDocumentManager`, `useFileOperations`), slimming down `App.tsx` by ~46% for superior maintainability and type safety.
+- **Top Bar & Status Bar UI Refresh**:
+  - Cleaned up top title bar badges and expanded central drag region (`data-tauri-drag-region`).
+  - Moved save status indicator (`saveStatus`) and "Open Folder" button next to view mode toggles.
+
+---
+
 ## [1.2.3] - 2026-08-07
 
 ### 🐛 Bug Fixes & Infrastructure Pipeline (v1.2.3)

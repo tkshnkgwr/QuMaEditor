@@ -410,18 +410,67 @@ export default function App() {
     }
   }, []);
 
-  // 画像/ファイルのドロップ処理
-  const handleDroppedFile = (file: File) => {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        if (dataUrl) {
-          handleFormat('image', dataUrl);
+  // 画像/ファイルのドロップ処理（複数ファイル・画像/テキスト自動判別対応）
+  const handleDroppedFiles = async (files: File[]) => {
+    if (!files || files.length === 0) return;
+
+    for (const file of files) {
+      const isImage =
+        file.type.startsWith('image/') ||
+        /\.(png|jpe?g|gif|webp|svg|bmp|ico|avif)$/i.test(file.name);
+
+      if (isImage) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          if (dataUrl) {
+            handleFormat('image', dataUrl);
+          }
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // テキスト/ローカルドキュメントの場合: まずネイティブパスで試行
+        const nativePath = (file as any).path || (file as any).webkitRelativePath;
+        if (nativePath && typeof nativePath === 'string' && nativePath.length > 0) {
+          const openResult = await openNativeFileFromPath(nativePath);
+          if (openResult && openResult.doc) {
+            handleAddOpenedDoc(openResult.doc);
+            continue;
+          }
         }
-      };
-      reader.readAsDataURL(file);
+
+        // ネイティブパスが取れない場合のフォールバック（直接ファイル読み取り）
+        try {
+          const text = await file.text();
+          const { body, metadata } = parseYamlFrontMatter(text);
+          const fileNameWithExt = file.name || '無題のドキュメント';
+          const defaultTitle = fileNameWithExt.replace(/\.[^/.]+$/, '') || fileNameWithExt;
+
+          const doc: MarkdownDoc = {
+            id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            title: metadata.title || defaultTitle,
+            author: metadata.author || settings.defaultAuthor || 'Unknown',
+            updatedBy: metadata.updatedBy || metadata.author || settings.defaultAuthor || 'Unknown',
+            content: body,
+            encoding: (metadata.encoding as SupportedEncoding) || 'UTF-8',
+            createdAt: metadata.created || new Date().toISOString(),
+            updatedAt: metadata.updated || new Date().toISOString(),
+            tags: metadata.tags || [],
+            filePath: undefined,
+            isFavorite: false,
+            isRemote: false,
+          };
+
+          handleAddOpenedDoc(doc);
+        } catch (err) {
+          logger.error(`[ドロップファイル読み込み失敗] ${file.name}: ${err}`);
+        }
+      }
     }
+  };
+
+  const handleDroppedFile = (file: File) => {
+    handleDroppedFiles([file]);
   };
 
   // ツールバー各種フォーマット挿入
@@ -608,6 +657,7 @@ export default function App() {
                   }}
                   onScrollSync={handleScrollSync}
                   onImageDrop={handleDroppedFile}
+                  onDropFiles={handleDroppedFiles}
                   doc={currentDoc}
                   onUpdateTags={handleUpdateTags}
                   onTextareaRef={(el) => { editorTextareaRef.current = el; }}

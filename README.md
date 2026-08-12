@@ -2,7 +2,7 @@
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.2.3-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.3.0-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v18-61dafb?logo=react)](https://react.dev/)
@@ -24,6 +24,7 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 
 ### 🎨 Modern UI & Color Themes
 - **High-Contrast Themes**: Dynamic light/dark mode adaptation across all panels, modals, syntax highlighting, and scrollbars.
+- **Drag & Drop File Opening**: Drag `.md` or `.txt` files directly from Windows File Explorer onto the workspace to open them as new tabs, or drop image files (`.png`, `.jpg`, etc.) to embed as Data URL Markdown image tags.
 - **Ctrl + Scroll Wheel Preview Zoom**: Zoom preview rendering between 50% ~ 300% via `Ctrl + Scroll Wheel` with a one-click reset badge.
 - **Selection-Aware & Line-Heading Toolbar**: Wrap highlighted text selections for bold/italic and insert `# ` heading markers at the beginning of the cursor line.
 - **Prism Code Highlighting**: Clean `prism` syntax highlighting style for multi-line code blocks in light mode.
