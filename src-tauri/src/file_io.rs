@@ -94,25 +94,36 @@ pub fn write_file_bytes_native(file_path: String, bytes: Vec<u8>) -> Result<bool
     Ok(true)
 }
 
-/// 指定ファイルの親フォルダをエクスプローラーで開く (Windows)
+/// 指定ファイルが存在する場合は選択ハイライト表示で親フォルダをエクスプローラーで開く (Windows)
 pub fn open_folder_native(file_path: String) -> Result<bool, String> {
     #[cfg(target_os = "windows")]
     {
-        use std::process::Command;
-        let clean_path = file_path.trim_matches('"').to_string();
-        let folder_path = Path::new(&clean_path)
-            .parent()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or(clean_path.clone());
-
         #[cfg(target_os = "windows")]
         use std::os::windows::process::CommandExt;
+        use std::process::Command;
 
-        let _ = Command::new("explorer.exe")
-            .creation_flags(0x08000000)
-            .arg(&folder_path)
-            .spawn()
-            .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
+        let clean_path = file_path.trim_matches('"').to_string();
+        let path_obj = Path::new(&clean_path);
+
+        if path_obj.exists() && path_obj.is_file() {
+            let select_arg = format!("/select,{}", clean_path);
+            let _ = Command::new("explorer.exe")
+                .creation_flags(0x08000000)
+                .arg(&select_arg)
+                .spawn()
+                .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
+        } else {
+            let folder_path = path_obj
+                .parent()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or(clean_path.clone());
+
+            let _ = Command::new("explorer.exe")
+                .creation_flags(0x08000000)
+                .arg(&folder_path)
+                .spawn()
+                .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
+        }
         Ok(true)
     }
     #[cfg(not(target_os = "windows"))]

@@ -2,6 +2,15 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.3.3] - 2026-08-12
+
+### ✨ Explorer Target File Selection Focus Support (v1.3.3)
+
+- **Explorer File Highlight Selection**:
+  - Enhanced native `open_folder_native` Rust command to invoke `explorer.exe /select, "<path>"` when opening local disk file directories, automatically highlighting/selecting the target file in Windows Explorer.
+
+---
+
 ## [1.3.2] - 2026-08-12
 
 ### 🐛 Editor Area & Window-Wide Drag & Drop Fix (v1.3.2)

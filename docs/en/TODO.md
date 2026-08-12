@@ -6,8 +6,8 @@ Tracked tasks and completed features for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
-### v1.3.2 Release (2026-08-12)
-- [x] **Editor Area & Window-Wide Drag & Drop Fix**: Integrated `getCurrentWebviewWindow().onDragDropEvent` to resolve WebView2 drop event suppression and guaranteed 100% reliable file opening/embedding across the entire window.
+### v1.3.3 Release (2026-08-12)
+- [x] **Explorer Target File Selection Focus**: Enhanced `open_folder_native` with `explorer.exe /select,` to open Windows Explorer with the active file highlighted and selected.
 - [x] **Ctrl + Scroll Wheel Preview Zoom**: Added interactive preview zooming (50%~300%) with reset badge in `Preview.tsx`.
 - [x] **Selection-Aware Toolbar Formatting**: Updated Bold, Italic, Underline, and Strikethrough buttons to wrap text selections or insert at cursor with focus restoration.
 - [x] **Cursor-Line Heading Insertion**: Modified H1/H2/H3 buttons to insert/replace `# ` markers at the start of the current line instead of appending at EOF.

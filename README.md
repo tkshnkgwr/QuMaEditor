@@ -2,7 +2,7 @@
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.3.2-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.3.3-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v18-61dafb?logo=react)](https://react.dev/)
@@ -20,7 +20,7 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 - **Inverted Index Full-Text Search**: Fast word-based inverted index search using Rust `LazyLock<Mutex<Vec<DocSearchInput>>>`.
 - **Parallel Multi-Threaded Encoding**: Multi-file batch encoding conversion (`rayon`) to UTF-8 and Shift_JIS.
 - **Native Text Diff**: Ultra-fast line-by-line diff calculation powered by the Rust `similar` crate.
-- **Native Explorer Opening**: Open active file parent directories directly in Windows Explorer via `open_folder_native`.
+- **Native Explorer Opening with File Selection**: Open active file parent directories directly in Windows Explorer via `open_folder_native`, automatically highlighting/selecting the target file.
 
 ### 🎨 Modern UI & Color Themes
 - **High-Contrast Themes**: Dynamic light/dark mode adaptation across all panels, modals, syntax highlighting, and scrollbars.
