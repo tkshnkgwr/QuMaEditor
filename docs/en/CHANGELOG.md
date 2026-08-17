@@ -2,6 +2,28 @@
 
 All notable changes to QuMaEditor will be documented in this file.
 
+## [1.4.0] - 2026-08-17
+
+### 🚀 Rust Native CSV Acceleration, Large File Chunked Loading & Mermaid Preview (v1.4.0)
+
+- **Mermaid Diagram Real-Time Preview with Zoom & Fullscreen Modal (`MermaidRenderer`)**:
+  - Implemented dynamic SVG diagram rendering for ````mermaid ... ```` code blocks in the preview pane.
+  - Features 300% default readable zoom, interactive zoom controls (50% ~ 600%), fullscreen expand modal, dark/light theme synchronization, and code copying.
+- **Large File (47,000+ Lines) On-Demand Chunked Lazy Loading**:
+  - Implemented instant 0.01s initial opening for 500KB+/CSV files by loading only the initial 1,500 lines (150KB) instead of the entire file.
+  - Added an interactive bottom bar with "さらに読み込む (Load More)" and "全文を一括読み込み (Load Full File)" actions, with automatic full loading when enabling edit mode.
+- **Rust Native CSV Ultra-Fast Preview (`parse_csv_preview_native`)**:
+  - Eliminated UI thread blocking by replacing synchronous JS `split('\n')` parsing with zero-copy Rust native line counting and quoted cell extraction.
+  - Automatically hid reading time and word count when opening CSV files.
+- **External File Modification Detection & Auto-Reload**:
+  - Ultra-lightweight file change detection based on OS file `mtime`. Automatically reloads documents on window focus or background polling with a non-intrusive toast notification.
+- **Comprehensive Rust Native Migrations**:
+  - Text statistics calculation (`calculate_text_stats_native`), YAML Front Matter parsing (`parse_yaml_front_matter_native`), heading outline extraction (`extract_headings_native`), task status toggling (`toggle_task_native`), and full HTML export (`export_html_full_native`).
+- **Complete Architecture Documentation with Mermaid**:
+  - Upgraded architecture diagrams, data flows, state diagrams, and IPC sequences to Mermaid across all technical documentation.
+
+---
+
 ## [1.3.3] - 2026-08-12
 
 ### ✨ Explorer Target File Selection Focus Support (v1.3.3)

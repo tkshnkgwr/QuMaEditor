@@ -5,7 +5,7 @@ Feature specifications and architecture overview for QuMaEditor.
 ---
 
 ## 1. Overview
-QuMaEditor is an ultra-fast, lightweight desktop Markdown editor built with Tauri v2 + Rust backend and React + TypeScript frontend. (Current Version: v1.3.3)
+QuMaEditor is an ultra-fast, lightweight desktop Markdown editor built with Tauri v2 + Rust backend and React + TypeScript frontend. (Current Version: v1.4.0)
 
 ---
 
