@@ -16,6 +16,7 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 ## ✨ Highlights & Key Features
 
 ### ⚡ Rust Native Acceleration
+
 - **Chunked File Streaming**: Effortlessly loads 10MB+ large files in small chunks (`read_file_chunk_native`) without memory spikes.
 - **Inverted Index Full-Text Search**: Fast word-based inverted index search using Rust `LazyLock<Mutex<Vec<DocSearchInput>>>`.
 - **Parallel Multi-Threaded Encoding**: Multi-file batch encoding conversion (`rayon`) to UTF-8 and Shift_JIS.
@@ -23,6 +24,7 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 - **Native Explorer Opening with File Selection**: Open active file parent directories directly in Windows Explorer via `open_folder_native`, automatically highlighting/selecting the target file.
 
 ### 🎨 Modern UI & Color Themes
+
 - **High-Contrast Themes**: Dynamic light/dark mode adaptation across all panels, modals, syntax highlighting, and scrollbars.
 - **Drag & Drop File Opening**: Drag `.md` or `.txt` files directly from Windows File Explorer onto the workspace to open them as new tabs, or drop image files (`.png`, `.jpg`, etc.) to embed as Data URL Markdown image tags.
 - **Ctrl + Scroll Wheel Preview Zoom**: Zoom preview rendering between 50% ~ 300% via `Ctrl + Scroll Wheel` with a one-click reset badge.
@@ -30,16 +32,19 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 - **Prism Code Highlighting**: Clean `prism` syntax highlighting style for multi-line code blocks in light mode.
 
 ### 🔍 Advanced Search & Tag System
+
 - **Instant Keyword Highlighting**: Real-time query matching with amber badges (`<mark>`) in titles, body snippets, and search hits.
 - **YAML Tag Filtering**: Search and filter documents by tag names (`#guide`, `#sample`, etc.) fully integrated into JS filtering and Rust search engines.
 - **High-Contrast Search Titles**: High-visibility target document titles (`text-cyan-300` / `text-cyan-900`) in search result hits.
 
 ### 📄 Preview, Printing & Direct PDF
+
 - **Direct Instant PDF Export**: One-click instant `.pdf` file saving from preview rendering without opening the print dialog.
 - **A4 Full-Width Printing (`Ctrl + P`)**: Complete UI isolation (`print:hidden`) guaranteeing 100% page width printing of preview content.
 - **GFM Table Text Alignment**: Full support for left `:---`, center `:---:`, and right `---:` Markdown table alignment.
 
-### 💾 Native File Saving & Dual Protection Architecture (v1.2.2)
+### 💾 Native File Saving & Dual Protection Architecture
+
 - **Direct File Overwrite (`Ctrl + S`)**: Directly overwrites disk `.md` files via Rust native commands (`💾 Saved to file`).
 - **Crash Prevention (LocalStorage Safety)**: Automatically persists transient editing data into LocalStorage (`📦 Saved in-app (LocalStorage)`) to prevent data loss in case of unexpected OS shutdowns or crashes.
 - **Intuitive Status Badging**: TitleBar and StatusBar clearly distinguish between real disk saves (`💾 Saved to file`) and transient memory saves (`📦 Saved in-app`).
@@ -90,6 +95,7 @@ QuMaEditor is an ultra-lightweight, high-performance desktop Markdown editor bui
 ## 🚀 Quick Start & Local Setup
 
 ### Requirements
+
 - [Rust](https://www.rust-lang.org/) (v1.80+)
 - [Node.js](https://nodejs.org/) (v18+)
 - [npm](https://www.npmjs.com/) or [bun](https://bun.sh/)

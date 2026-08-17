@@ -18,6 +18,7 @@ The Markdown Editor features an intuitive Windows dark-themed desktop layout:
 ## 2. Managing Encodings & Line Endings
 
 ### Opening Files
+
 - Click **File > Open (Ctrl+O)** or use the Sidebar file importer. Local `.md` or `.txt` files will automatically have their character encodings detected to prevent garbled text.
 - **Drag & Drop Support**:
   - Drag and drop `.md` or `.txt` files directly from Windows File Explorer onto the editor workspace to open them as new tabs.
@@ -25,6 +26,7 @@ The Markdown Editor features an intuitive Windows dark-themed desktop layout:
   - Supports dragging and dropping multiple files simultaneously.
 
 ### Saving / Exporting Files
+
 - Select your target encoding (`UTF-8`, `Shift_JIS`, or `EUC-JP`) from the status bar dropdown menu.
 - **Shift_JIS**: Converts line endings to **CRLF** (`\r\n`).
 - **EUC-JP / UTF-8**: Converts line endings to **LF** (`\n`).
@@ -33,11 +35,13 @@ The Markdown Editor features an intuitive Windows dark-themed desktop layout:
 ## 3. Yama YAML Front Matter & Tag Operations
 
 ### Metadata Protection Panel
+
 - The editor features a **"YAML Front Matter (Protected)"** header block.
 - Fields such as `title`, `created`, `updated`, and `encoding` are **protected from direct text editing** to prevent accidental deletion or syntax corruption.
 - Click the header arrow to collapse or expand the Front Matter block.
 
 ### Managing Tags
+
 - Only the **tags** field inside the Front Matter panel can be updated interactively.
 - **Add Tag**: Click "+ Add Tag", type the tag name, and press Enter or the "Add" button.
 - **Remove Tag**: Click the `x` button on any active tag badge to delete it.
@@ -46,6 +50,7 @@ The Markdown Editor features an intuitive Windows dark-themed desktop layout:
 ## 4. Keyboard Shortcuts Help
 
 ### Opening the Shortcuts Modal
+
 - Access via **Help > Keyboard Shortcuts** in the top title bar menu, or press <kbd>F1</kbd> on your keyboard.
 - Review all available hotkeys categorized into File Operations, Formatting, and View Toggles.
 - Dismiss the modal anytime by pressing <kbd>Esc</kbd> or clicking "Close".

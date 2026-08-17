@@ -7,6 +7,7 @@ This document provides extended development and operational guidelines for the A
 ---
 
 ## 1. Automated Semantic Versioning Rule
+
 - Based on the scope of future modifications, the AI agent ("Grand Sage") will autonomously increment and manage version numbers:
   - **PATCH (`1.0.x`)**: Bug fixes, minor UI tweaks, CSS style adjustments.
   - **MINOR (`1.x.0`)**: New feature additions, new native Rust capabilities, UI enhancements.
@@ -16,6 +17,7 @@ This document provides extended development and operational guidelines for the A
 ---
 
 ## 2. Quality Control & Verification Procedure
+
 - **Code Quality Check**:
   - `npm run lint`: Confirm zero TypeScript type errors.
   - `cargo check --manifest-path src-tauri/Cargo.toml`: Confirm Rust backend validity.
@@ -24,6 +26,7 @@ This document provides extended development and operational guidelines for the A
 ---
 
 ## 3. Automated Documentation Syncing Rules
+
 - Sync documents upon significant updates:
 
 | Document           | Role                | Sync Trigger                                   |

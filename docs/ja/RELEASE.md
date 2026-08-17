@@ -31,6 +31,7 @@
 SnippetFlow スタイルの GitHub Actions ワークフローが設定済みです。
 
 ### 3.1 CI ワークフロー (`.github/workflows/ci.yml`)
+
 - **トリガー**: `main` / `master` ブランチへの `push` および `pull_request`
 - **処理内容**:
   - TypeScript の型チェック (`npm run lint`)
@@ -38,6 +39,7 @@ SnippetFlow スタイルの GitHub Actions ワークフローが設定済みで�
   - Tauri バックエンドビルド検証 (`cargo check`)
 
 ### 3.2 リリリース自動化ワークフロー (`.github/workflows/release.yml`)
+
 - **トリガー**: `v*` タグのプッシュ（例: `git push origin v1.2.2`）または GitHub 上での手動トリガー (`workflow_dispatch`)
 - **処理内容**:
   - Windows デスクトップアプリバイナリ (`.msi` / `.exe` インストーラー) の全自動ビルド
