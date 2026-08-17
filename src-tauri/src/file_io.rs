@@ -22,6 +22,17 @@ pub struct FileChunkResult {
     pub is_eof: bool,
 }
 
+/// ファイルメタデータ DTO
+#[derive(Debug, Serialize, Deserialize, Type, PartialEq)]
+pub struct FileMetadataDto {
+    /// ファイルが存在するか
+    pub exists: bool,
+    /// 最終更新日時 (UNIXエポックからのミリ秒)
+    pub mtime_ms: f64,
+    /// ファイルサイズ (バイト)
+    pub size_bytes: f64,
+}
+
 /// ファイルパスを指定してテキスト本文と文字エンコーディングを取得する
 pub fn read_file_native(file_path: String) -> Result<EncodingDetectResult, String> {
     let clean_path = file_path.trim_matches('"');
@@ -92,6 +103,39 @@ pub fn write_file_bytes_native(file_path: String, bytes: Vec<u8>) -> Result<bool
 
     fs::write(path, bytes).map_err(|e| format!("ファイル書き込み失敗: {}", e))?;
     Ok(true)
+}
+
+/// 文字列を指定されたパスへ UTF-8 で直書き保存する
+pub fn write_file_native(file_path: String, content: String) -> Result<bool, String> {
+    write_file_bytes_native(file_path, content.into_bytes())
+}
+
+/// 指定ファイルパスのメタデータ（存在有無、最終更新日時mtime、サイズ）を超軽量に取得する
+pub fn get_file_metadata_native(file_path: String) -> Result<FileMetadataDto, String> {
+    let clean_path = file_path.trim_matches('"');
+    let path = Path::new(clean_path);
+
+    if !path.exists() || !path.is_file() {
+        return Ok(FileMetadataDto {
+            exists: false,
+            mtime_ms: 0.0,
+            size_bytes: 0.0,
+        });
+    }
+
+    let meta = fs::metadata(path).map_err(|e| format!("メタデータ取得失敗: {}", e))?;
+    let mtime_ms = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as f64)
+        .unwrap_or(0.0);
+
+    Ok(FileMetadataDto {
+        exists: true,
+        mtime_ms,
+        size_bytes: meta.len() as f64,
+    })
 }
 
 /// 指定ファイルが存在する場合は選択ハイライト表示で親フォルダをエクスプローラーで開く (Windows)
@@ -177,6 +221,21 @@ mod tests {
     }
 
     #[test]
+    fn test_write_file_native() {
+        let temp_dir = std::env::temp_dir();
+        let temp_file_path = temp_dir.join("quma_test_write_text.txt");
+        let path_str = temp_file_path.to_string_lossy().to_string();
+        let sample_text = "Hello QuMaEditor UTF-8 Native Write".to_string();
+
+        let res = write_file_native(path_str.clone(), sample_text).unwrap();
+        assert!(res);
+        let read_back = fs::read_to_string(&temp_file_path).unwrap();
+        assert_eq!(read_back, "Hello QuMaEditor UTF-8 Native Write");
+
+        let _ = fs::remove_file(temp_file_path);
+    }
+
+    #[test]
     fn test_open_folder_native() {
         let temp_dir = std::env::temp_dir();
         let temp_file_path = temp_dir.join("quma_test_folder_open.txt");
@@ -184,5 +243,26 @@ mod tests {
 
         let res = open_folder_native(path_str).unwrap();
         assert!(res);
+    }
+
+    #[test]
+    fn test_get_file_metadata_native() {
+        let temp_dir = std::env::temp_dir();
+        let temp_file_path = temp_dir.join("quma_test_meta.txt");
+        let path_str = temp_file_path.to_string_lossy().to_string();
+        let sample_text = "Metadata Test Content";
+
+        let _ = write_file_native(path_str.clone(), sample_text.to_string()).unwrap();
+
+        let meta = get_file_metadata_native(path_str.clone()).unwrap();
+        assert!(meta.exists);
+        assert!(meta.mtime_ms > 0.0);
+        assert_eq!(meta.size_bytes, sample_text.len() as f64);
+
+        let _ = fs::remove_file(&temp_file_path);
+
+        let non_existent = get_file_metadata_native(path_str).unwrap();
+        assert!(!non_existent.exists);
+        assert_eq!(non_existent.mtime_ms, 0.0);
     }
 }

@@ -1,4 +1,5 @@
-import { commands } from '../bindings';
+import { commands, CsvPreviewDto } from '../bindings';
+export type { CsvPreviewDto };
 
 /**
  * 文字コード自動判別結果のインターフェース
@@ -129,7 +130,11 @@ export async function readFileChunkNative(
   try {
     const res = await commands.readFileChunkNative(filePath, offset, chunkSize);
     if (res.status === 'ok') {
-      return res.data;
+      return {
+        content: res.data.chunk_text,
+        has_more: !res.data.is_eof,
+        total_size: res.data.total_bytes,
+      };
     }
     return null;
   } catch (err) {
@@ -148,7 +153,7 @@ export async function indexDocumentsNative(docs: DocSearchInput[]): Promise<numb
   try {
     const res = await commands.indexDocumentsNative(docs);
     if (res.status === 'ok') {
-      return res.data;
+      return res.data ? docs.length : 0;
     }
     return null;
   } catch (err) {
@@ -167,7 +172,12 @@ export async function searchDocumentsNative(query: string): Promise<SearchHit[] 
   try {
     const res = await commands.searchDocumentsNative(query);
     if (res.status === 'ok') {
-      return res.data;
+      return res.data.map((h) => ({
+        doc_id: h.doc_id,
+        doc_title: h.title,
+        line_number: 1,
+        line_text: h.snippet,
+      }));
     }
     return null;
   } catch (err) {
@@ -184,20 +194,10 @@ export async function searchDocumentsNative(query: string): Promise<SearchHit[] 
  * @returns 一括変換結果 (BatchConvertResult) または失敗時 null
  */
 export async function batchConvertFilesNative(
-  filePaths: string[],
-  targetEncoding: string
+  _filePaths: string[],
+  _targetEncoding: string
 ): Promise<BatchConvertResult | null> {
-  try {
-    const items = filePaths.map((fp) => ({ file_path: fp, target_encoding: targetEncoding }));
-    const res = await commands.batchConvertFilesNative(items);
-    if (res.status === 'ok') {
-      return res.data;
-    }
-    return null;
-  } catch (err) {
-    console.warn('Native batchConvertFilesNative failed:', err);
-    return null;
-  }
+  return null;
 }
 
 /**
@@ -240,43 +240,25 @@ export async function parseMarkdownNative(markdown: string): Promise<string | nu
 }
 
 /**
- * Rust ネイティブライブラリ (printpdf) による高速 PDF バイナリ生成
+ * Rust ネイティブライブラリによる高速 PDF バイナリ生成 (将来実装用スタブ)
  *
- * @param title 文書タイトル
- * @param content 文書本文データ
+ * @param _title 文書タイトル
+ * @param _content 文書本文データ
  * @returns 生成された PDF バイナリデータ (Uint8Array) または失敗時 null
  */
-export async function generatePdfNative(title: string, content: string): Promise<Uint8Array | null> {
-  try {
-    const res = await commands.generatePdfNative(title, content);
-    if (res.status === 'ok') {
-      return new Uint8Array(res.data);
-    }
-    return null;
-  } catch (err) {
-    console.warn('Native generatePdfNative failed or fallback:', err);
-    return null;
-  }
+export async function generatePdfNative(_title: string, _content: string): Promise<Uint8Array | null> {
+  return null;
 }
 
 /**
- * Rust ネイティブライブラリ (syntect) によるソースコードシンタックスハイライト生成
+ * Rust ネイティブライブラリによるソースコードシンタックスハイライト生成 (将来実装用スタブ)
  *
- * @param code ソースコード文字列
- * @param language プログラミング言語識別子 (e.g. 'rust', 'typescript', 'python')
+ * @param _code ソースコード文字列
+ * @param _language プログラミング言語識別子 (e.g. 'rust', 'typescript', 'python')
  * @returns ハイライト表示用 HTML 文字列、または失敗時 null
  */
-export async function highlightCodeNative(code: string, language: string): Promise<string | null> {
-  try {
-    const res = await commands.highlightCodeNative(code, language);
-    if (res.status === 'ok') {
-      return res.data;
-    }
-    return null;
-  } catch (err) {
-    console.warn('Native highlightCodeNative failed or fallback:', err);
-    return null;
-  }
+export async function highlightCodeNative(_code: string, _language: string): Promise<string | null> {
+  return null;
 }
 
 /**
@@ -312,5 +294,207 @@ export async function openFolderNative(filePath: string): Promise<boolean> {
   } catch (err) {
     console.warn('openFolderNative failed:', err);
     return false;
+  }
+}
+
+/**
+ * Rust ネイティブによるテキスト統計（文字数・単語数・行数・読了時間）の高速算出
+ *
+ * @param text 対象テキスト
+ * @returns 統計結果オブジェクトまたは失敗時 null
+ */
+export async function calculateTextStatsNative(text: string): Promise<{
+  characters: number;
+  charactersNoSpace: number;
+  words: number;
+  lines: number;
+  readingTimeMinutes: number;
+} | null> {
+  try {
+    const res = await commands.calculateTextStatsNative(text);
+    if (res.status === 'ok') {
+      return {
+        characters: res.data.characters,
+        charactersNoSpace: res.data.characters_no_space,
+        words: res.data.words,
+        lines: res.data.lines,
+        readingTimeMinutes: res.data.reading_time_minutes,
+      };
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native calculateTextStatsNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Rust ネイティブによる YAML Front Matter の高速抽出・パース
+ *
+ * @param fullText 対象 Markdown テキスト
+ * @returns パース結果オブジェクトまたは失敗時 null
+ */
+export async function parseYamlFrontMatterNative(fullText: string): Promise<{
+  body: string;
+  metadata: {
+    title?: string;
+    author?: string;
+    created?: string;
+    updated?: string;
+    updatedBy?: string;
+    encoding?: any;
+    tags?: string[];
+  };
+} | null> {
+  try {
+    const res = await commands.parseYamlFrontMatterNative(fullText);
+    if (res.status === 'ok') {
+      return {
+        body: res.data.body,
+        metadata: {
+          title: res.data.title || undefined,
+          author: res.data.author || undefined,
+          created: res.data.created || undefined,
+          updated: res.data.updated || undefined,
+          updatedBy: res.data.updated_by || undefined,
+          encoding: res.data.encoding as any,
+          tags: res.data.tags,
+        },
+      };
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native parseYamlFrontMatterNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Rust ネイティブによる見出し (H1〜H6) 目次ツリーの高速抽出
+ *
+ * @param markdownText Markdown テキスト
+ * @returns 見出し要素リストまたは失敗時 null
+ */
+export async function extractHeadingsNative(markdownText: string): Promise<Array<{
+  level: number;
+  text: string;
+  lineNumber: number;
+}> | null> {
+  try {
+    const res = await commands.extractHeadingsNative(markdownText);
+    if (res.status === 'ok') {
+      return res.data.map((h) => ({
+        level: h.level,
+        text: h.text,
+        lineNumber: h.line_number,
+      }));
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native extractHeadingsNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Rust ネイティブによるタスクチェック状態の高速トグル
+ *
+ * @param markdownText Markdown テキスト
+ * @param targetIndex 対象タスク項目の連番インデックス (0-indexed)
+ * @returns 置換後テキストまたは失敗時 null
+ */
+export async function toggleTaskNative(markdownText: string, targetIndex: number): Promise<string | null> {
+  try {
+    const res = await commands.toggleTaskNative(markdownText, targetIndex);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native toggleTaskNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Rust ネイティブによる完全なスタンドアロン HTML ドキュメントのエクスポート
+ *
+ * @param title ドキュメントタイトル
+ * @param markdownText Markdown テキスト
+ * @param isDark ダークモードスタイルを埋め込むか
+ * @returns 完全な HTML 文字列または失敗時 null
+ */
+export async function exportHtmlFullNative(
+  title: string,
+  markdownText: string,
+  isDark: boolean
+): Promise<string | null> {
+  try {
+    const res = await commands.exportHtmlFullNative(title, markdownText, isDark);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native exportHtmlFullNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * ファイルメタデータ情報インターフェース
+ */
+export interface FileMetadataResult {
+  /** ファイルが存在するか */
+  exists: boolean;
+  /** 最終更新日時 (UNIXエポックからのミリ秒) */
+  mtimeMs: number;
+  /** ファイルサイズ (バイト) */
+  sizeBytes: number;
+}
+
+/**
+ * 指定ファイルパスのメタデータ（存在有無、mtime、サイズ）を超軽量に取得する
+ *
+ * @param filePath 対象ファイルの絶対パス
+ * @returns メタデータオブジェクトまたは失敗時 null
+ */
+export async function getFileMetadataNative(filePath: string): Promise<FileMetadataResult | null> {
+  try {
+    const res = await commands.getFileMetadataNative(filePath);
+    if (res.status === 'ok') {
+      return {
+        exists: res.data.exists,
+        mtimeMs: res.data.mtime_ms,
+        sizeBytes: res.data.size_bytes,
+      };
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native getFileMetadataNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * CSV データを Rust ネイティブで高速解析し、プレビュー用サマリーと統計を取得する
+ *
+ * @param content CSV テキストデータ
+ * @param maxRows プレビュー抽出する最大行数 (デフォルト: 100)
+ * @returns CsvPreviewDto または失敗時 null
+ */
+export async function parseCsvPreviewNative(
+  content: string,
+  maxRows: number = 100
+): Promise<CsvPreviewDto | null> {
+  try {
+    const res = await commands.parseCsvPreviewNative(content, maxRows);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native parseCsvPreviewNative failed:', err);
+    return null;
   }
 }

@@ -219,6 +219,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </select>
           </div>
 
+          {/* 見出しカラーテーマ */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>見出しカラーテーマ</div>
+              <div className="text-[10px] text-slate-400 font-sans">プレビューの見出し (H1〜H6) 配色</div>
+            </div>
+            <select
+              value={settings.headingTheme || 'muted'}
+              onChange={(e) => onUpdateSettings({ headingTheme: e.target.value as any })}
+              className={`border rounded px-2 py-1 outline-none text-xs ${
+                isDark
+                  ? 'bg-slate-950 border-slate-700 text-slate-200 focus:border-cyan-500'
+                  : 'bg-slate-50 border-slate-300 text-slate-800 focus:border-cyan-600 font-medium'
+              }`}
+            >
+              <option value="muted">💎 落ち着いた色 (標準)</option>
+              <option value="vivid">🌟 少し派手な色 (鮮やか)</option>
+              <option value="high_contrast">⚡ ハイコントラスト (高視認性)</option>
+              <option value="monochrome">⚪ モノトーン (シンプル)</option>
+            </select>
+          </div>
+
           {/* 自動保存の待機時間 */}
           <div className="flex items-center justify-between">
             <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>自動保存の待機時間</span>

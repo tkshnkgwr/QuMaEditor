@@ -49,10 +49,42 @@ QuMaEditor は、Tauri v2 + Rust バックエンドおよび React + TypeScript 
 
 ---
 
-## 3. システム動作環境
+## 3. ドキュメント状態遷移＆ライフサイクル (Lifecycle Architecture)
 
-| 項目       | 詳細                                     |
-| :--------- | :--------------------------------------- |
-| バージョン | v1.3.3                                   |
-| OS         | Windows 10 / 11 (Tauri v2 Native Window) |
-| ランタイム | Rust Native Engine + WebView2            |
+```mermaid
+stateDiagram-v2
+    [*] --> UnsavedNew: 新規ノート作成
+    [*] --> DiskLoaded: ローカルファイルオープン (.md / .csv)
+    
+    state DiskLoaded {
+        [*] --> ChunkedMode: 大容量 (500KB超 / CSV) 冒頭1,500行ロード
+        [*] --> FullLoaded: 通常ファイル 全文ロード
+        ChunkedMode --> FullLoaded: 「全文読込」または「編集有効化」
+    }
+
+    UnsavedNew --> Editing: テキスト入力・編集
+    FullLoaded --> Editing: テキスト入力・編集
+    
+    state Editing {
+        [*] --> Typing: 変更検知 (Dirty)
+        Typing --> LocalStorageSave: 3000ms ディバウンス自動保存
+        LocalStorageSave --> Typing
+    }
+
+    Editing --> DiskSaved: 手動保存 (Ctrl+S) / 実ファイル自動上書き
+    DiskSaved --> ExternalDetected: 外部プロセスでの変更検知 (mtime)
+    ExternalDetected --> DiskLoaded: 自動再読み込み (通知トースト)
+    
+    DiskSaved --> [*]: タブを閉じる
+```
+
+---
+
+## 4. システム動作環境
+
+| 項目 | 詳細 |
+| :--- | :--- |
+| バージョン | v1.4.0 |
+| OS | Windows 10 / 11 (Tauri v2 Native Window) |
+| ランタイム | Rust Native Engine + WebView2 |
+

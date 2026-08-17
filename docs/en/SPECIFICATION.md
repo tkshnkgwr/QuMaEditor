@@ -46,10 +46,42 @@ QuMaEditor is an ultra-fast, lightweight desktop Markdown editor built with Taur
 
 ---
 
-## 3. System Requirements
+## 3. Document Lifecycle Architecture
 
-| Item    | Details                                  |
-| :------ | :--------------------------------------- |
-| Version | v1.3.3                                   |
-| OS      | Windows 10 / 11 (Tauri v2 Native Window) |
-| Runtime | Rust Native Engine + WebView2            |
+```mermaid
+stateDiagram-v2
+    [*] --> UnsavedNew: Create New Note
+    [*] --> DiskLoaded: Open Local File (.md / .csv)
+    
+    state DiskLoaded {
+        [*] --> ChunkedMode: Large File (>500KB / CSV) Load 1,500 Lines
+        [*] --> FullLoaded: Normal File Load Full Text
+        ChunkedMode --> FullLoaded: "Load Full File" or "Enable Editing"
+    }
+
+    UnsavedNew --> Editing: Typing & Editing
+    FullLoaded --> Editing: Typing & Editing
+    
+    state Editing {
+        [*] --> Typing: Content Changed (Dirty)
+        Typing --> LocalStorageSave: 3000ms Debounced Auto-Save
+        LocalStorageSave --> Typing
+    }
+
+    Editing --> DiskSaved: Manual Save (Ctrl+S) / Direct Overwrite
+    DiskSaved --> ExternalDetected: External Modification Detected (mtime)
+    ExternalDetected --> DiskLoaded: Auto-Reload (Toast Notification)
+    
+    DiskSaved --> [*]: Close Tab
+```
+
+---
+
+## 4. System Requirements
+
+| Item | Details |
+| :--- | :--- |
+| Version | v1.4.0 |
+| OS | Windows 10 / 11 (Tauri v2 Native Window) |
+| Runtime | Rust Native Engine + WebView2 |
+

@@ -8,41 +8,52 @@
 
 ## 1. Tauri v2 IPC 通信アーキテクチャ
 
-QuMaEditor は、フロントエンド (React 18 + TypeScript) とバックエンド (Rust Engine) 間で高速な **IPC (Inter-Process Communication)** 通信を行っています。
+QuMaEditor は、フロントエンド (React 19 + TypeScript) とバックエンド (Rust Engine) 間で高速な **IPC (Inter-Process Communication)** 通信を行っています。
 
-```
-+-----------------------------------------------------------------------+
-|  Frontend (React)                                                     |
-|  src/utils/tauriNative.ts                                             |
-|   - invoke('detect_and_convert_to_utf8', { bytes })                   |
-|   - invoke('search_documents_native', { query })                      |
-+-----------------------------------------------------------------------+
-                                  │ (Tauri IPC Protocol)
-                                  ▼
-+-----------------------------------------------------------------------+
-|  Backend (Tauri v2 + Rust)                                            |
-|  src-tauri/src/lib.rs                                                 |
-|   - #[tauri::command] pub fn detect_and_convert_to_utf8(...)          |
-|   - #[tauri::command] pub fn search_documents_native(...)           |
-+-----------------------------------------------------------------------+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as React 19 Frontend<br/>(src/utils/tauriNative.ts)
+    participant Bindings as Specta Bindings<br/>(src/bindings.ts)
+    participant Core as Tauri IPC Gateway<br/>(tauri::invoke_handler)
+    participant Rust as Rust Native Engine<br/>(src-tauri/src/commands.rs)
+
+    UI->>Bindings: commands.parseCsvPreviewNative(slice, 100)
+    Bindings->>Core: TAURI_INVOKE("parse_csv_preview_native", args)
+    Core->>Rust: commands::parse_csv_preview_native(content, max_rows)
+    Rust-->>Core: Result<CsvPreviewDto, String>
+    Core-->>Bindings: JSON Payload (Zero Memory Overhead)
+    Bindings-->>UI: Promise<{ status: "ok", data: CsvPreviewDto }>
 ```
 
 ---
 
 ## 2. IPC コマンド一覧 & DTO 定義
 
-| コマンド名                    | 引数                                      | 戻り値                       | 概要                                         |
-| :---------------------------- | :---------------------------------------- | :--------------------------- | :------------------------------------------- |
-| `detect_and_convert_to_utf8`  | `bytes: Vec<u8>`                          | `Result<ConvertedTextDto>`   | バイト配列の文字コード自動判別 & UTF-8 デコード |
-| `convert_utf8_to_encoding`    | `text: String, target_encoding: String`   | `Result<Vec<u8>>`            | 指定エンコーディングへのエンコード保存バイト生成 |
-| `read_file_chunk_native`      | `file_path: String, offset, chunk_size`  | `Result<ChunkResultDto>`     | 10MB+ 大容量ファイルのメモリ分割ストリーミング |
-| `index_documents_native`      | `docs: Vec<DocSearchInput>`               | `Result<usize>`              | 転置インデックス検索エンジンへの一括登録     |
-| `search_documents_native`     | `query: String`                           | `Result<Vec<SearchHitDto>>`  | 単語・行単位爆速全文検索                     |
-| `batch_convert_files_native`  | `items: Vec<BatchConvertItem>`            | `Result<BatchConvertResult>` | `rayon` マルチスレッド一括文字コード変換     |
-| `compute_text_diff_native`    | `old_text: String, new_text: String`      | `Result<Vec<DiffChangeDto>>` | `similar` クレートによる行単位差分算出       |
-| `parse_markdown_native`       | `markdown: String`                        | `Result<String>`             | `pulldown-cmark` 高速 Markdown -> HTML 変換  |
-| `generate_pdf_native`         | `title: String, content: String`          | `Result<Vec<u8>>`            | `printpdf` ネイティブ PDF バイナリ直接生成   |
-| `highlight_code_native`       | `code: String, language: String`          | `Result<String>`             | `syntect` ネイティブ構文ハイライト HTML 生成 |
+| コマンド名 | 引数 | 戻り値 | 概要 |
+| :--- | :--- | :--- | :--- |
+| `detect_and_convert_to_utf8` | `bytes: Vec<u8>` | `Result<EncodingDetectResult>` | バイト配列の文字コード自動判別 & UTF-8 デコード |
+| `convert_utf8_to_encoding` | `text: String, target_encoding: String` | `Result<Vec<u8>>` | 指定エンコーディングへのエンコード保存バイト生成 |
+| `read_file_native` | `file_path: String` | `Result<EncodingDetectResult>` | ファイルパス指定による高速読込・エンコーディング判定 |
+| `read_file_chunk_native` | `file_path: String, offset, length` | `Result<FileChunkResult>` | 10MB+ 大容量ファイルのメモリ分割ストリーミング |
+| `index_documents_native` | `docs: Vec<DocSearchInput>` | `Result<bool>` | 転置インデックス検索エンジンへの一括登録 |
+| `search_documents_native` | `query: String` | `Result<Vec<SearchResult>>` | 単語・行単位爆速全文検索（マルチバイト文字安全） |
+| `compute_text_diff_native` | `old_text: String, new_text: String` | `Result<Vec<TextDiffChunk>>` | `similar` クレートによる行単位差分算出 |
+| `parse_markdown_native` | `markdown_text: String` | `Result<String>` | `pulldown-cmark` 高速 Markdown -> HTML 変換 |
+| `write_file_bytes_native` | `file_path: String, bytes: Vec<u8>` | `Result<bool>` | バイト配列のネイティブ直書き保存 |
+| `write_file_native` | `file_path: String, content: String` | `Result<bool>` | UTF-8 テキストのネイティブ直書き保存 |
+| `calculate_text_stats_native` | `text: String` | `Result<TextStatsDto>` | リアルタイム文字数・単語数・読了時間高速算出 |
+| `parse_yaml_front_matter_native` | `full_text: String` | `Result<ParsedYamlDocResult>` | YAML Front Matter 高速パース・本文分離 |
+| `extract_headings_native` | `markdown_text: String` | `Result<Vec<HeadingItemDto>>` | H1〜H6 目次アウトラインツリー高速抽出 |
+| `toggle_task_native` | `markdown_text: String, target_index: u32`| `Result<String>` | タスクチェックボックス状態のトグル・巡回置換 |
+| `export_html_full_native` | `title, markdown_text, is_dark` | `Result<String>` | 完全なスタンドアロン HTML ドキュメント生成 |
+| `parse_csv_preview_native` | `content: String, max_rows: u32` | `Result<CsvPreviewDto>` | CSV データのゼロコピー行カウント＆クォート対応セル抽出 |
+| `get_file_metadata_native` | `file_path: String` | `Result<FileMetadataDto>` | ファイルの存在・最終更新日時 (mtime)・サイズ取得 |
+| `open_folder_native` | `file_path: String` | `Result<bool>` | エクスプローラーで対象ファイルを選択表示 |ative` | `full_text: String`                       | `Result<ParsedYamlDocResult>`  | YAML Front Matter 高速パース・本文分離           |
+| `extract_headings_native`        | `markdown_text: String`                   | `Result<Vec<HeadingItemDto>>`  | H1〜H6 目次アウトラインツリー高速抽出            |
+| `toggle_task_native`             | `markdown_text: String, target_index: u32`| `Result<String>`               | タスクチェックボックス状態のトグル・巡回置換     |
+| `export_html_full_native`        | `title, markdown_text, is_dark`           | `Result<String>`               | 完全なスタンドアロン HTML ドキュメント生成       |
+| `open_folder_native`             | `file_path: String`                       | `Result<bool>`                 | エクスプローラーで対象ファイルを選択表示         |
 
 ---
 

@@ -34,6 +34,50 @@ export function useDocumentManager() {
     }
   }, [activeDocId, openTabIds]);
 
+  // 実ファイルを持つドキュメントのディスクからの完全読み込み（ハイドレーション）
+  const loadFullDocFromDisk = useCallback(async (docToLoad: MarkdownDoc) => {
+    if (!docToLoad.filePath || docToLoad.isRemote) return;
+    try {
+      const { openNativeFileFromPath } = await import('../utils/fileSystem');
+      const res = await openNativeFileFromPath(docToLoad.filePath);
+      if (res && res.doc) {
+        setDocs((prevDocs) => {
+          const updated = prevDocs.map((d) =>
+            d.id === docToLoad.id
+              ? {
+                  ...d,
+                  title: res.doc.title,
+                  content: res.doc.content,
+                  tags: res.doc.tags,
+                  author: res.doc.author,
+                  updatedAt: res.doc.updatedAt || d.updatedAt,
+                  updatedBy: res.doc.updatedBy,
+                  encoding: res.doc.encoding,
+                }
+              : d
+          );
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.warn('[useDocumentManager] loadFullDocFromDisk failed:', err);
+    }
+  }, []);
+
+  // 起動時にスリム化されているドキュメント、または開いているタブの実ファイルを自動フルロード
+  useEffect(() => {
+    const docsToHydrate = docs.filter(
+      (d) =>
+        d.filePath &&
+        !d.isRemote &&
+        (d.content.includes('[STORAGE_SLIMMED_LOAD_FROM_DISK]') || openTabIds.includes(d.id))
+    );
+
+    for (const docToHydrate of docsToHydrate) {
+      loadFullDocFromDisk(docToHydrate);
+    }
+  }, []); // 起動時1回
+
   // 現在アクティブなドキュメントの取得
   const currentDoc = docs.find((d) => d.id === activeDocId) || docs[0] || {
     id: 'default',
@@ -58,7 +102,13 @@ export function useDocumentManager() {
       }
       return prev;
     });
-  }, [activeDocId]);
+
+    // 選択したドキュメントがスリム化されている場合、即座にディスクからフルロード
+    const targetDoc = docs.find((d) => d.id === id);
+    if (targetDoc && targetDoc.filePath && targetDoc.content.includes('[STORAGE_SLIMMED_LOAD_FROM_DISK]')) {
+      loadFullDocFromDisk(targetDoc);
+    }
+  }, [activeDocId, docs, loadFullDocFromDisk]);
 
   // ドキュメントの選択
   const handleSelectDoc = useCallback((id: string) => {

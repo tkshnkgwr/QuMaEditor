@@ -12,11 +12,11 @@ import {
   loadSettings,
   saveSettings,
 } from './utils/storage';
-import { calculateTextStats, insertFormatting } from './utils/markdownUtils';
+import { calculateTextStats, insertFormatting, toggleTaskInMarkdown } from './utils/markdownUtils';
 import { decodeFileContent } from './utils/encodingUtils';
 import { parseYamlFrontMatter } from './utils/yamlUtils';
-import { parseMarkdownNative } from './utils/tauriNative';
-import { openNativeFileFromPath } from './utils/fileSystem';
+import { parseMarkdownNative, calculateTextStatsNative, toggleTaskNative } from './utils/tauriNative';
+import { openNativeFileFromPath, isCsvDoc, loadFullNativeDoc, loadMoreChunkNativeDoc } from './utils/fileSystem';
 import { commands } from './bindings';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -37,12 +37,14 @@ import { ShortcutsModal } from './components/ShortcutsModal';
 import { DiffModal } from './components/DiffModal';
 import { BatchConvertModal } from './components/BatchConvertModal';
 import { LogModal } from './components/LogModal';
+import { Toast, ToastMessage } from './components/Toast';
 import { logger } from './utils/logger';
 
 // リファクタリング用に分離したカスタムフック
 import { useModalState } from './hooks/useModalState';
 import { useDocumentManager } from './hooks/useDocumentManager';
 import { useFileOperations } from './hooks/useFileOperations';
+import { useFileWatcher } from './hooks/useFileWatcher';
 
 export default function App() {
   // ドキュメント一覧・タブ状態の管理 (useDocumentManager)
@@ -124,6 +126,20 @@ export default function App() {
     settings.theme === 'system' ? systemTheme : settings.theme || 'dark';
   const isDark = effectiveTheme === 'dark';
 
+  // HTML ルート (documentElement) のテーマクラス・color-scheme 同期
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+      root.classList.remove('light');
+      root.style.colorScheme = 'dark';
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+      root.style.colorScheme = 'light';
+    }
+  }, [isDark]);
+
   const handleChangeTheme = (newTheme: ThemeMode) => {
     handleUpdateSettings({ theme: newTheme });
   };
@@ -145,6 +161,57 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState<import('./types').SaveStatus>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
+  // CSV 編集ロック解除されたドキュメントID一覧
+  const [editableCsvDocIds, setEditableCsvDocIds] = useState<string[]>([]);
+
+  // 全文一括読み込みハンドラー
+  const handleLoadFullDoc = useCallback(async () => {
+    if (!currentDoc.filePath) return;
+    const fullDoc = await loadFullNativeDoc(currentDoc);
+    if (fullDoc) {
+      setDocs((prevDocs) =>
+        prevDocs.map((d) => (d.id === currentDoc.id ? fullDoc : d))
+      );
+      setToast({
+        id: Date.now().toString(),
+        message: 'ファイル全文を読み込みました。',
+        type: 'info',
+        duration: 3000,
+      });
+    }
+  }, [currentDoc, setDocs]);
+
+  // 追加チャンク読み込みハンドラー
+  const handleLoadMoreChunk = useCallback(async () => {
+    if (!currentDoc.filePath) return;
+    const updatedDoc = await loadMoreChunkNativeDoc(currentDoc);
+    if (updatedDoc) {
+      setDocs((prevDocs) =>
+        prevDocs.map((d) => (d.id === currentDoc.id ? updatedDoc : d))
+      );
+    }
+  }, [currentDoc, setDocs]);
+
+  // 現在のドキュメントの CSV 判定と ReadOnly 判定
+  const isCurrentCsv = isCsvDoc(currentDoc);
+  const isCsvReadOnly = isCurrentCsv && !editableCsvDocIds.includes(currentDoc.id);
+
+  const handleToggleCsvEditLock = useCallback(async () => {
+    // 遅延読み込み中の場合は、編集有効化時に全文を自動ロード
+    if (currentDoc.isChunkedLoaded) {
+      await handleLoadFullDoc();
+    }
+
+    setEditableCsvDocIds((prev) =>
+      prev.includes(currentDoc.id)
+        ? prev.filter((id) => id !== currentDoc.id)
+        : [...prev, currentDoc.id]
+    );
+  }, [currentDoc.id, currentDoc.isChunkedLoaded, handleLoadFullDoc]);
+
+  // トースト通知 state
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+
   // カーソル位置
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
@@ -154,6 +221,58 @@ export default function App() {
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // 外部プロセス更新時のドキュメント自動再読み込み処理
+  const handleReloadExternalFile = useCallback(
+    async (filePath: string) => {
+      try {
+        const result = await openNativeFileFromPath(filePath);
+        if (result && result.doc) {
+          setDocs((prevDocs) => {
+            const updated = prevDocs.map((doc) =>
+              doc.id === currentDoc.id
+                ? {
+                    ...doc,
+                    title: result.doc.title,
+                    content: result.doc.content,
+                    tags: result.doc.tags,
+                    author: result.doc.author,
+                    updatedAt: result.doc.updatedAt || new Date().toISOString(),
+                    updatedBy: result.doc.updatedBy,
+                    encoding: result.doc.encoding,
+                    filePath: result.filePath,
+                  }
+                : doc
+            );
+            saveStoredDocs(updated);
+            return updated;
+          });
+
+          // トースト通知を表示
+          setToast({
+            id: Date.now().toString(),
+            message: '別プロセスから更新されました。再読み込みします。',
+            type: 'reload',
+            duration: 4000,
+          });
+
+          logger.info(
+            `[外部プロセス更新検知] "${result.doc.title}" を最新ファイルから再読み込みしました`,
+            `パス: ${filePath}`
+          );
+        }
+      } catch (err) {
+        console.error('外部ファイル再読み込み失敗:', err);
+      }
+    },
+    [currentDoc.id, setDocs]
+  );
+
+  // 外部ファイル変更監視フック (useFileWatcher)
+  const { recordLocalSave } = useFileWatcher({
+    currentDoc,
+    onReloadFile: handleReloadExternalFile,
+  });
 
   // ファイル操作アクションの管理 (useFileOperations)
   const {
@@ -171,10 +290,29 @@ export default function App() {
     setLastSavedTime,
     handleAddOpenedDoc,
     fileInputRef,
+    onSaveSuccess: recordLocalSave,
   });
 
-  // テキスト統計情報
-  const stats: TextStats = calculateTextStats(currentDoc.content);
+  // テキスト統計情報 (Rust ネイティブによる超高速・低メモリ計算 + 150ms ディバウンス)
+  const [nativeStats, setNativeStats] = useState<TextStats | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      calculateTextStatsNative(currentDoc.content).then((res) => {
+        if (isMounted && res) {
+          setNativeStats(res);
+        }
+      });
+    }, 150);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [currentDoc.content]);
+
+  const stats: TextStats = nativeStats || calculateTextStats(currentDoc.content);
 
   // 前回のドキュメント情報（差分比較用）
   const previousDoc = docs.find((d) => d.id === previousDocId);
@@ -203,6 +341,13 @@ export default function App() {
     }
 
     setSaveStatus('editing');
+
+    // CSV ファイルの場合は自動保存を一切行わない
+    if (isCurrentCsv) {
+      setSaveStatus('unsaved');
+      return;
+    }
+
     const delayMs = Math.max(2000, Math.min(10000, settings.autoSaveIntervalMs || 3000));
 
     autoSaveTimeoutRef.current = setTimeout(async () => {
@@ -219,8 +364,9 @@ export default function App() {
       if (currentDoc.filePath) {
         const { saveNativeFile } = await import('./utils/fileSystem');
         const res = await saveNativeFile(currentDoc, { forceSaveAs: false, defaultAuthor: settings.defaultAuthor });
-        if (res.success) {
+        if (res.success && res.filePath) {
           savedToFile = true;
+          recordLocalSave(res.filePath);
         }
       }
 
@@ -239,6 +385,21 @@ export default function App() {
       }
     }, delayMs);
   };
+
+  // プレビュー上のタスク項目チェック状態トグル (Rust ネイティブ高速置換)
+  const handleToggleTaskItem = useCallback(async (taskIndex: number) => {
+    try {
+      const nativeUpdated = await toggleTaskNative(currentDoc.content, taskIndex);
+      if (nativeUpdated !== null) {
+        updateDocContent(nativeUpdated);
+        return;
+      }
+    } catch (e) {
+      console.warn('Native task toggle error:', e);
+    }
+    const fallbackUpdated = toggleTaskInMarkdown(currentDoc.content, taskIndex);
+    updateDocContent(fallbackUpdated);
+  }, [currentDoc.content]);
 
   // ファイル選択ダイアログからのフォールバック読み込み
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -344,6 +505,15 @@ export default function App() {
         setIsZenMode(false);
         return;
       }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        if (viewMode === 'editor') {
+          setViewMode('preview');
+        } else if (viewMode === 'preview') {
+          setViewMode('editor');
+        }
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         handleSaveCurrentDoc({ forceSaveAs: e.shiftKey });
@@ -368,7 +538,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isZenMode, handleSaveCurrentDoc, handleOpenLocalFile, handleNewDoc, handlePrint, toggleZenMode, setIsZenMode, setIsShortcutsModalOpen]);
+  }, [isZenMode, viewMode, setViewMode, handleSaveCurrentDoc, handleOpenLocalFile, handleNewDoc, handlePrint, toggleZenMode, setIsZenMode, setIsShortcutsModalOpen]);
 
   // 起動時のファイルオープンイベントリスナー
   useEffect(() => {
@@ -644,7 +814,7 @@ export default function App() {
   return (
     <div
       className={`relative h-screen w-screen flex flex-col overflow-hidden font-sans ${
-        isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'
+        isDark ? 'dark bg-slate-950 text-slate-100' : 'light bg-slate-100 text-slate-900'
       }`}
       onDragOver={handleAppDragOver}
       onDragLeave={handleAppDragLeave}
@@ -807,23 +977,31 @@ export default function App() {
                   onUpdateTags={handleUpdateTags}
                   onTextareaRef={(el) => { editorTextareaRef.current = el; }}
                   isDark={isDark}
+                  isCsv={isCurrentCsv}
+                  isReadOnly={isCsvReadOnly}
+                  onToggleEditLock={handleToggleCsvEditLock}
+                  onLoadFullDoc={handleLoadFullDoc}
+                  onLoadMoreChunk={handleLoadMoreChunk}
                 />
               </div>
             )}
 
             {/* プレビューパネル */}
-            {(viewMode === 'split' || viewMode === 'preview') && (
-              <div className="flex-1 h-full flex flex-col min-w-0 print:block print:w-full print:static print:p-0 print:m-0">
-                <Preview
-                  content={currentDoc.content}
-                  onScrollRef={(el) => {
-                    previewScrollRef.current = el;
-                  }}
-                  isDark={isDark}
-                  fontSize={settings.fontSize}
-                />
-              </div>
-            )}
+            <div className={`flex-1 h-full flex flex-col min-w-0 print:block print:w-full print:static print:p-0 print:m-0 ${
+              viewMode === 'editor' ? 'hidden' : ''
+            }`}>
+              <Preview
+                content={currentDoc.content}
+                onToggleTaskItem={handleToggleTaskItem}
+                onScrollRef={(el) => {
+                  previewScrollRef.current = el;
+                }}
+                isDark={isDark}
+                fontSize={settings.fontSize}
+                headingTheme={settings.headingTheme}
+                isCsv={isCurrentCsv}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -838,9 +1016,11 @@ export default function App() {
           onUpdateSettings={handleUpdateSettings}
           saveStatus={saveStatus}
           updatedAt={currentDoc.updatedAt}
-          encoding={currentDoc.encoding || 'UTF-8'}
+          encoding={currentDoc.encoding}
           onChangeEncoding={handleChangeEncoding}
           isDark={isDark}
+          isCsv={isCurrentCsv}
+          isReadOnly={isCsvReadOnly}
         />
       )}
 
@@ -909,6 +1089,9 @@ export default function App() {
         onClose={() => setIsLogModalOpen(false)}
         isDark={isDark}
       />
+
+      {/* フローティングトースト通知 */}
+      <Toast toast={toast} onClose={() => setToast(null)} isDark={isDark} />
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import { MarkdownDoc, EditorSettings, SaveStatus } from '../types';
-import { openNativeFileDialog, saveNativeFile, openNativeFileFromPath } from '../utils/fileSystem';
+import { openNativeFileDialog, saveNativeFile, openNativeFileFromPath, isCsvDoc } from '../utils/fileSystem';
 import { decodeFileContent, prepareEncodedBlob } from '../utils/encodingUtils';
 import { parseYamlFrontMatter, buildFullMarkdownWithFrontMatter } from '../utils/yamlUtils';
-import { generatePdfNative } from '../utils/tauriNative';
+import { generatePdfNative, exportHtmlFullNative } from '../utils/tauriNative';
 import { saveStoredDocs } from '../utils/storage';
 import { logger } from '../utils/logger';
 
@@ -15,6 +15,7 @@ interface FileOperationsProps {
   setLastSavedTime: (time: string | null) => void;
   handleAddOpenedDoc: (doc: MarkdownDoc) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onSaveSuccess?: (filePath: string) => void;
 }
 
 /**
@@ -29,19 +30,24 @@ export function useFileOperations({
   setLastSavedTime,
   handleAddOpenedDoc,
   fileInputRef,
+  onSaveSuccess,
 }: FileOperationsProps) {
-  // Markdownファイルとしてのエクスポート (ダウンロード)
+  // Markdown/CSV ファイルとしてのエクスポート (ダウンロード)
   const handleExportMarkdown = useCallback(() => {
-    const fullMarkdown = buildFullMarkdownWithFrontMatter(currentDoc);
+    const isCsv = isCsvDoc(currentDoc);
+    const exportText = isCsv ? currentDoc.content : buildFullMarkdownWithFrontMatter(currentDoc);
     const targetEncoding = currentDoc.encoding || 'UTF-8';
-    const blob = prepareEncodedBlob(fullMarkdown, targetEncoding);
+    const blob = prepareEncodedBlob(exportText, targetEncoding);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${currentDoc.title || 'document'}.md`;
+    a.download = isCsv ? `${currentDoc.title || 'table'}.csv` : `${currentDoc.title || 'document'}.md`;
     a.click();
     URL.revokeObjectURL(url);
-    logger.info(`[エクスポート] Markdownを出力しました (${targetEncoding})`, `ファイル名: ${currentDoc.title}.md`);
+    logger.info(
+      isCsv ? `[エクスポート] CSVを出力しました (${targetEncoding})` : `[エクスポート] Markdownを出力しました (${targetEncoding})`,
+      `ファイル名: ${a.download}`
+    );
   }, [currentDoc]);
 
   // 実ファイルへの保存（直上書き保存 または 名前を付けて保存）
@@ -76,6 +82,7 @@ export function useFileOperations({
         setSaveStatus('saved_file');
         const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setLastSavedTime(timeStr);
+        onSaveSuccess?.(updatedDocPath);
 
         logger.info(
           res.isSaveAs
@@ -116,10 +123,17 @@ export function useFileOperations({
     fileInputRef.current?.click();
   }, [handleAddOpenedDoc, fileInputRef]);
 
-  // HTML ファイルとしてのエクスポート
-  const handleExportHtml = useCallback(() => {
-    const fullMarkdown = buildFullMarkdownWithFrontMatter(currentDoc);
-    const htmlContent = `<!DOCTYPE html>
+  // HTML ファイルとしてのエクスポート (Rust ネイティブ pulldown-cmark + 埋め込み CSS)
+  const handleExportHtml = useCallback(async () => {
+    try {
+      const isDark = settings.theme === 'dark';
+      const nativeHtml = await exportHtmlFullNative(
+        currentDoc.title || '無題のドキュメント',
+        currentDoc.content,
+        isDark
+      );
+
+      const htmlContent = nativeHtml || `<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -131,19 +145,22 @@ export function useFileOperations({
   </style>
 </head>
 <body>
-  <pre>${fullMarkdown}</pre>
+  <pre>${buildFullMarkdownWithFrontMatter(currentDoc)}</pre>
 </body>
 </html>`;
 
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentDoc.title || 'document'}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-    logger.info(`[エクスポート] HTMLを出力しました`, `ファイル名: ${currentDoc.title}.html`);
-  }, [currentDoc]);
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentDoc.title || 'document'}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+      logger.info(`[エクスポート] HTMLを出力しました (Rustネイティブ)`, `ファイル名: ${currentDoc.title}.html`);
+    } catch (e) {
+      logger.error(`[HTMLエクスポートエラー]`, String(e));
+    }
+  }, [currentDoc, settings.theme]);
 
   // ダイレクト PDF 保存 (Rust ネイティブ生成)
   const handleExportPdfDirect = useCallback(async () => {

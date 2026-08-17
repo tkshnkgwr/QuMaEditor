@@ -11,6 +11,14 @@
  * ----------------------------------------------------------------------------- */
 
 /* デフォルト & ダークモード用スクロールバー */
+:root,
+html,
+body,
+.dark {
+  color-scheme: dark;
+  scrollbar-color: #1e293b #090d16;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -29,20 +37,34 @@
   background: #334155;
 }
 
-/* ライトモード用スクロールバー (.light コンテナ配下の全要素) */
+/* ライトモード用スクロールバー */
+:root.light,
+html.light,
+body.light,
+.light {
+  color-scheme: light;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
 .light ::-webkit-scrollbar-track,
-.light::-webkit-scrollbar-track {
+.light::-webkit-scrollbar-track,
+html.light ::-webkit-scrollbar-track,
+body.light ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
 
 .light ::-webkit-scrollbar-thumb,
-.light::-webkit-scrollbar-thumb {
+.light::-webkit-scrollbar-thumb,
+html.light ::-webkit-scrollbar-thumb,
+body.light ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
 
 .light ::-webkit-scrollbar-thumb:hover,
-.light::-webkit-scrollbar-thumb:hover {
+.light::-webkit-scrollbar-thumb:hover,
+html.light ::-webkit-scrollbar-thumb:hover,
+body.light ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
@@ -56,6 +78,7 @@
   }
 
   html, body {
+    color-scheme: light !important;
     background: #ffffff !important;
     color: #0f172a !important;
     width: 100% !important;

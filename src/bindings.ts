@@ -5,7 +5,10 @@
 
 
 export const commands = {
-async detectAndConvertToUtf8(bytes: number[]) : Promise<Result<ConvertedTextDto, string>> {
+/**
+ * バイト配列から文字コード（UTF-8, Shift_JIS, EUC-JP）を自動判別し UTF-8 文字列へ変換する
+ */
+async detectAndConvertToUtf8(bytes: number[]) : Promise<Result<EncodingDetectResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("detect_and_convert_to_utf8", { bytes }) };
 } catch (e) {
@@ -13,6 +16,9 @@ async detectAndConvertToUtf8(bytes: number[]) : Promise<Result<ConvertedTextDto,
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * UTF-8 文字列を指定された文字エンコーディングのバイト列に変換する
+ */
 async convertUtf8ToEncoding(text: string, targetEncoding: string) : Promise<Result<number[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("convert_utf8_to_encoding", { text, targetEncoding }) };
@@ -21,15 +27,21 @@ async convertUtf8ToEncoding(text: string, targetEncoding: string) : Promise<Resu
     else return { status: "error", error: e  as any };
 }
 },
-async readFileChunkNative(filePath: string, offset: number, chunkSize: number) : Promise<Result<ChunkResultDto, string>> {
+/**
+ * 大容量ファイルを指定オフセットと長さで部分チャンク読込する
+ */
+async readFileChunkNative(filePath: string, offset: number, length: number) : Promise<Result<FileChunkResult, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("read_file_chunk_native", { filePath, offset, chunkSize }) };
+    return { status: "ok", data: await TAURI_INVOKE("read_file_chunk_native", { filePath, offset, length }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async indexDocumentsNative(docs: DocSearchInput[]) : Promise<Result<number, string>> {
+/**
+ * 全文検索用ドキュメントインデックスを一括登録・更新する
+ */
+async indexDocumentsNative(docs: DocSearchInput[]) : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("index_documents_native", { docs }) };
 } catch (e) {
@@ -37,7 +49,10 @@ async indexDocumentsNative(docs: DocSearchInput[]) : Promise<Result<number, stri
     else return { status: "error", error: e  as any };
 }
 },
-async searchDocumentsNative(query: string) : Promise<Result<SearchHitDto[], string>> {
+/**
+ * インデックス登録済みドキュメントに対してキーワード全文検索を実行する
+ */
+async searchDocumentsNative(query: string) : Promise<Result<SearchResult[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("search_documents_native", { query }) };
 } catch (e) {
@@ -45,15 +60,21 @@ async searchDocumentsNative(query: string) : Promise<Result<SearchHitDto[], stri
     else return { status: "error", error: e  as any };
 }
 },
-async batchConvertFilesNative(items: BatchConvertItem[]) : Promise<Result<BatchConvertResultDto, string>> {
+/**
+ * pulldown-cmark による Markdown から HTML への高速変換を実行する
+ */
+async parseMarkdownNative(markdownText: string) : Promise<Result<string, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("batch_convert_files_native", { items }) };
+    return { status: "ok", data: await TAURI_INVOKE("parse_markdown_native", { markdownText }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async computeTextDiffNative(oldText: string, newText: string) : Promise<Result<DiffChangeDto[], string>> {
+/**
+ * 2つのテキスト文字列間の行単位・単語単位リアルタイム差分 (Diff) を計算する
+ */
+async computeTextDiffNative(oldText: string, newText: string) : Promise<Result<TextDiffChunk[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("compute_text_diff_native", { oldText, newText }) };
 } catch (e) {
@@ -61,31 +82,10 @@ async computeTextDiffNative(oldText: string, newText: string) : Promise<Result<D
     else return { status: "error", error: e  as any };
 }
 },
-async parseMarkdownNative(markdown: string) : Promise<Result<string, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("parse_markdown_native", { markdown }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async generatePdfNative(title: string, content: string) : Promise<Result<number[], string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("generate_pdf_native", { title, content }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async highlightCodeNative(code: string, language: string) : Promise<Result<string, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("highlight_code_native", { code, language }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async readFileNative(filePath: string) : Promise<Result<ConvertedTextDto, string>> {
+/**
+ * ファイルパスを指定してテキスト本文と文字エンコーディングを高速読込する
+ */
+async readFileNative(filePath: string) : Promise<Result<EncodingDetectResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("read_file_native", { filePath }) };
 } catch (e) {
@@ -93,6 +93,31 @@ async readFileNative(filePath: string) : Promise<Result<ConvertedTextDto, string
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * 指定ファイルパスのメタデータ（存在有無、最終更新日時mtime、サイズ）を超軽量に取得する
+ */
+async getFileMetadataNative(filePath: string) : Promise<Result<FileMetadataDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_file_metadata_native", { filePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 指定ファイルパスへ生バイト列を直接書き込み保存する
+ */
+async writeFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("write_file_bytes_native", { filePath, bytes }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 指定ファイルパスへ UTF-8 テキスト文字列を直接書き込み保存する
+ */
 async writeFileNative(filePath: string, content: string) : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("write_file_native", { filePath, content }) };
@@ -101,9 +126,67 @@ async writeFileNative(filePath: string, content: string) : Promise<Result<boolea
     else return { status: "error", error: e  as any };
 }
 },
-async writeFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<boolean, string>> {
+/**
+ * テキストのリアルタイム統計（文字数、単語数、行数、読了時間）を高速計算する
+ */
+async calculateTextStatsNative(text: string) : Promise<Result<TextStatsDto, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("write_file_bytes_native", { filePath, bytes }) };
+    return { status: "ok", data: await TAURI_INVOKE("calculate_text_stats_native", { text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Markdown の YAML Front Matter と本文を高速分離・パースする
+ */
+async parseYamlFrontMatterNative(fullText: string) : Promise<Result<ParsedYamlDocResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("parse_yaml_front_matter_native", { fullText }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Markdown から H1〜H6 見出し（目次アウトラインツリー）を高速抽出する
+ */
+async extractHeadingsNative(markdownText: string) : Promise<Result<HeadingItemDto[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("extract_headings_native", { markdownText }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 指定インデックスのタスク項目チェックボックス状態をトグル/巡回置換する
+ */
+async toggleTaskNative(markdownText: string, targetIndex: number) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("toggle_task_native", { markdownText, targetIndex }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * パース済み Markdown とスタイルシートを埋め込んだスタンドアロン完全 HTML を生成する
+ */
+async exportHtmlFullNative(title: string, markdownText: string, isDark: boolean) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_html_full_native", { title, markdownText, isDark }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * CSV データを高速解析し、プレビュー用サマリーと統計を返却する
+ */
+async parseCsvPreviewNative(content: string, maxRows: number) : Promise<Result<CsvPreviewDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("parse_csv_preview_native", { content, maxRows }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -122,117 +205,201 @@ async writeFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<b
 /** user-defined types **/
 
 /**
- * バッチ文字コード一括変換の指定項目 DTO
+ * CSV プレビュー解析結果 DTO
  */
-export type BatchConvertItem = { 
+export type CsvPreviewDto = { 
 /**
- * 対象ファイルパス
+ * ヘッダー列（1行目）
  */
-file_path: string; 
+headers: string[]; 
 /**
- * 変換先ターゲット文字コード ("UTF-8", "Shift_JIS")
+ * プレビュー用データ行一覧
  */
-target_encoding: string }
+rows: string[][]; 
 /**
- * バッチ文字コード一括変換の全体実行結果 DTO
+ * 総行数
  */
-export type BatchConvertResultDto = { 
+total_lines: number; 
 /**
- * 変換成功ファイル数
+ * 最大列数
  */
-success_count: number; 
+total_cols: number; 
 /**
- * 変換失敗ファイル数
+ * 実際にプレビュー表示した行数
  */
-failure_count: number; 
+displayed_lines: number }
 /**
- * 実行ログ・メッセージ一覧
- */
-messages: string[] }
-/**
- * チャンク読み込み結果を表す DTO
- */
-export type ChunkResultDto = { 
-/**
- * 読み込まれたテキストチャンクデータ
- */
-content: string; 
-/**
- * 残りのファイルデータが存在するかどうか
- */
-has_more: boolean; 
-/**
- * ファイルの総バイトサイズ
- */
-total_size: number }
-/**
- * 文字コード変換結果を表す DTO
- */
-export type ConvertedTextDto = { 
-/**
- * 変換後の UTF-8 テキスト
- */
-text: string; 
-/**
- * 判定された元の文字コード名 ("UTF-8", "Shift_JIS", "EUC-JP")
- */
-encoding: string }
-/**
- * テキスト Diff 差分変更単位を表す DTO
- */
-export type DiffChangeDto = { 
-/**
- * 変更種別 ("insert", "delete", "equal")
- */
-tag: string; 
-/**
- * 変更行テキスト
- */
-value: string; 
-/**
- * 旧ドキュメントでの行番号 (1-indexed)
- */
-old_line: number | null; 
-/**
- * 新ドキュメントでの行番号 (1-indexed)
- */
-new_line: number | null }
-/**
- * インデックス検索の入力ドキュメント構造体
+ * 検索インデックス登録用データ構造体
  */
 export type DocSearchInput = { 
 /**
- * ドキュメント識別子 ID
+ * ドキュメント ID
  */
 id: string; 
 /**
- * ドキュメントタイトル
+ * タイトル
  */
 title: string; 
 /**
- * ドキュメント本文およびタグテキスト
+ * 本文テキスト (Front Matter含む)
  */
 content: string }
 /**
- * 全文検索ヒット結果を表す DTO
+ * エンコーディング検出結果構造体
  */
-export type SearchHitDto = { 
+export type EncodingDetectResult = { 
+/**
+ * 検出された文字コード名 (例: "UTF-8", "Shift_JIS", "EUC-JP")
+ */
+encoding: string; 
+/**
+ * UTF-8 に変換されたテキスト本文
+ */
+text: string }
+/**
+ * チャンク読み込み結果構造体
+ */
+export type FileChunkResult = { 
+/**
+ * 読み込まれたチャンク文字列データ
+ */
+chunk_text: string; 
+/**
+ * 全体サイズ (バイト)
+ */
+total_bytes: number; 
+/**
+ * 次回読み込み用オフセット (バイト)
+ */
+next_offset: number; 
+/**
+ * 読み込みが完了したかどうか
+ */
+is_eof: boolean }
+/**
+ * ファイルメタデータ DTO
+ */
+export type FileMetadataDto = { 
+/**
+ * ファイルが存在するか
+ */
+exists: boolean; 
+/**
+ * 最終更新日時 (UNIXエポックからのミリ秒)
+ */
+mtime_ms: number; 
+/**
+ * ファイルサイズ (バイト)
+ */
+size_bytes: number }
+/**
+ * 見出し（アウトライン）抽出結果 DTO
+ */
+export type HeadingItemDto = { 
+/**
+ * 見出しレベル (1〜6)
+ */
+level: number; 
+/**
+ * 見出しテキスト
+ */
+text: string; 
+/**
+ * 該当行番号 (1-indexed)
+ */
+line_number: number }
+/**
+ * YAML Front Matter パース結果 DTO
+ */
+export type ParsedYamlDocResult = { 
+/**
+ * Front Matter を除外した Markdown 本文
+ */
+body: string; 
+/**
+ * タイトル
+ */
+title: string | null; 
+/**
+ * 作成者
+ */
+author: string | null; 
+/**
+ * 作成日時
+ */
+created: string | null; 
+/**
+ * 更新日時
+ */
+updated: string | null; 
+/**
+ * 更新者
+ */
+updated_by: string | null; 
+/**
+ * 文字コード
+ */
+encoding: string | null; 
+/**
+ * タグ一覧
+ */
+tags: string[] }
+/**
+ * 検索結果構造体
+ */
+export type SearchResult = { 
 /**
  * ヒットしたドキュメント ID
  */
 doc_id: string; 
 /**
- * ヒットしたドキュメントタイトル
+ * ドキュメントタイトル
  */
-doc_title: string; 
+title: string; 
 /**
- * ヒットした行番号 (1-indexed)
+ * マッチした行のプレビュー抜き出し
  */
-line_number: number; 
+snippet: string; 
 /**
- * ヒットした行のテキスト文字列
+ * スコア (マッチ数)
  */
-line_text: string }
+score: number }
+/**
+ * 差分比較結果チャンク
+ */
+export type TextDiffChunk = { 
+/**
+ * 差分タグ ("equal", "insert", "delete")
+ */
+tag: string; 
+/**
+ * 変更該当行のテキスト内容
+ */
+value: string }
+/**
+ * テキスト詳細統計 DTO
+ */
+export type TextStatsDto = { 
+/**
+ * 全文字数
+ */
+characters: number; 
+/**
+ * 空白・改行除外の文字数
+ */
+characters_no_space: number; 
+/**
+ * 単語数 (CJK文字 + 英単語)
+ */
+words: number; 
+/**
+ * 行数
+ */
+lines: number; 
+/**
+ * 読了予想時間 (分)
+ */
+reading_time_minutes: number }
 
 /** tauri-specta globals **/
 

@@ -7,6 +7,7 @@ pub mod diff;
 pub mod encoding;
 pub mod file_io;
 pub mod search;
+pub mod text_processing;
 
 use tauri::{Emitter, Manager};
 
@@ -22,16 +23,29 @@ pub fn export_specta_types() {
             commands::parse_markdown_native,
             commands::compute_text_diff_native,
             commands::read_file_native,
+            commands::get_file_metadata_native,
             commands::write_file_bytes_native,
+            commands::write_file_native,
+            commands::calculate_text_stats_native,
+            commands::parse_yaml_front_matter_native,
+            commands::extract_headings_native,
+            commands::toggle_task_native,
+            commands::export_html_full_native,
+            commands::parse_csv_preview_native,
         ]);
 
     #[cfg(debug_assertions)]
-    _builder
-        .export(
-            specta_typescript::Typescript::default(),
-            "../src/bindings.ts",
-        )
-        .expect("Specta TS 型定義のエクスポートに失敗しました");
+    {
+        let target_path = if std::path::Path::new("src-tauri").exists() {
+            "src/bindings.ts"
+        } else {
+            "../src/bindings.ts"
+        };
+
+        _builder
+            .export(specta_typescript::Typescript::default(), target_path)
+            .expect("Specta TS 型定義のエクスポートに失敗しました");
+    }
 }
 
 /// Windows のコンテキストメニュー「QuMaEditorで開く」を自動登録する
@@ -100,12 +114,20 @@ pub fn run() {
             commands::detect_and_convert_to_utf8,
             commands::convert_utf8_to_encoding,
             commands::read_file_native,
+            commands::get_file_metadata_native,
             commands::read_file_chunk_native,
             commands::index_documents_native,
             commands::search_documents_native,
             commands::parse_markdown_native,
             commands::compute_text_diff_native,
             commands::write_file_bytes_native,
+            commands::write_file_native,
+            commands::calculate_text_stats_native,
+            commands::parse_yaml_front_matter_native,
+            commands::extract_headings_native,
+            commands::toggle_task_native,
+            commands::export_html_full_native,
+            commands::parse_csv_preview_native,
             commands::open_folder_native,
         ])
         .run(tauri::generate_context!())

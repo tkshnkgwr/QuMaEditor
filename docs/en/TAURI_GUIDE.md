@@ -8,41 +8,48 @@ This document describes the **Tauri v2** native backend architecture, IPC commun
 
 ## 1. Tauri v2 IPC Communication Architecture
 
-QuMaEditor uses a high-performance **IPC (Inter-Process Communication)** bridge between the frontend (React 18 + TypeScript) and native Rust engine.
+QuMaEditor uses a high-performance **IPC (Inter-Process Communication)** bridge between the frontend (React 19 + TypeScript) and native Rust engine.
 
-```
-+-----------------------------------------------------------------------+
-|  Frontend (React)                                                     |
-|  src/utils/tauriNative.ts                                             |
-|   - invoke('detect_and_convert_to_utf8', { bytes })                   |
-|   - invoke('search_documents_native', { query })                      |
-+-----------------------------------------------------------------------+
-                                  │ (Tauri IPC Protocol)
-                                  ▼
-+-----------------------------------------------------------------------+
-|  Backend (Tauri v2 + Rust)                                            |
-|  src-tauri/src/lib.rs                                                 |
-|   - #[tauri::command] pub fn detect_and_convert_to_utf8(...)          |
-|   - #[tauri::command] pub fn search_documents_native(...)           |
-+-----------------------------------------------------------------------+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as React 19 Frontend<br/>(src/utils/tauriNative.ts)
+    participant Bindings as Specta Bindings<br/>(src/bindings.ts)
+    participant Core as Tauri IPC Gateway<br/>(tauri::invoke_handler)
+    participant Rust as Rust Native Engine<br/>(src-tauri/src/commands.rs)
+
+    UI->>Bindings: commands.parseCsvPreviewNative(slice, 100)
+    Bindings->>Core: TAURI_INVOKE("parse_csv_preview_native", args)
+    Core->>Rust: commands::parse_csv_preview_native(content, max_rows)
+    Rust-->>Core: Result<CsvPreviewDto, String>
+    Core-->>Bindings: JSON Payload (Zero Memory Overhead)
+    Bindings-->>UI: Promise<{ status: "ok", data: CsvPreviewDto }>
 ```
 
 ---
 
 ## 2. Native IPC Commands Summary
 
-| Command                      | Arguments                                 | Return Type                  | Description                                 |
-| :--------------------------- | :---------------------------------------- | :--------------------------- | :------------------------------------------ |
-| `detect_and_convert_to_utf8` | `bytes: Vec<u8>`                          | `Result<ConvertedTextDto>`   | Auto encoding detection & UTF-8 decoding    |
-| `convert_utf8_to_encoding`   | `text: String, target_encoding: String`   | `Result<Vec<u8>>`            | Encodes text to Shift_JIS / EUC-JP bytes    |
-| `read_file_chunk_native`     | `file_path: String, offset, chunk_size`  | `Result<ChunkResultDto>`     | 10MB+ large file chunk streaming            |
-| `index_documents_native`     | `docs: Vec<DocSearchInput>`               | `Result<usize>`              | Batch registration for inverted index search |
-| `search_documents_native`    | `query: String`                           | `Result<Vec<SearchHitDto>>`  | Ultra-fast word & line inverted index search |
-| `batch_convert_files_native` | `items: Vec<BatchConvertItem>`            | `Result<BatchConvertResult>` | Rayon multi-threaded batch conversion       |
-| `compute_text_diff_native`   | `old_text: String, new_text: String`      | `Result<Vec<DiffChangeDto>>` | Line-by-line diff using `similar` crate     |
-| `parse_markdown_native`      | `markdown: String`                        | `Result<String>`             | Fast Markdown -> HTML via `pulldown-cmark`  |
-| `generate_pdf_native`        | `title: String, content: String`          | `Result<Vec<u8>>`            | Direct PDF generation via `printpdf`        |
-| `highlight_code_native`      | `code: String, language: String`          | `Result<String>`             | Syntax highlighted HTML via `syntect`       |
+| Command | Arguments | Return Type | Description |
+| :--- | :--- | :--- | :--- |
+| `detect_and_convert_to_utf8` | `bytes: Vec<u8>` | `Result<EncodingDetectResult>` | Auto encoding detection & UTF-8 decoding |
+| `convert_utf8_to_encoding` | `text: String, target_encoding: String` | `Result<Vec<u8>>` | Encodes text to Shift_JIS / EUC-JP bytes |
+| `read_file_native` | `file_path: String` | `Result<EncodingDetectResult>` | Fast native file reading and encoding detection |
+| `read_file_chunk_native` | `file_path: String, offset, length` | `Result<FileChunkResult>` | 10MB+ large file chunk streaming |
+| `index_documents_native` | `docs: Vec<DocSearchInput>` | `Result<bool>` | In-memory inverted index batch registration |
+| `search_documents_native` | `query: String` | `Result<Vec<SearchResult>>` | Multi-byte safe fast full-text keyword search |
+| `compute_text_diff_native` | `old_text: String, new_text: String` | `Result<Vec<TextDiffChunk>>` | Line-by-line diff using `similar` crate |
+| `parse_markdown_native` | `markdown_text: String` | `Result<String>` | Fast Markdown -> HTML via `pulldown-cmark` |
+| `write_file_bytes_native` | `file_path: String, bytes: Vec<u8>` | `Result<bool>` | Raw byte array native disk writing |
+| `write_file_native` | `file_path: String, content: String` | `Result<bool>` | UTF-8 string native disk writing |
+| `calculate_text_stats_native` | `text: String` | `Result<TextStatsDto>` | Real-time character, word, and reading time stats |
+| `parse_yaml_front_matter_native` | `full_text: String` | `Result<ParsedYamlDocResult>` | Fast YAML Front Matter & body separation |
+| `extract_headings_native` | `markdown_text: String` | `Result<Vec<HeadingItemDto>>` | Instant H1-H6 outline table of contents tree |
+| `toggle_task_native` | `markdown_text: String, target_index: u32`| `Result<String>` | Fast checkbox cycling & status toggle |
+| `export_html_full_native` | `title, markdown_text, is_dark` | `Result<String>` | Standalone complete HTML document export |
+| `parse_csv_preview_native` | `content: String, max_rows: u32` | `Result<CsvPreviewDto>` | Zero-copy CSV row counting and quoted cell extraction |
+| `get_file_metadata_native` | `file_path: String` | `Result<FileMetadataDto>` | File existence, modification timestamp (mtime), size |
+| `open_folder_native` | `file_path: String` | `Result<bool>` | Opens Explorer and highlights target file |le         |
 
 ---
 

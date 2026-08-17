@@ -43,20 +43,16 @@ pub fn index_documents_native(docs: Vec<DocSearchInput>) -> Result<bool, String>
     Ok(true)
 }
 
-/// クエリキーワードで高速全文検索を行う
-pub fn search_documents_native(query: String) -> Result<Vec<SearchResult>, String> {
+/// ドキュメントリストからクエリに一致するものを高速検索する（内部ロジック）
+pub fn search_documents_in_list(docs: &[DocSearchInput], query: &str) -> Vec<SearchResult> {
     let q = query.trim().to_lowercase();
     if q.is_empty() {
-        return Ok(Vec::new());
+        return Vec::new();
     }
-
-    let index = SEARCH_INDEX
-        .lock()
-        .map_err(|e| format!("インデックスのロック取得失敗: {}", e))?;
 
     let mut results = Vec::new();
 
-    for doc in index.iter() {
+    for doc in docs.iter() {
         let title_lower = doc.title.to_lowercase();
         let content_lower = doc.content.to_lowercase();
 
@@ -70,8 +66,10 @@ pub fn search_documents_native(query: String) -> Result<Vec<SearchResult>, Strin
             for line in doc.content.lines() {
                 if line.to_lowercase().contains(&q) {
                     let trimmed = line.trim();
-                    snippet = if trimmed.len() > 120 {
-                        format!("{}...", &trimmed[..120])
+                    let char_count = trimmed.chars().count();
+                    snippet = if char_count > 80 {
+                        let truncated: String = trimmed.chars().take(80).collect();
+                        format!("{}...", truncated)
                     } else {
                         trimmed.to_string()
                     };
@@ -93,7 +91,16 @@ pub fn search_documents_native(query: String) -> Result<Vec<SearchResult>, Strin
     }
 
     results.sort_by_key(|b| std::cmp::Reverse(b.score));
-    Ok(results)
+    results
+}
+
+/// クエリキーワードで高速全文検索を行う
+pub fn search_documents_native(query: String) -> Result<Vec<SearchResult>, String> {
+    let index = SEARCH_INDEX
+        .lock()
+        .map_err(|e| format!("インデックスのロック取得失敗: {}", e))?;
+
+    Ok(search_documents_in_list(&index, &query))
 }
 
 #[cfg(test)]
@@ -107,9 +114,24 @@ mod tests {
             title: "Tauri v2 ガイド".to_string(),
             content: "QuMaEditor は Rust で動作します。\nTags: #ガイド".to_string(),
         }];
-        index_documents_native(docs).unwrap();
-        let hits = search_documents_native("Rust".to_string()).unwrap();
+        let hits = search_documents_in_list(&docs, "Rust");
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].doc_id, "doc-1");
+    }
+
+    #[test]
+    fn test_search_japanese_multibyte_slice_no_panic() {
+        // 日本語マルチバイト文字が境界付近（バイト長120前後）にあるケースのテスト
+        let long_japanese_line = "これは日本語のテスト文章です。キーワード合致の確認を行っています。非常に長い文章が含まれており、従来のバイト長スライスではマルチバイト文字の途中で切断されてpanicを起こしていました。安全に文字数単位で切り詰められることを検証します。";
+        let docs = vec![DocSearchInput {
+            id: "doc-jp".to_string(),
+            title: "日本語テスト文書".to_string(),
+            content: format!("タイトル\n{}\nおわり", long_japanese_line),
+        }];
+        let hits = search_documents_in_list(&docs, "合致");
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].doc_id, "doc-jp");
+        assert!(hits[0].snippet.contains("合致"));
+        assert!(hits[0].snippet.ends_with("..."));
     }
 }

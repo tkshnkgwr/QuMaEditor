@@ -38,6 +38,8 @@ printpdf = "0.7"            # ブラウザ非依存のネイティブ PDF 直接
 syntect = "5.2"             # ネイティブ高速構文ハイライト
 similar = "2.6"             # 高速 Text Diff 差分計算エンジン
 rayon = "1.10"              # マルチスレッド並列処理エンジン
+serde_yaml = "0.9"          # 高速・高信頼 YAML デシリアライズ
+unicode-segmentation = "1.12" # 高速・高精度 Unicode 単語/文字境界走査
 specta = { version = "=2.0.0-rc.20" }
 specta-typescript = "0.0.7"
 tauri-specta = { version = "=2.0.0-rc.20", features = ["javascript", "typescript"] }

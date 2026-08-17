@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Upload, Lock, Tag, Plus, X, ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useRef, useState, useMemo } from 'react';
+import { Upload, Lock, Unlock, Tag, Plus, X, ChevronDown, ChevronRight, Edit3, Layers, Download, Zap } from 'lucide-react';
 import { EditorSettings, MarkdownDoc } from '../types';
 import { handleAutoListContinuation, insertFormatting } from '../utils/markdownUtils';
 
@@ -16,6 +16,11 @@ interface EditorProps {
   /** textareaRef を親コンポーネントへ公開するコールバック (フォーマット時の選択範囲取得に使用) */
   onTextareaRef?: (ref: HTMLTextAreaElement | null) => void;
   isDark?: boolean;
+  isReadOnly?: boolean;
+  isCsv?: boolean;
+  onToggleEditLock?: () => void;
+  onLoadFullDoc?: () => void;
+  onLoadMoreChunk?: () => void;
 }
 
 export const Editor: React.FC<EditorProps> = ({
@@ -30,6 +35,11 @@ export const Editor: React.FC<EditorProps> = ({
   onUpdateTags,
   onTextareaRef,
   isDark = true,
+  isReadOnly = false,
+  isCsv = false,
+  onToggleEditLock,
+  onLoadFullDoc,
+  onLoadMoreChunk,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -63,9 +73,26 @@ export const Editor: React.FC<EditorProps> = ({
     onUpdateTags?.(updated);
   };
 
-  // 行番号の計算
-  const lineCount = content ? content.split('\n').length : 1;
-  const lineNumbers = Array.from({ length: lineCount }, (_, i) => i + 1);
+  // 改行文字の高速カウント (ゼロアロケーション)
+  const lineCount = useMemo(() => {
+    if (!content) return 1;
+    let count = 1;
+    for (let i = 0; i < content.length; i++) {
+      if (content.charCodeAt(i) === 10) {
+        count++;
+      }
+    }
+    return count;
+  }, [content]);
+
+  // 行番号文字列の単一キャッシュ (10万個のDOM要素生成を完全廃止し1要素化)
+  const lineNumbersText = useMemo(() => {
+    let result = '';
+    for (let i = 1; i <= lineCount; i++) {
+      result += i + (i === lineCount ? '' : '\n');
+    }
+    return result;
+  }, [lineCount]);
 
   // 行番号およびプレビューとのスクロール同期処理
   const handleScroll = () => {
@@ -80,15 +107,20 @@ export const Editor: React.FC<EditorProps> = ({
     }
   };
 
-  // カーソル位置の行・列番号を更新
+  // カーソル位置の行・列番号を高速更新 (split を使わないゼロアロケーション走査)
   const updateCursorPos = () => {
     if (!textareaRef.current) return;
     const pos = textareaRef.current.selectionStart;
-    const textBefore = content.slice(0, pos);
-    const lines = textBefore.split('\n');
-    const currentLine = lines.length;
-    const currentCol = lines[lines.length - 1].length + 1;
-    onCursorChange(currentLine, currentCol);
+    let line = 1;
+    let lastLineStart = 0;
+    for (let i = 0; i < pos; i++) {
+      if (content.charCodeAt(i) === 10) {
+        line++;
+        lastLineStart = i + 1;
+      }
+    }
+    const col = pos - lastLineStart + 1;
+    onCursorChange(line, col);
   };
 
   // キーバインドと特殊動作
@@ -191,18 +223,81 @@ export const Editor: React.FC<EditorProps> = ({
         </div>
       )}
 
-      {/* YAML Front Matter 保護エリア (タグのみ編集可 - テーマ完全調和・高明度) */}
-      <div className={`border-b shrink-0 font-mono text-xs select-none transition-colors ${
-        isDark
-          ? 'bg-slate-900/90 border-slate-800 text-slate-300'
-          : 'bg-amber-50/90 border-amber-200 text-slate-900 shadow-2xs'
-      }`}>
+      {/* CSV ファイル用の ReadOnly / 編集モード切替バナー */}
+      {isCsv && (
         <div
-          onClick={() => setIsFrontMatterOpen(!isFrontMatterOpen)}
-          className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
-            isDark ? 'hover:bg-slate-800/60' : 'hover:bg-amber-100/80'
+          className={`px-3 py-2 border-b select-none flex items-center justify-between transition-colors ${
+            isReadOnly
+              ? isDark
+                ? 'bg-amber-950/40 border-amber-800/60 text-amber-200'
+                : 'bg-amber-50 border-amber-200 text-amber-900'
+              : isDark
+                ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-900'
           }`}
         >
+          <div className="flex items-center gap-2 text-xs">
+            {isReadOnly ? (
+              <>
+                <Lock className={`w-4 h-4 shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-700'}`} />
+                <span className="font-bold">読み取り専用 (CSV)</span>
+                <span className={`text-[11px] hidden sm:inline ${isDark ? 'text-amber-300/80' : 'text-amber-800'}`}>
+                  — 安全のため保護されています。自動保存・LocalStorage保存は無効です。
+                </span>
+              </>
+            ) : (
+              <>
+                <Unlock className={`w-4 h-4 shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`} />
+                <span className="font-bold">編集モード (CSV)</span>
+                <span className={`text-[11px] hidden sm:inline ${isDark ? 'text-emerald-300/80' : 'text-emerald-800'}`}>
+                  — 自動保存は無効です。編集後は手動保存 (Ctrl+S) で実ファイルへ保存してください。
+                </span>
+              </>
+            )}
+          </div>
+          {onToggleEditLock && (
+            <button
+              onClick={onToggleEditLock}
+              className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
+                isReadOnly
+                  ? isDark
+                    ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-black/40'
+                    : 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-900/20'
+                  : isDark
+                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300'
+              }`}
+              title={isReadOnly ? 'CSV の編集を有効化する' : '読み取り専用に戻す'}
+            >
+              {isReadOnly ? (
+                <>
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>編集を有効化</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>読み取り専用に戻す</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* YAML Front Matter 保護エリア (Markdown ファイル時のみ表示 - タグのみ編集可) */}
+      {!isCsv && (
+        <div className={`border-b shrink-0 font-mono text-xs select-none transition-colors ${
+          isDark
+            ? 'bg-slate-900/90 border-slate-800 text-slate-300'
+            : 'bg-amber-50/90 border-amber-200 text-slate-900 shadow-2xs'
+        }`}>
+          <div
+            onClick={() => setIsFrontMatterOpen(!isFrontMatterOpen)}
+            className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
+              isDark ? 'hover:bg-slate-800/60' : 'hover:bg-amber-100/80'
+            }`}
+          >
           <div className="flex items-center gap-2">
             {isFrontMatterOpen ? (
               <ChevronDown className={`w-3.5 h-3.5 ${isDark ? 'text-amber-400' : 'text-amber-800'}`} />
@@ -331,23 +426,25 @@ export const Editor: React.FC<EditorProps> = ({
           </div>
         )}
       </div>
+      )}
 
       {/* エディタ＆行番号エリア */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* 行番号カラム */}
+        {/* 行番号カラム (単一 pre による超高速・ゼロDOMオーバーヘッド描画) */}
         {settings.lineNumbers && (
           <div
             ref={lineNumbersRef}
-            className={`w-12 py-3 text-right pr-3 font-mono text-xs select-none overflow-hidden shrink-0 leading-relaxed border-r ${
+            className={`min-w-12 px-2.5 py-3 text-right font-mono text-xs select-none overflow-hidden shrink-0 border-r pointer-events-none ${
               isDark
                 ? 'bg-slate-950 text-slate-600 border-slate-800'
                 : 'bg-slate-100 text-slate-400 border-slate-200'
             }`}
-            style={{ fontSize: `${settings.fontSize}px` }}
+            style={{
+              fontSize: `${settings.fontSize}px`,
+              lineHeight: 1.625,
+            }}
           >
-            {lineNumbers.map((num) => (
-              <div key={num}>{num}</div>
-            ))}
+            <pre className="font-mono m-0 p-0 text-right whitespace-pre">{lineNumbersText}</pre>
           </div>
         )}
 
@@ -360,21 +457,83 @@ export const Editor: React.FC<EditorProps> = ({
           onKeyUp={updateCursorPos}
           onClick={updateCursorPos}
           onScroll={handleScroll}
-          placeholder="ここからMarkdown入力を開始してください..."
+          readOnly={isReadOnly}
+          placeholder={isCsv ? (isReadOnly ? "このCSVファイルは読み取り専用です。「編集を有効化」ボタンを押すと編集できます。" : "CSVデータを入力してください...") : "ここからMarkdown入力を開始してください..."}
           spellCheck={false}
           className={`flex-1 w-full h-full p-3 font-mono resize-none focus:outline-none leading-relaxed transition-colors ${
             isDark
               ? 'bg-slate-950 text-slate-100 selection:bg-cyan-800 selection:text-slate-100'
               : 'bg-white text-slate-900 selection:bg-cyan-200 selection:text-slate-900'
           } ${
+            isReadOnly ? 'cursor-default opacity-90' : ''
+          } ${
             settings.wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre overflow-x-auto'
           }`}
           style={{
             fontSize: `${settings.fontSize}px`,
+            lineHeight: 1.625,
             tabSize: 2,
           }}
         />
       </div>
+
+      {/* 大容量ファイルの遅延読み込み（部分表示中）アクションバー */}
+      {doc?.isChunkedLoaded && (
+        <div
+          className={`px-4 py-2 border-t select-none flex items-center justify-between transition-colors text-xs shrink-0 ${
+            isDark
+              ? 'bg-slate-900/95 border-slate-800 text-slate-300'
+              : 'bg-cyan-50/95 border-cyan-200 text-cyan-950 shadow-md'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono font-bold">
+              <Zap className="w-3 h-3 text-cyan-400 fill-cyan-400" />
+              大容量高速ロード中
+            </span>
+            <span className="font-medium">
+              冒頭 <strong className={isDark ? 'text-white' : 'text-cyan-900'}>{lineCount.toLocaleString()}</strong> 行を表示中
+              {doc.totalSizeBytes && (
+                <span className="text-[11px] opacity-70 ml-1">
+                  (全体: 約 {(doc.totalSizeBytes / 1024 / 1024).toFixed(1)} MB)
+                </span>
+              )}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {onLoadMoreChunk && (
+              <button
+                onClick={onLoadMoreChunk}
+                className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  isDark
+                    ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700'
+                    : 'bg-white hover:bg-slate-100 text-cyan-800 border border-cyan-300'
+                }`}
+                title="さらに約 1,500 行読み込みます"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>さらに読み込む</span>
+              </button>
+            )}
+
+            {onLoadFullDoc && (
+              <button
+                onClick={onLoadFullDoc}
+                className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  isDark
+                    ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                    : 'bg-cyan-700 hover:bg-cyan-800 text-white'
+                }`}
+                title="ファイル全体を完全に読み込みます"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>全文を一括読み込み</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

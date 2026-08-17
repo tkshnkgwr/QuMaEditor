@@ -27,6 +27,10 @@ export interface MarkdownDoc {
   filePath?: string;   // 実ファイルの絶対パス（ローカルファイル上書き保存用）
   isRemote?: boolean;   // リモートファイルフラグ（trueの場合は自動保存対象外）
   remoteUrl?: string;  // リモート参照元URL
+  isCsv?: boolean;      // CSVファイルフラグ（LocalStorage非保存・自動保存無効・通常ReadOnly）
+  isChunkedLoaded?: boolean; // 遅延読み込み（部分表示中）フラグ
+  loadedBytes?: number;     // 現在読み込み済みのバイト数
+  totalSizeBytes?: number;  // ファイル全体の総バイト数
 }
 
 export type LogLevel = 'info' | 'warn' | 'error';
@@ -43,6 +47,8 @@ export type ViewMode = 'split' | 'editor' | 'preview';
 
 export type ThemeMode = 'dark' | 'light' | 'system';
 
+export type HeadingTheme = 'muted' | 'vivid' | 'high_contrast' | 'monochrome';
+
 export type SaveStatus = 'saved' | 'saved_file' | 'saved_local' | 'saving' | 'editing' | 'unsaved';
 
 // UPDATE 2026-08-04: 自動保存状態（編集中 'editing' を含む）の型定義を追加
@@ -53,6 +59,7 @@ export interface EditorSettings {
   syncScroll: boolean;
   autoSaveIntervalMs: number; // 最小1000ms, 最大10000ms
   theme: ThemeMode;
+  headingTheme?: HeadingTheme; // 見出しカラーテーマ
   defaultAuthor?: string; // 既定の作成者名 (YAML Front Matter 自動付与用)
 }
 

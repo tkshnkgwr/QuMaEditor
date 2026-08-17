@@ -47,6 +47,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose,
     {
       category: '表示 & ヘルプ',
       items: [
+        { keys: [modKey, 'E'], description: '編集のみ ↔ プレビューのみ表示切り替え' },
         { keys: [modKey, 'Shift', 'Z'], description: 'Zen集中執筆モードの切り替え' },
         { keys: [modKey, 'Shift', 'D'], description: 'リアルタイムタブ差分比較 (Diff)' },
         { keys: [modKey, 'Shift', 'L'], description: 'システム動作ログ一覧の表示 (最大100件)' },
