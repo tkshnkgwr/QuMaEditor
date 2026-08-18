@@ -2,13 +2,13 @@
 
 **English** | [日本語版](docs/ja/USER_GUIDE.md)
 
-## 1. UI Components Overview (v1.4.0)
+## 1. UI Components Overview (v1.4.1)
 
-QuMaEditor features an intuitive, modern desktop UI.
+QuMaEditor features an intuitive Windows desktop-native layout:
 
 1. **Title Bar (Header)**:
-   - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), EOL badge (`LF`, `CRLF`), character & line counter.
-   - Right: Theme toggle (Light/Dark/System), version info (`v1.4.0`), settings button, native window controls.
+   - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), line-ending badge (`LF`, `CRLF`), character and line counters.
+   - Right: Theme toggle (Light/Dark/System), version info (`v1.4.1`), settings button, native window controls.
    - Sub-bar: File / Template / Help dropdown menus, view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
 2. **Formatting Toolbar**:
    - Headings (H1~H3), Bold, Italic, Underline, Strikethrough, List, Task, Table, Code, Quote, Link, Image upload, Horizontal Rule, Timestamp.

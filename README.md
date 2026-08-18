@@ -1,8 +1,8 @@
-# QuMaEditor (Quick & Minimal Markdown Editor)
+# QuMaEditor — High-Performance Native Markdown & CSV Desktop Editor
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.4.0-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.4.1-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v19-61dafb?logo=react)](https://react.dev/)

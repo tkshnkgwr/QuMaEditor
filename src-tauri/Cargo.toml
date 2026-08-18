@@ -1,7 +1,7 @@
 [package]
 name = "QuMaEditor"
-version = "1.4.0"
-description = "High Performance Native Markdown Editor Desktop Application"
+version = "1.4.1"
+description = "High-Performance Desktop Markdown Editor with Native Encoding Support"
 authors = ["you"]
 edition = "2021"
 default-run = "QuMaEditor"

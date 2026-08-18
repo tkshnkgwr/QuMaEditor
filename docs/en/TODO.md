@@ -5,6 +5,13 @@ List of completed features and upcoming development tasks for QuMaEditor.
 ---
 
 ## 🎯 Completed Tasks
+ 
+### v1.4.1 Release (2026-08-18)
+
+- [x] **Print Preview Overhaul & Multi-Page Pagination**: Real-time layout/paper size synchronization, document file name header, crisp task list printing.
+- [x] **Mermaid Diagram Single-Page Auto-Scaling & Blank Page Elimination**: Auto-scales large diagrams to fit single page, zero orphan borders or empty pages.
+- [x] **Instant Layout Switching & Settings Synchronization**: CSS display control for zero-latency Preview switching, line-height & font-family propagation.
+- [x] **Windows "SendTo" Setting Removal**: Cleaned up unused registry stubs and settings modal checkbox.
 
 ### v1.4.0 Release (2026-08-18)
 

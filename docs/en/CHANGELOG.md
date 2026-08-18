@@ -2,6 +2,23 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.4.1] - 2026-08-18
+
+### 🖨️ Print Preview Overhaul, Mermaid Auto-Scaling, and Real-Time Layout Sync (v1.4.1)
+
+- **Print Preview Overhaul & Multi-Page Pagination Optimization**:
+  - Instant preview update upon paper size and orientation changes in print dialog.
+  - Document file name printing in print header alongside QuMaEditor badge.
+  - Crisp task list printing with clear checkboxes and strike-through support.
+- **Mermaid Diagram Single-Page Auto-Scaling & Blank Page Elimination**:
+  - Automatically scales oversized and tall diagrams to cleanly fit inside a single page.
+  - Completely eradicated empty blank pages and orphan border outlines during print.
+- **Instant Layout Switching & Settings Synchronization**:
+  - Zero-latency view mode switching via CSS display control for `Preview`.
+  - Full propagation of line-height and font family preferences into markdown preview.
+- **Windows "SendTo" Setting Removal**:
+  - Cleaned up unused SendTo registry stubs and settings modal checkbox.
+
 ## [1.4.0] - 2026-08-18
 
 ### 🚀 Rust Native Auto-Formatting, Zero-Latency Typing, Fast CSV, and Modularization (v1.4.0)
