@@ -32,6 +32,8 @@ pub fn export_specta_types() {
             commands::toggle_task_native,
             commands::export_html_full_native,
             commands::parse_csv_preview_native,
+            commands::format_markdown_native,
+            commands::render_markdown_html_native,
         ]);
 
     #[cfg(debug_assertions)]
@@ -49,7 +51,7 @@ pub fn export_specta_types() {
 }
 
 /// Windows のコンテキストメニュー「QuMaEditorで開く」を自動登録する
-fn register_send_to_menu_native() -> Result<bool, String> {
+fn register_context_menu_native() -> Result<bool, String> {
     #[cfg(target_os = "windows")]
     {
         let exe_path = std::env::current_exe()
@@ -106,7 +108,7 @@ pub fn run() {
         }))
         .setup(|_app| {
             tauri::async_runtime::spawn_blocking(move || {
-                let _ = register_send_to_menu_native();
+                let _ = register_context_menu_native();
             });
             Ok(())
         })
@@ -128,6 +130,8 @@ pub fn run() {
             commands::toggle_task_native,
             commands::export_html_full_native,
             commands::parse_csv_preview_native,
+            commands::format_markdown_native,
+            commands::render_markdown_html_native,
             commands::open_folder_native,
         ])
         .run(tauri::generate_context!())

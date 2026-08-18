@@ -191,6 +191,28 @@ async parseCsvPreviewNative(content: string, maxRows: number) : Promise<Result<C
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Markdown ドキュメントの高速ネイティブ自動整形（空行圧縮・見出し空行・表組み垂直整列）を実行する
+ */
+async formatMarkdownNative(markdownText: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("format_markdown_native", { markdownText }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * syntect による構文ハイライト付きネイティブ HTML をレンダリングする
+ */
+async renderMarkdownHtmlNative(markdownText: string, isDark: boolean) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("render_markdown_html_native", { markdownText, isDark }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

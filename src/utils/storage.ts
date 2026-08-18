@@ -13,6 +13,9 @@ export const STORAGE_KEYS = {
 /** デフォルトのエディタ設定値 */
 export const DEFAULT_SETTINGS: EditorSettings = {
   fontSize: 15,
+  lineHeight: 1.625,
+  fontFamily: 'monospace',
+  tabSize: 2,
   wordWrap: true,
   lineNumbers: true,
   syncScroll: true,

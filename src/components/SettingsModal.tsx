@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings as SettingsIcon, RotateCcw, HardDrive, Trash2, Copy, Check, Folder, Send } from 'lucide-react';
+import { X, Settings as SettingsIcon, RotateCcw, HardDrive, Trash2, Copy, Check, Folder } from 'lucide-react';
 import { appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
-import { checkSendToMenuNative, registerSendToMenuNative } from '../utils/tauriNative';
 import { EditorSettings } from '../types';
 
 interface SettingsModalProps {
@@ -25,13 +24,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [storageKb, setStorageKb] = useState<number>(0);
   const [docCount, setDocCount] = useState<number>(0);
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [isSendToRegistered, setIsSendToRegistered] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isOpen) return;
-
-    // SendTo 登録状態のチェック
-    checkSendToMenuNative().then((res) => setIsSendToRegistered(res));
 
     // LocalStorage 容量およびドキュメント数の計測
     try {
@@ -67,13 +62,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     };
     fetchPath();
   }, [isOpen]);
-
-  const handleToggleSendTo = async (enable: boolean) => {
-    const success = await registerSendToMenuNative(enable);
-    if (success || !enable) {
-      setIsSendToRegistered(enable);
-    }
-  };
 
   const handleCopyPath = () => {
     if (!appDataPath) return;
@@ -148,6 +136,72 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 className="w-28 accent-cyan-500 cursor-pointer"
               />
               <span className="w-8 font-mono text-cyan-500 text-right font-semibold">{settings.fontSize}px</span>
+            </div>
+          </div>
+
+          {/* フォントファミリー */}
+          <div className="flex items-center justify-between">
+            <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>エディタフォント</span>
+            <select
+              value={settings.fontFamily || 'monospace'}
+              onChange={(e) => onUpdateSettings({ fontFamily: e.target.value as any })}
+              className={`border rounded px-2 py-1 outline-none text-xs ${
+                isDark
+                  ? 'bg-slate-950 border-slate-700 text-slate-200 focus:border-cyan-500'
+                  : 'bg-slate-50 border-slate-300 text-slate-800 focus:border-cyan-600 font-medium'
+              }`}
+            >
+              <option value="monospace">等幅 (Monospace / JetBrains Mono)</option>
+              <option value="sans-serif">ゴシック (Sans-serif / Inter / メイリオ)</option>
+              <option value="serif">明朝 (Serif / Noto Serif)</option>
+            </select>
+          </div>
+
+          {/* 行間 (Line Height) */}
+          <div className="flex items-center justify-between">
+            <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>行間 (Line Height)</span>
+            <select
+              value={settings.lineHeight || 1.625}
+              onChange={(e) => onUpdateSettings({ lineHeight: parseFloat(e.target.value) })}
+              className={`border rounded px-2 py-1 outline-none text-xs ${
+                isDark
+                  ? 'bg-slate-950 border-slate-700 text-slate-200 focus:border-cyan-500'
+                  : 'bg-slate-50 border-slate-300 text-slate-800 focus:border-cyan-600 font-medium'
+              }`}
+            >
+              <option value="1.4">1.4 (コンパクト)</option>
+              <option value="1.625">1.625 (標準)</option>
+              <option value="1.8">1.8 (ゆったり)</option>
+              <option value="2.0">2.0 (広め)</option>
+            </select>
+          </div>
+
+          {/* タブ幅 */}
+          <div className="flex items-center justify-between">
+            <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>タブ幅 (Tab Size)</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ tabSize: 2 })}
+                className={`px-2.5 py-0.5 rounded border text-xs font-mono font-bold transition-colors ${
+                  (settings.tabSize || 2) === 2
+                    ? 'bg-cyan-600 text-white border-cyan-500 shadow-xs'
+                    : isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-300 text-slate-600'
+                }`}
+              >
+                2 スペース
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateSettings({ tabSize: 4 })}
+                className={`px-2.5 py-0.5 rounded border text-xs font-mono font-bold transition-colors ${
+                  settings.tabSize === 4
+                    ? 'bg-cyan-600 text-white border-cyan-500 shadow-xs'
+                    : isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-100 border-slate-300 text-slate-600'
+                }`}
+              >
+                4 スペース
+              </button>
             </div>
           </div>
 
@@ -259,21 +313,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <option value={5000}>5.0秒</option>
               <option value={10000}>10.0秒 (最大)</option>
             </select>
-          </div>
-
-          {/* Windows エクスプローラーの「送る (SendTo)」連携 */}
-          <div className="flex items-center justify-between">
-            <span className={`font-medium flex items-center gap-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-              <Send className="w-3.5 h-3.5 text-cyan-400" />
-              Windows「送る (SendTo)」メニューに登録
-            </span>
-            <input
-              type="checkbox"
-              checked={isSendToRegistered}
-              onChange={(e) => handleToggleSendTo(e.target.checked)}
-              className="w-4 h-4 rounded accent-cyan-500 cursor-pointer"
-              title="エクスプローラーの『送る』メニューに QuMaEditor を追加/解除"
-            />
           </div>
 
           {/* 内部ストレージ (LocalStorage / AppData) 情報セクション */}

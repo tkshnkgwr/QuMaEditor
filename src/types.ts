@@ -51,16 +51,40 @@ export type HeadingTheme = 'muted' | 'vivid' | 'high_contrast' | 'monochrome';
 
 export type SaveStatus = 'saved' | 'saved_file' | 'saved_local' | 'saving' | 'editing' | 'unsaved';
 
-// UPDATE 2026-08-04: 自動保存状態（編集中 'editing' を含む）の型定義を追加
+/**
+ * エディタのフォントファミリー設定
+ * - `monospace`: 等幅フォント (JetBrains Mono / Cascadia Code / Consolas)
+ * - `sans-serif`: ゴシック体 (Inter / メイリオ / Hiragino Sans)
+ * - `serif`: 明朝体 (Noto Serif JP / 游明朝)
+ */
+export type EditorFontFamily = 'monospace' | 'sans-serif' | 'serif';
+
+/**
+ * エディタ全般の動作・外観カスタマイズ設定インターフェース
+ */
 export interface EditorSettings {
+  /** 基本フォントサイズ (px, 12〜24) */
   fontSize: number;
+  /** 行間 Line Height (1.4: コンパクト, 1.625: 標準, 1.8: ゆったり, 2.0: 広め) */
+  lineHeight?: number;
+  /** エディタフォントファミリー ('monospace' | 'sans-serif' | 'serif') */
+  fontFamily?: EditorFontFamily;
+  /** タブ文字幅 Tab Size (2 または 4 スペース) */
+  tabSize?: number;
+  /** 右端での自動折り返し有効フラグ */
   wordWrap: boolean;
+  /** 行番号表示フラグ */
   lineNumbers: boolean;
+  /** 分割表示時のスクロール連動同期フラグ */
   syncScroll: boolean;
-  autoSaveIntervalMs: number; // 最小1000ms, 最大10000ms
+  /** 自動保存インターバルミリ秒 (1000〜10000ms) */
+  autoSaveIntervalMs: number;
+  /** カラーテーマ ('dark' | 'light' | 'system') */
   theme: ThemeMode;
-  headingTheme?: HeadingTheme; // 見出しカラーテーマ
-  defaultAuthor?: string; // 既定の作成者名 (YAML Front Matter 自動付与用)
+  /** 見出しカラーテーマ ('muted' | 'vivid' | 'high_contrast' | 'monochrome') */
+  headingTheme?: HeadingTheme;
+  /** 既定の作成者名 (YAML Front Matter 自動付与用) */
+  defaultAuthor?: string;
 }
 
 export interface TextStats {

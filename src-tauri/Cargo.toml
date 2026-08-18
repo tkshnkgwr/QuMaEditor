@@ -40,6 +40,7 @@ similar = "2.6"             # 高速 Text Diff 差分計算エンジン
 rayon = "1.10"              # マルチスレッド並列処理エンジン
 serde_yaml = "0.9"          # 高速・高信頼 YAML デシリアライズ
 unicode-segmentation = "1.12" # 高速・高精度 Unicode 単語/文字境界走査
+unicode-width = "0.2"         # 表組み垂直整列用の高精度 Unicode 表示幅計算
 specta = { version = "=2.0.0-rc.20" }
 specta-typescript = "0.0.7"
 tauri-specta = { version = "=2.0.0-rc.20", features = ["javascript", "typescript"] }

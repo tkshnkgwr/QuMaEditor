@@ -32,6 +32,7 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tauri-specta",
  "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

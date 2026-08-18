@@ -73,27 +73,41 @@ body.light ::-webkit-scrollbar-thumb:hover {
  * ----------------------------------------------------------------------------- */
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 15mm 15mm 15mm 15mm;
+    /* 印刷ダイアログでの「縦/横」「用紙サイズ (A4/A3/Letter等)」変更を即座に反映 */
+    size: auto;
+    margin: 12mm 15mm 15mm 15mm;
   }
 
-  html, body {
+  html,
+  body,
+  #root {
     color-scheme: light !important;
     background: #ffffff !important;
     color: #0f172a !important;
     width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     overflow: visible !important;
-    font-size: 12pt !important;
+    font-size: 11pt !important;
     margin: 0 !important;
     padding: 0 !important;
+    display: block !important;
+    position: static !important;
   }
 
-  /* 印刷枠における親コンテナの flex/grid 配分・左右オフセットを強制リセット */
-  div, main, section {
+  /* 親コンテナの flex/grid 配分・固定高さ・overflow を完全解除し、複数ページの改ページを保証 */
+  div,
+  main,
+  section {
+    position: static !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
     flex: none !important;
     float: none !important;
-    position: static !important;
+    box-shadow: none !important;
     width: 100% !important;
     max-width: 100% !important;
     margin-left: 0 !important;
@@ -115,13 +129,15 @@ body.light ::-webkit-scrollbar-thumb:hover {
     display: none !important;
   }
 
-  /* プレビュー描画領域 (.preview-markdown) のみを A4 印刷対象として用紙左端から幅100%展開 */
+  /* プレビュー描画領域 (.preview-markdown) のみを印刷対象として全ページ展開 */
   .preview-markdown {
     display: block !important;
     position: static !important;
     width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     background: #ffffff !important;
     color: #0f172a !important;
     padding: 0 !important;
@@ -137,20 +153,39 @@ body.light ::-webkit-scrollbar-thumb:hover {
     border-color: #cbd5e1 !important;
   }
 
-  /* 見出し */
+  /* 見出し（直後での不自然な改ページを防止） */
   .preview-markdown h1,
   .preview-markdown h2,
-  .preview-markdown h3 {
+  .preview-markdown h3,
+  .preview-markdown h4,
+  .preview-markdown h5,
+  .preview-markdown h6 {
     color: #0f172a !important;
     border-bottom: 1pt solid #cbd5e1 !important;
-    page-break-after: avoid;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
   }
 
-  /* テーブル */
+  /* 段落（孤行・未亡人行の防止） */
+  .preview-markdown p {
+    orphans: 3 !important;
+    widows: 3 !important;
+  }
+
+  /* 表組み（テーブル行の途中分割を防止し、前後の要素と絶対に重ならないようクリア） */
   .preview-markdown table {
+    position: static !important;
+    clear: both !important;
     width: 100% !important;
     border-collapse: collapse !important;
-    page-break-inside: avoid;
+    margin: 6pt 0 12pt 0 !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .preview-markdown tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .preview-markdown th,
@@ -164,7 +199,79 @@ body.light ::-webkit-scrollbar-thumb:hover {
     font-weight: bold !important;
   }
 
-  /* コードブロック */
+  /* コードブロック・画像・引用ブロック（要素途中での裂け分割を防止） */
+  .preview-markdown pre,
+  .preview-markdown img,
+  .preview-markdown blockquote {
+    position: static !important;
+    clear: both !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Mermaid ダイアグラム印刷スタイル (外枠線・空白ページの完全排除＆用紙1ページへの自動フィット縮小) */
+  .preview-markdown .mermaid-wrapper,
+  .preview-markdown div[class*="mermaid-wrapper"] {
+    --diagram-zoom: 1 !important;
+    zoom: 1 !important;
+    transform: none !important;
+    position: static !important;
+    clear: both !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 6pt 0 12pt 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .preview-markdown .mermaid-svg-container {
+    --diagram-zoom: 1 !important;
+    zoom: 1 !important;
+    transform: none !important;
+    position: static !important;
+    clear: both !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .preview-markdown .mermaid-svg-container svg,
+  .preview-markdown svg[id^="mermaid-"] {
+    zoom: 1 !important;
+    transform: none !important;
+    display: block !important;
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 135mm !important; /* A4用紙1ページ内に確実に収まる自動縮小上限 */
+    margin: 0 auto !important;
+    overflow: visible !important;
+    border: none !important;
+    object-fit: contain !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   .preview-markdown pre {
     background: #f8fafc !important;
     border: 1pt solid #cbd5e1 !important;
@@ -172,7 +279,6 @@ body.light ::-webkit-scrollbar-thumb:hover {
     padding: 8pt !important;
     white-space: pre-wrap !important;
     word-break: break-all !important;
-    page-break-inside: avoid;
   }
 
   .preview-markdown code {
@@ -181,11 +287,66 @@ body.light ::-webkit-scrollbar-thumb:hover {
     border: 1pt solid #e2e8f0 !important;
   }
 
-  /* 引用ブロック */
   .preview-markdown blockquote {
     border-left: 3pt solid #0284c7 !important;
     background: #f0f9ff !important;
     color: #334155 !important;
     padding: 6pt 12pt !important;
+  }
+
+  /* タスクリスト印刷スタイル (チェックボックス枠・マーク・打消し線の明瞭化) */
+  .preview-markdown .task-list-item {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 6pt !important;
+    list-style: none !important;
+    margin: 4pt 0 !important;
+  }
+
+  .preview-markdown .task-checkbox {
+    width: 12pt !important;
+    height: 12pt !important;
+    min-width: 12pt !important;
+    min-height: 12pt !important;
+    border: 1.2pt solid #0f172a !important;
+    border-radius: 2.5pt !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin-top: 1.5pt !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .preview-markdown .task-checkbox-checked {
+    background: #0f172a !important;
+    border-color: #0f172a !important;
+  }
+
+  .preview-markdown .task-checkbox-checked svg {
+    display: block !important;
+    stroke: #ffffff !important;
+    stroke-width: 3.5 !important;
+    width: 8.5pt !important;
+    height: 8.5pt !important;
+  }
+
+  .preview-markdown .task-text-checked {
+    color: #475569 !important;
+    text-decoration: line-through solid #64748b !important;
+  }
+
+  .preview-markdown .task-checkbox-in-progress {
+    border: 1.5pt dashed #0284c7 !important;
+    background: #f0f9ff !important;
+  }
+
+  .preview-markdown .task-checkbox-in-progress svg {
+    display: block !important;
+    stroke: #0284c7 !important;
+    width: 8pt !important;
+    height: 8pt !important;
   }
 }

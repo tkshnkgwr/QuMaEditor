@@ -1,58 +1,68 @@
 # User Guide (USER_GUIDE)
 
-## 1. User Interface Overview
+**English** | [日本語版](docs/ja/USER_GUIDE.md)
 
-The Markdown Editor features an intuitive Windows dark-themed desktop layout:
+## 1. UI Components Overview (v1.4.0)
 
-1. **Title Bar**:
-   - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), save status.
-   - Right: Version badge (`v1.2.0`), Settings button, window controls.
-   - Dropdown Menu: File, Edit, View, Insert, Templates.
+QuMaEditor features an intuitive, modern desktop UI.
+
+1. **Title Bar (Header)**:
+   - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), EOL badge (`LF`, `CRLF`), character & line counter.
+   - Right: Theme toggle (Light/Dark/System), version info (`v1.4.0`), settings button, native window controls.
+   - Sub-bar: File / Template / Help dropdown menus, view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
 2. **Formatting Toolbar**:
-   - One-click buttons for Headings (H1~H3), Bold, Italic, Underline, Strikethrough, Lists, Tasks, Code, Tables, Images, Links.
-3. **Workspace**:
-   - Dual-view split mode (Editor / Preview), Editor-only, or Preview-only modes.
-4. **Status Bar**:
-   - Line/Column counters, Word & Character stats, Estimated reading time, Encoding selector, Newline indicator (LF / CRLF).
+   - Headings (H1~H3), Bold, Italic, Underline, Strikethrough, List, Task, Table, Code, Quote, Link, Image upload, Horizontal Rule, Timestamp.
+   - **✨ Markdown Auto-Formatting (`Ctrl+Shift+F`)**: Instantly aligns GFM tables, adds blank lines around headings, and collapses consecutive blank lines.
+   - **Selection Wrapping**: Wraps selected text when pressing formatting buttons.
+   - **Heading Insertion**: Inserts `# ` markers at the beginning of the active cursor line.
+3. **Workspace (Editor & Preview)**:
+   - **Zero-Latency Typing**: Bypasses preview parsing in "Editor Only" mode for lag-free typing.
+   - **`Ctrl + E` Focus Restoration**: Restores cursor position when toggling between editor and preview.
+   - **Mermaid Diagrams**: Dynamic SVG diagram rendering with zoom (50%~600%) and fullscreen modal.
+   - **CSV Table Preview**: Type auto-alignment (numbers right, dates center, strings left), sorting, and search filtering.
+4. **Status Bar (Footer)**:
+   - Persistence status badge (💾 Saved to Disk / 📦 Saved in App), cursor line/col, character/word count, reading time, encoding selector.
+   - **Statistics Dashboard**: Click the character/word counter to open the detailed `StatsModal`.
 
-## 2. Managing Encodings & Line Endings
+---
+
+## 2. Character Encodings & Line Breaks
 
 ### Opening Files
 
-- Click **File > Open (Ctrl+O)** or use the Sidebar file importer. Local `.md` or `.txt` files will automatically have their character encodings detected to prevent garbled text.
-- **Drag & Drop Support**:
-  - Drag and drop `.md` or `.txt` files directly from Windows File Explorer onto the editor workspace to open them as new tabs.
-  - Drop image files (`.png`, `.jpg`, `.gif`, `.svg`, etc.) to automatically embed them at the cursor position as Markdown image tags.
-  - Supports dragging and dropping multiple files simultaneously.
+- Open files via "File > Open (Ctrl+O)", **Drag & Drop from Explorer**, or right-click "Open with QuMaEditor".
+- Character encoding is auto-detected (UTF-8, Shift_JIS, EUC-JP) with zero garbled text.
+- Drag & drop text files (`.md`, `.txt`, `.csv`) to open as new tabs; drop images to insert Data URLs.
 
-### Saving / Exporting Files
+### Saving & Exporting
 
-- Select your target encoding (`UTF-8`, `Shift_JIS`, or `EUC-JP`) from the status bar dropdown menu.
-- **Shift_JIS**: Converts line endings to **CRLF** (`\r\n`).
-- **EUC-JP / UTF-8**: Converts line endings to **LF** (`\n`).
-- Click **File > Export (.md)** to download the file in your target encoding and line ending format.
+- Select target encoding from the status bar dropdown.
+- Shift_JIS automatically standardizes line breaks to **CRLF**; EUC-JP / UTF-8 to **LF**.
+- `Ctrl + S` directly saves back to disk; `Ctrl + Shift + S` opens the Save As dialog.
 
-## 3. Yama YAML Front Matter & Tag Operations
+---
 
-### Metadata Protection Panel
+## 3. Crash-Proof Dual Persistence
 
-- The editor features a **"YAML Front Matter (Protected)"** header block.
-- Fields such as `title`, `created`, `updated`, and `encoding` are **protected from direct text editing** to prevent accidental deletion or syntax corruption.
-- Click the header arrow to collapse or expand the Front Matter block.
+- Text is auto-saved to **LocalStorage** within 3 seconds of typing.
+- Use `Ctrl + S` to save directly to local `.md` files on disk.
+- External file modifications are detected via `mtime` with toast alerts and manual reload (`F5` / `Ctrl+R`).
 
-### Managing Tags
+---
 
-- Only the **tags** field inside the Front Matter panel can be updated interactively.
-- **Add Tag**: Click "+ Add Tag", type the tag name, and press Enter or the "Add" button.
-- **Remove Tag**: Click the `x` button on any active tag badge to delete it.
-- Defined tags are automatically serialized into the YAML Front Matter upon exporting (.md) your document.
+## 4. Keyboard Shortcuts
 
-## 4. Keyboard Shortcuts Help
-
-### Opening the Shortcuts Modal
-
-- Access via **Help > Keyboard Shortcuts** in the top title bar menu, or press <kbd>F1</kbd> on your keyboard.
-- Review all available hotkeys categorized into File Operations, Formatting, and View Toggles.
-- Dismiss the modal anytime by pressing <kbd>Esc</kbd> or clicking "Close".
-
-
+| Shortcut           | Action / Feature                               |
+| :----------------- | :--------------------------------------------- |
+| `Ctrl + N`         | Create new Markdown document                   |
+| `Ctrl + O`         | Open local text file (.md, .txt, .csv)         |
+| `Ctrl + S`         | Direct save to disk                            |
+| `Ctrl + Shift + S` | Save As (choose file location)                 |
+| `Ctrl + Shift + F` | Markdown auto-formatting (align tables, lines) |
+| `Ctrl + E`         | Toggle View Mode (Editor Only ↔ Preview Only)  |
+| `F5` / `Ctrl + R`  | Force reload file from disk                    |
+| `Ctrl + P`         | A4 Print / PDF Export dialog                   |
+| `Ctrl + B`         | Bold formatting / wrap selection               |
+| `Ctrl + I`         | Italic formatting / wrap selection             |
+| `Ctrl + Shift + Z` | Toggle Zen Focus Mode                          |
+| `F1`               | Open Keyboard Shortcuts Help                   |

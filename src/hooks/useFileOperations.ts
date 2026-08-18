@@ -183,8 +183,14 @@ export function useFileOperations({
 
   // 印刷
   const handlePrint = useCallback(() => {
+    const originalTitle = document.title;
+    document.title = currentDoc.title || 'document';
     window.print();
-  }, []);
+    // 印刷ダイアログ終了後に元に戻す (非同期)
+    setTimeout(() => {
+      document.title = currentDoc.title || originalTitle;
+    }, 1000);
+  }, [currentDoc.title]);
 
   return {
     handleOpenLocalFile,

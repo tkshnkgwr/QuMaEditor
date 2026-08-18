@@ -12,12 +12,12 @@ This application adopts a multi-process desktop model powered by the Tauri v2 fr
 flowchart TD
     subgraph Core["🦀 Core Process (Rust / src-tauri)"]
         direction TB
-        NativeWin["🪟 Native Window\n(Decorations / Single-Instance)"]
-        Plugins["🔌 Tauri Plugins\n(fs / dialog / http)"]
-        Commands["⚡ Native IPC Commands\n(file_io / encoding / search / diff / text_processing)"]
+        NativeWin["🪟 Native Window<br/>(Decorations / Single-Instance)"]
+        Plugins["🔌 Tauri Plugins<br/>(fs / dialog / http)"]
+        Commands["⚡ Native IPC Commands<br/>(file_io / encoding / search / diff / text_processing)"]
     end
 
-    Core <===>|"📡 Tauri IPC (tauri-specta Type-Safe IPC)"| Renderer
+    Core <==>|"📡 Tauri IPC (tauri-specta Type-Safe IPC)"| Renderer
 
     subgraph Renderer["⚛️ Renderer Process (Webview2 / React 19 + TypeScript)"]
         direction TB
@@ -48,8 +48,8 @@ Data processing flow for file imports and exports:
 
 ```mermaid
 flowchart TD
-    FileSel["📂 File Selection (.md / .txt / .csv)"] --> ReadData["Uint8Array Binary Read\n(readFileNative / plugin-fs)"]
-    ReadData --> DetectEnc["Encoding Auto-Detection\n(encoding_rs: UTF-8 / Shift_JIS / EUC-JP)"]
+    FileSel["📂 File Selection (.md / .txt / .csv)"] --> ReadData["Uint8Array Binary Read<br/>(readFileNative / plugin-fs)"]
+    ReadData --> DetectEnc["Encoding Auto-Detection<br/>(encoding_rs: UTF-8 / Shift_JIS / EUC-JP)"]
     DetectEnc --> ToUtf8["Rust Native / UTF-8 String Conversion"]
     ToUtf8 --> AppState["JavaScript Standard UTF-8 (App State)"]
 
@@ -84,20 +84,20 @@ flowchart TD
 ```mermaid
 graph TD
     subgraph Core["Tauri Application Entry"]
-        Lib["lib.rs\n(Runner / Plugin Init / Specta Export)"]
-        GenSpecta["bin/gen_specta.rs\n(TS Binding Generator)"]
+        Lib["lib.rs<br/>(Runner / Plugin Init / Specta Export)"]
+        GenSpecta["bin/gen_specta.rs<br/>(TS Binding Generator)"]
     end
 
     subgraph CommandLayer["IPC Command Layer"]
-        Commands["commands.rs\n(tauri::command / Specta DTO)"]
+        Commands["commands.rs<br/>(tauri::command / Specta DTO)"]
     end
 
     subgraph DomainModules["Domain Modules"]
-        FileIO["file_io.rs\n(Native File I/O & Chunks)"]
-        Encoding["encoding.rs\n(Multi-Encoding Detection)"]
-        Search["search.rs\n(In-Memory Full-Text Search)"]
-        Diff["diff.rs\n(Text Diff & pulldown-cmark)"]
-        TextProc["text_processing.rs\n(Stats, Headings, CSV Preview, HTML)"]
+        FileIO["file_io.rs<br/>(Native File I/O & Chunks)"]
+        Encoding["encoding.rs<br/>(Multi-Encoding Detection)"]
+        Search["search.rs<br/>(In-Memory Full-Text Search)"]
+        Diff["diff.rs<br/>(Text Diff & pulldown-cmark)"]
+        TextProc["text_processing/<br/>(Stats, Headings, CSV, Formatter, HTML)"]
     end
 
     Lib --> Commands
@@ -109,12 +109,13 @@ graph TD
     Commands --> TextProc
 ```
 
-| Module Name | File Path | Responsibilities & Description |
-| :--- | :--- | :--- |
-| `lib` | [`src-tauri/src/lib.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/lib.rs) | Main entrypoint, plugin initialization, and Specta TypeScript binding generator handler |
-| `commands` | [`src-tauri/src/commands.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/commands.rs) | IPC command handlers exposed to TypeScript and Specta macro mappings |
-| `encoding` | [`src-tauri/src/encoding.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/encoding.rs) | Multi-encoding auto-detection (UTF-8, Shift_JIS, EUC-JP) and conversion via `encoding_rs` |
-| `file_io` | [`src-tauri/src/file_io.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/file_io.rs) | Native file reading, chunked streaming, direct byte writing, and Windows Explorer folder opening |
-| `search` | [`src-tauri/src/search.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/search.rs) | Fast inverted index search engine using `LazyLock<Mutex<Vec<DocSearchInput>>>` |
-| `diff` | [`src-tauri/src/diff.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/diff.rs) | Line-by-line text diffing via `similar` crate and native Markdown HTML parsing via `pulldown-cmark` |
-| `text_processing` | [`src-tauri/src/text_processing.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/text_processing.rs) | Text stats calculation, YAML front matter parser, heading outline, CSV fast preview, HTML export |
+| Module Name       | File Path                                                                                             | Responsibilities & Description                                                                                                   |
+| :---------------- | :---------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| `lib`             | [`src-tauri/src/lib.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/lib.rs)       | Main entrypoint, plugin initialization, and Specta TypeScript binding generator handler                                         |
+| `commands`        | [`src-tauri/src/commands.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/commands.rs) | IPC command handlers exposed to TypeScript and Specta macro mappings                                                             |
+| `encoding`        | [`src-tauri/src/encoding.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/encoding.rs) | Multi-encoding auto-detection (UTF-8, Shift_JIS, EUC-JP) and conversion via `encoding_rs`                                         |
+| `file_io`         | [`src-tauri/src/file_io.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/file_io.rs)   | Native file reading, chunked streaming, direct byte writing, and Windows Explorer folder opening                                 |
+| `search`          | [`src-tauri/src/search.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/search.rs)     | Fast inverted index search engine using `LazyLock<Mutex<Vec<DocSearchInput>>>`                                                   |
+| `diff`            | [`src-tauri/src/diff.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/diff.rs)         | Line-by-line text diffing via `similar` crate and native Markdown HTML parsing via `pulldown-cmark`                              |
+| `text_processing` | [`src-tauri/src/text_processing/`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/text_processing/) | Text stats calculation, YAML front matter parser, heading outline, CSV fast preview, table alignment formatting, syntect HTML |
+

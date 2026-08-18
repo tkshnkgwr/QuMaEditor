@@ -140,6 +140,20 @@ pub fn parse_csv_preview_native(content: String, max_rows: u32) -> Result<CsvPre
     text_processing::parse_csv_preview_native(content, max_rows)
 }
 
+/// Markdown ドキュメントの高速ネイティブ自動整形（空行圧縮・見出し空行・表組み垂直整列）を実行する
+#[tauri::command]
+#[specta::specta]
+pub fn format_markdown_native(markdown_text: String) -> Result<String, String> {
+    text_processing::format_markdown_native(markdown_text)
+}
+
+/// syntect による構文ハイライト付きネイティブ HTML をレンダリングする
+#[tauri::command]
+#[specta::specta]
+pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Result<String, String> {
+    text_processing::render_markdown_html_native(markdown_text, is_dark)
+}
+
 /// 指定ファイルの親フォルダをエクスプローラーで選択表示して開く (Windows)
 #[tauri::command]
 pub fn open_folder_native(file_path: String) -> Result<bool, String> {

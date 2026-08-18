@@ -46,6 +46,7 @@ interface ToolbarProps {
   onOpenTableModal: () => void;
   onInsertDate: () => void;
   onImageUpload: (file: File) => void;
+  onAutoFormat?: () => void;
   isDark?: boolean;
 }
 
@@ -54,6 +55,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onOpenTableModal,
   onInsertDate,
   onImageUpload,
+  onAutoFormat,
   isDark = true,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -227,6 +229,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <Calendar className="w-4 h-4 text-cyan-500" />
         </button>
+        {onAutoFormat && (
+          <button
+            onClick={onAutoFormat}
+            className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs font-medium ml-1 ${
+              isDark
+                ? 'bg-cyan-950/50 hover:bg-cyan-900/70 text-cyan-300 border border-cyan-800/60'
+                : 'bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-300'
+            }`}
+            title="Markdown 自動整形 (Ctrl+Shift+F) — 表組み垂直整列・見出し空行・連続空行圧縮"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400 fill-cyan-400/20" />
+            <span className="hidden sm:inline">整形</span>
+          </button>
+        )}
       </div>
     </div>
   );

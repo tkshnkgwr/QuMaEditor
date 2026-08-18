@@ -23,6 +23,9 @@ interface EditorProps {
   onLoadMoreChunk?: () => void;
 }
 
+// ドキュメントごとの直前カーソル位置・スクロール位置キャッシュ
+const docCursorHistoryMap = new Map<string, { start: number; end: number; scrollTop: number }>();
+
 export const Editor: React.FC<EditorProps> = ({
   content,
   onChange,
@@ -94,22 +97,20 @@ export const Editor: React.FC<EditorProps> = ({
     return result;
   }, [lineCount]);
 
-  // 行番号およびプレビューとのスクロール同期処理
-  const handleScroll = () => {
-    if (textareaRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = textareaRef.current;
-      if (lineNumbersRef.current) {
-        lineNumbersRef.current.scrollTop = scrollTop;
-      }
-      if (onScrollSync) {
-        onScrollSync(scrollTop, scrollHeight, clientHeight);
-      }
-    }
+  // カーソル・スクロール位置の保存
+  const saveCursorState = () => {
+    if (!textareaRef.current || !doc?.id) return;
+    docCursorHistoryMap.set(doc.id, {
+      start: textareaRef.current.selectionStart,
+      end: textareaRef.current.selectionEnd,
+      scrollTop: textareaRef.current.scrollTop,
+    });
   };
 
   // カーソル位置の行・列番号を高速更新 (split を使わないゼロアロケーション走査)
   const updateCursorPos = () => {
     if (!textareaRef.current) return;
+    saveCursorState();
     const pos = textareaRef.current.selectionStart;
     let line = 1;
     let lastLineStart = 0;
@@ -122,6 +123,47 @@ export const Editor: React.FC<EditorProps> = ({
     const col = pos - lastLineStart + 1;
     onCursorChange(line, col);
   };
+
+  // 行番号およびプレビューとのスクロール同期処理
+  const handleScroll = () => {
+    if (textareaRef.current) {
+      saveCursorState();
+      const { scrollTop, scrollHeight, clientHeight } = textareaRef.current;
+      if (lineNumbersRef.current) {
+        lineNumbersRef.current.scrollTop = scrollTop;
+      }
+      if (onScrollSync) {
+        onScrollSync(scrollTop, scrollHeight, clientHeight);
+      }
+    }
+  };
+
+  // マウント時・ドキュメント切り替え・プレビュー復帰時のカーソル位置・フォーカス自動復元
+  React.useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    if (doc?.id) {
+      const history = docCursorHistoryMap.get(doc.id);
+      if (history) {
+        el.setSelectionRange(
+          Math.min(history.start, el.value.length),
+          Math.min(history.end, el.value.length)
+        );
+        el.scrollTop = history.scrollTop;
+      }
+    }
+
+    // プレビュー復帰時等の自動フォーカス
+    const timer = setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        updateCursorPos();
+      }
+    }, 10);
+
+    return () => clearTimeout(timer);
+  }, [doc?.id]);
 
   // キーバインドと特殊動作
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -203,6 +245,22 @@ export const Editor: React.FC<EditorProps> = ({
     }
   };
 
+  const getFontFamilyCss = (ff?: string) => {
+    switch (ff) {
+      case 'sans-serif':
+        return '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Meiryo", sans-serif';
+      case 'serif':
+        return '"Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif';
+      case 'monospace':
+      default:
+        return '"JetBrains Mono", "Cascadia Code", "Consolas", "Courier New", monospace';
+    }
+  };
+
+  const effectiveLineHeight = settings.lineHeight || 1.625;
+  const effectiveFontFamily = getFontFamilyCss(settings.fontFamily);
+  const effectiveTabSize = settings.tabSize || 2;
+
   return (
     <div
       className={`relative flex-1 flex flex-col h-full overflow-hidden transition-colors print:hidden ${
@@ -248,181 +306,171 @@ export const Editor: React.FC<EditorProps> = ({
             ) : (
               <>
                 <Unlock className={`w-4 h-4 shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`} />
-                <span className="font-bold">編集モード (CSV)</span>
+                <span className="font-bold text-emerald-400">編集モード有効 (CSV)</span>
                 <span className={`text-[11px] hidden sm:inline ${isDark ? 'text-emerald-300/80' : 'text-emerald-800'}`}>
-                  — 自動保存は無効です。編集後は手動保存 (Ctrl+S) で実ファイルへ保存してください。
+                  — 編集内容を上書き保存する際は [Ctrl+S] を実行してください。
                 </span>
               </>
             )}
           </div>
-          {onToggleEditLock && (
-            <button
-              onClick={onToggleEditLock}
-              className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer ${
-                isReadOnly
-                  ? isDark
-                    ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-black/40'
-                    : 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-900/20'
-                  : isDark
-                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
-                    : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300'
-              }`}
-              title={isReadOnly ? 'CSV の編集を有効化する' : '読み取り専用に戻す'}
-            >
-              {isReadOnly ? (
-                <>
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>編集を有効化</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>読み取り専用に戻す</span>
-                </>
-              )}
-            </button>
-          )}
+
+          <div className="flex items-center gap-2">
+            {onToggleEditLock && (
+              <button
+                onClick={onToggleEditLock}
+                className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
+                  isReadOnly
+                    ? isDark
+                      ? 'bg-amber-600 hover:bg-amber-500 text-white'
+                      : 'bg-amber-700 hover:bg-amber-800 text-white'
+                    : isDark
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300'
+                }`}
+              >
+                {isReadOnly ? (
+                  <>
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>編集を有効化</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>保護（読み取り専用）に戻す</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* YAML Front Matter 保護エリア (Markdown ファイル時のみ表示 - タグのみ編集可) */}
+      {/* Front Matter 設定アコーディオンパネル (CSV時は非表示) */}
       {!isCsv && (
-        <div className={`border-b shrink-0 font-mono text-xs select-none transition-colors ${
-          isDark
-            ? 'bg-slate-900/90 border-slate-800 text-slate-300'
-            : 'bg-amber-50/90 border-amber-200 text-slate-900 shadow-2xs'
-        }`}>
-          <div
-            onClick={() => setIsFrontMatterOpen(!isFrontMatterOpen)}
-            className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
-              isDark ? 'hover:bg-slate-800/60' : 'hover:bg-amber-100/80'
-            }`}
-          >
-          <div className="flex items-center gap-2">
-            {isFrontMatterOpen ? (
-              <ChevronDown className={`w-3.5 h-3.5 ${isDark ? 'text-amber-400' : 'text-amber-800'}`} />
-            ) : (
-              <ChevronRight className={`w-3.5 h-3.5 ${isDark ? 'text-amber-400' : 'text-amber-800'}`} />
+      <div className={`border-b select-none transition-colors ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+        <button
+          onClick={() => setIsFrontMatterOpen(!isFrontMatterOpen)}
+          className={`w-full px-4 py-1.5 flex items-center justify-between text-xs font-medium transition-colors ${
+            isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            {isFrontMatterOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            <span>ドキュメント属性 (Front Matter / メタデータ)</span>
+            {tags.length > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${isDark ? 'bg-slate-800 text-cyan-400' : 'bg-slate-200 text-cyan-700'}`}>
+                {tags.length} tags
+              </span>
             )}
-            <span className={`font-bold ${isDark ? 'text-amber-400' : 'text-amber-950'}`}>
-              YAML Front Matter
-            </span>
-            <span className={`px-1.5 py-0.2 text-[10px] rounded flex items-center gap-1 font-semibold ${
-              isDark
-                ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300'
-                : 'bg-amber-200/90 border border-amber-300/90 text-amber-950'
-            }`}>
-              <Lock className="w-2.5 h-2.5" />
-              保護領域 (エディタ直接編集不可)
-            </span>
-          </div>
-          <div className={`text-[11px] flex items-center gap-1.5 font-medium ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-            <Tag className={`w-3 h-3 ${isDark ? 'text-cyan-400' : 'text-cyan-800'}`} />
-            <span>タグのみ設定可能 ({tags.length})</span>
-          </div>
-        </div>
+          </span>
+          <span className="text-[10px] opacity-60">クリックで開閉</span>
+        </button>
 
         {isFrontMatterOpen && (
-          <div className={`px-4 py-2.5 border-t space-y-1.5 transition-colors ${
-            isDark
-              ? 'bg-slate-950/60 border-slate-800/80 text-slate-400'
-              : 'bg-amber-50/60 border-amber-200 text-slate-900'
-          }`}>
+          <div className="px-4 py-2 space-y-2 text-xs font-mono">
             <div className={isDark ? 'text-slate-500' : 'text-amber-800/60 font-bold'}>---</div>
-            <div className="flex items-center gap-2 text-[11px]" title="読み取り専用">
-              <span className={`w-20 font-bold ${isDark ? 'text-slate-400' : 'text-slate-800'}`}>title:</span>
-              <span className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>{JSON.stringify(doc?.title || '無題のドキュメント')}</span>
-              <Lock className={`w-3 h-3 ml-auto ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
-            </div>
-            <div className="flex items-center gap-2 text-[11px]" title="読み取り専用">
-              <span className={`w-20 font-bold ${isDark ? 'text-slate-400' : 'text-slate-800'}`}>created:</span>
-              <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-900'}`}>{JSON.stringify(doc?.createdAt || new Date().toISOString())}</span>
-              <Lock className={`w-3 h-3 ml-auto ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
-            </div>
-            <div className="flex items-center gap-2 text-[11px]" title="読み取り専用">
-              <span className={`w-20 ${isDark ? 'text-slate-400' : 'text-slate-600 font-medium'}`}>encoding:</span>
-              <span className={`font-bold ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>{JSON.stringify(doc?.encoding || 'UTF-8')}</span>
-              <Lock className={`w-3 h-3 ml-auto ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
-            </div>
-
-            {/* タグ設定エリア (タグのみ編集可能) */}
-            <div className={`flex items-start gap-2 text-[11px] pt-1.5 border-t ${
-              isDark ? 'border-slate-800/60' : 'border-amber-200/60'
-            }`}>
-              <span className={`font-semibold w-20 pt-1 flex items-center gap-1 ${
-                isDark ? 'text-cyan-400' : 'text-cyan-800'
-              }`}>
-                <Tag className="w-3 h-3" />
-                tags:
-              </span>
-              <div className="flex-1 flex flex-wrap items-center gap-1.5">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${
-                      isDark
-                        ? 'bg-cyan-950/80 border border-cyan-800 text-cyan-300'
-                        : 'bg-cyan-50 border border-cyan-300 text-cyan-900'
-                    }`}
-                  >
-                    #{tag}
-                    <button
-                      onClick={() => handleRemoveTag(tag)}
-                      className="hover:text-red-500 transition-colors p-0.5"
-                      title="タグを削除"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-
-                {isAddingTag ? (
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="text"
-                      autoFocus
-                      value={newTagInput}
-                      onChange={(e) => setNewTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleAddTag();
-                        if (e.key === 'Escape') setIsAddingTag(false);
-                      }}
-                      placeholder="タグ名を入力..."
-                      className={`px-2 py-0.5 border rounded text-[11px] outline-none w-28 ${
-                        isDark
-                          ? 'bg-slate-900 border-cyan-500 text-slate-100'
-                          : 'bg-white border-cyan-600 text-slate-900'
-                      }`}
-                    />
-                    <button
-                      onClick={handleAddTag}
-                      className="px-2 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[11px] font-medium"
-                    >
-                      追加
-                    </button>
-                    <button
-                      onClick={() => setIsAddingTag(false)}
-                      className={`p-0.5 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsAddingTag(true)}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 border border-dashed rounded text-[11px] transition-colors ${
-                      isDark
-                        ? 'border-slate-700 hover:border-cyan-500 text-slate-400 hover:text-cyan-300'
-                        : 'border-slate-300 hover:border-cyan-600 text-slate-600 hover:text-cyan-800'
-                    }`}
-                  >
-                    <Plus className="w-3 h-3" />
-                    タグを追加
-                  </button>
-                )}
+            <div className="pl-3 space-y-1.5 border-l-2 border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className={isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}>title:</span>
+                <span className={isDark ? 'text-slate-300' : 'text-slate-800'}>"{doc?.title || '無題'}"</span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className={isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}>created:</span>
+                <span className="text-slate-400">{doc?.createdAt ? new Date(doc.createdAt).toLocaleString('ja-JP') : '-'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}>updated:</span>
+                <span className="text-slate-400">{doc?.updatedAt ? new Date(doc.updatedAt).toLocaleString('ja-JP') : '-'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}>updated_by:</span>
+                <span className="text-slate-400">{doc?.updatedBy || doc?.author || settings.defaultAuthor || 'Unknown'}</span>
+              </div>
+              {doc?.encoding && (
+                <div className="flex items-center gap-2">
+                  <span className={isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}>encoding:</span>
+                  <span className="text-slate-400">{doc.encoding}</span>
+                </div>
+              )}
+              {doc?.filePath && (
+                <div className="flex items-center gap-2">
+                  <span className={isDark ? 'text-emerald-400' : 'text-emerald-700 font-semibold'}>file_path:</span>
+                  <span className="text-emerald-400/80 truncate max-w-md" title={doc.filePath}>{doc.filePath}</span>
+                </div>
+              )}
+              <div className="flex items-start gap-2 pt-0.5">
+                <span className={`flex items-center gap-1 ${isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}`}>
+                  <Tag className="w-3 h-3" />
+                  tags:
+                </span>
+                <div className="flex flex-wrap items-center gap-1">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-sans ${
+                        isDark
+                          ? 'bg-slate-800 text-cyan-300 border border-slate-700'
+                          : 'bg-white text-cyan-800 border border-slate-300'
+                      }`}
+                    >
+                      <span>#{tag}</span>
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        className={`hover:text-rose-400 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+
+                  {isAddingTag ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        autoFocus
+                        value={newTagInput}
+                        onChange={(e) => setNewTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleAddTag();
+                          if (e.key === 'Escape') setIsAddingTag(false);
+                        }}
+                        placeholder="タグ名を入力..."
+                        className={`px-2 py-0.5 border rounded text-[11px] outline-none w-28 ${
+                          isDark
+                            ? 'bg-slate-900 border-cyan-500 text-slate-100'
+                            : 'bg-white border-cyan-600 text-slate-900'
+                        }`}
+                      />
+                      <button
+                        onClick={handleAddTag}
+                        className="px-2 py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[11px] font-medium"
+                      >
+                        追加
+                      </button>
+                      <button
+                        onClick={() => setIsAddingTag(false)}
+                        className={`p-0.5 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setIsAddingTag(true)}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 border border-dashed rounded text-[11px] transition-colors ${
+                        isDark
+                          ? 'border-slate-700 hover:border-cyan-500 text-slate-400 hover:text-cyan-300'
+                          : 'border-slate-300 hover:border-cyan-600 text-slate-600 hover:text-cyan-800'
+                      }`}
+                    >
+                      <Plus className="w-3 h-3" />
+                      タグを追加
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className={isDark ? 'text-slate-500' : 'text-amber-800/60 font-bold'}>---</div>
             </div>
-            <div className={isDark ? 'text-slate-500' : 'text-amber-800/60 font-bold'}>---</div>
           </div>
         )}
       </div>
@@ -434,17 +482,26 @@ export const Editor: React.FC<EditorProps> = ({
         {settings.lineNumbers && (
           <div
             ref={lineNumbersRef}
-            className={`min-w-12 px-2.5 py-3 text-right font-mono text-xs select-none overflow-hidden shrink-0 border-r pointer-events-none ${
+            className={`min-w-12 px-2.5 py-3 text-right text-xs select-none overflow-hidden shrink-0 border-r pointer-events-none ${
               isDark
                 ? 'bg-slate-950 text-slate-600 border-slate-800'
                 : 'bg-slate-100 text-slate-400 border-slate-200'
             }`}
             style={{
               fontSize: `${settings.fontSize}px`,
-              lineHeight: 1.625,
+              lineHeight: effectiveLineHeight,
+              fontFamily: effectiveFontFamily,
             }}
           >
-            <pre className="font-mono m-0 p-0 text-right whitespace-pre">{lineNumbersText}</pre>
+            <pre
+              className="m-0 p-0 text-right whitespace-pre"
+              style={{
+                fontFamily: effectiveFontFamily,
+                lineHeight: effectiveLineHeight,
+              }}
+            >
+              {lineNumbersText}
+            </pre>
           </div>
         )}
 
@@ -471,8 +528,9 @@ export const Editor: React.FC<EditorProps> = ({
           }`}
           style={{
             fontSize: `${settings.fontSize}px`,
-            lineHeight: 1.625,
-            tabSize: 2,
+            lineHeight: effectiveLineHeight,
+            fontFamily: effectiveFontFamily,
+            tabSize: effectiveTabSize,
           }}
         />
       </div>

@@ -15,7 +15,12 @@ import {
 import { calculateTextStats, insertFormatting, toggleTaskInMarkdown } from './utils/markdownUtils';
 import { decodeFileContent } from './utils/encodingUtils';
 import { parseYamlFrontMatter } from './utils/yamlUtils';
-import { parseMarkdownNative, calculateTextStatsNative, toggleTaskNative } from './utils/tauriNative';
+import {
+  parseMarkdownNative,
+  calculateTextStatsNative,
+  toggleTaskNative,
+  formatMarkdownNative,
+} from './utils/tauriNative';
 import { openNativeFileFromPath, isCsvDoc, loadFullNativeDoc, loadMoreChunkNativeDoc } from './utils/fileSystem';
 import { commands } from './bindings';
 import { listen } from '@tauri-apps/api/event';
@@ -28,15 +33,7 @@ import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
 import { StatusBar } from './components/StatusBar';
 import { Minimize2, Upload } from 'lucide-react';
-import { TableModal } from './components/TableModal';
-import { TemplateModal } from './components/TemplateModal';
-import { SettingsModal } from './components/SettingsModal';
-import { AboutModal } from './components/AboutModal';
-import { HelpGuideModal } from './components/HelpGuideModal';
-import { ShortcutsModal } from './components/ShortcutsModal';
-import { DiffModal } from './components/DiffModal';
-import { BatchConvertModal } from './components/BatchConvertModal';
-import { LogModal } from './components/LogModal';
+import { ModalGroup } from './components/ModalGroup';
 import { Toast, ToastMessage } from './components/Toast';
 import { logger } from './utils/logger';
 
@@ -45,6 +42,7 @@ import { useModalState } from './hooks/useModalState';
 import { useDocumentManager } from './hooks/useDocumentManager';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useFileWatcher } from './hooks/useFileWatcher';
+import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 
 export default function App() {
   // ドキュメント一覧・タブ状態の管理 (useDocumentManager)
@@ -93,6 +91,8 @@ export default function App() {
     setIsBatchConvertModalOpen,
     isLogModalOpen,
     setIsLogModalOpen,
+    isStatsModalOpen,
+    setIsStatsModalOpen,
   } = useModalState();
 
   // 基本設定 state
@@ -139,6 +139,12 @@ export default function App() {
       root.style.colorScheme = 'light';
     }
   }, [isDark]);
+
+  // ウィンドウタイトルおよび印刷タイトルを現在のドキュメント名に同期
+  useEffect(() => {
+    const docName = currentDoc.title || 'QuMaEditor';
+    document.title = docName;
+  }, [currentDoc.title]);
 
   const handleChangeTheme = (newTheme: ThemeMode) => {
     handleUpdateSettings({ theme: newTheme });
@@ -269,10 +275,29 @@ export default function App() {
   );
 
   // 外部ファイル変更監視フック (useFileWatcher)
-  const { recordLocalSave } = useFileWatcher({
+  const { recordLocalSave, reloadCurrentDoc } = useFileWatcher({
     currentDoc,
     onReloadFile: handleReloadExternalFile,
+    saveStatus,
   });
+
+  // Markdown 自動整形ハンドラー (Rust ネイティブ)
+  const handleAutoFormat = useCallback(async () => {
+    try {
+      const formatted = await formatMarkdownNative(currentDoc.content);
+      if (formatted !== null) {
+        updateDocContent(formatted);
+        setToast({
+          id: Date.now().toString(),
+          message: 'Markdown を自動整形しました（垂直整列・見出し空行・連続空行圧縮）',
+          type: 'info',
+          duration: 3000,
+        });
+      }
+    } catch (err) {
+      console.error('自動整形エラー:', err);
+    }
+  }, [currentDoc.content]);
 
   // ファイル操作アクションの管理 (useFileOperations)
   const {
@@ -487,58 +512,22 @@ export default function App() {
     });
   };
 
-  // キーボードショートカット
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F1') {
-        e.preventDefault();
-        setIsShortcutsModalOpen(true);
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'Z' || e.key === 'z')) {
-        e.preventDefault();
-        toggleZenMode();
-        return;
-      }
-      if (isZenMode && e.key === 'Escape') {
-        e.preventDefault();
-        setIsZenMode(false);
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
-        e.preventDefault();
-        if (viewMode === 'editor') {
-          setViewMode('preview');
-        } else if (viewMode === 'preview') {
-          setViewMode('editor');
-        }
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-        e.preventDefault();
-        handleSaveCurrentDoc({ forceSaveAs: e.shiftKey });
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'o' || e.key === 'O')) {
-        e.preventDefault();
-        handleOpenLocalFile();
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'n' || e.key === 'N')) {
-        e.preventDefault();
-        handleNewDoc();
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-        e.preventDefault();
-        handlePrint();
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isZenMode, viewMode, setViewMode, handleSaveCurrentDoc, handleOpenLocalFile, handleNewDoc, handlePrint, toggleZenMode, setIsZenMode, setIsShortcutsModalOpen]);
+  // キーボードショートカット管理
+  useGlobalShortcuts({
+    isZenMode,
+    setIsZenMode,
+    toggleZenMode,
+    viewMode,
+    setViewMode,
+    handleSaveCurrentDoc,
+    handleOpenLocalFile,
+    handleNewDoc,
+    handlePrint,
+    handleAutoFormat,
+    reloadCurrentDoc,
+    setToast,
+    setIsShortcutsModalOpen,
+  });
 
   // 起動時のファイルオープンイベントリスナー
   useEffect(() => {
@@ -813,7 +802,7 @@ export default function App() {
 
   return (
     <div
-      className={`relative h-screen w-screen flex flex-col overflow-hidden font-sans ${
+      className={`relative h-screen w-screen flex flex-col overflow-hidden font-sans print:h-auto print:w-full print:overflow-visible print:block print:bg-white print:text-slate-900 ${
         isDark ? 'dark bg-slate-950 text-slate-100' : 'light bg-slate-100 text-slate-900'
       }`}
       onDragOver={handleAppDragOver}
@@ -874,6 +863,7 @@ export default function App() {
           onOpenDiffModal={() => setIsDiffModalOpen(true)}
           onOpenBatchConvert={() => setIsBatchConvertModalOpen(true)}
           onOpenLogModal={() => setIsLogModalOpen(true)}
+          onOpenStatsModal={() => setIsStatsModalOpen(true)}
           isZenMode={isZenMode}
           onToggleZenMode={toggleZenMode}
           isSidebarOpen={isSidebarOpen}
@@ -907,7 +897,7 @@ export default function App() {
         )}
 
         {/* コンテンツエリア (TabBar + ツールバー + 分割ビュー) */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative print:h-auto print:w-full print:overflow-visible print:block print:static">
           {/* マルチタブバー (Zenモード時は非表示) */}
           {!isZenMode && (
             <TabBar
@@ -931,6 +921,7 @@ export default function App() {
               onOpenTableModal={() => setIsTableModalOpen(true)}
               onInsertDate={handleInsertDate}
               onImageUpload={handleDroppedFile}
+              onAutoFormat={handleAutoFormat}
               isDark={isDark}
             />
           )}
@@ -954,50 +945,54 @@ export default function App() {
           )}
 
           {/* エディタ＆プレビュー ワークスペースコンテナ */}
-          <div className={`flex-1 flex min-h-0 overflow-hidden relative print:block print:w-full print:static print:p-0 print:m-0 ${
+          <div className={`flex-1 flex min-h-0 overflow-hidden relative print:block print:w-full print:h-auto print:overflow-visible print:static print:p-0 print:m-0 ${
             isZenMode && viewMode === 'editor' ? 'max-w-5xl mx-auto w-full px-2 sm:px-6 py-2' : ''
           }`}>
             {/* エディタパネル */}
-            {(viewMode === 'split' || viewMode === 'editor') && (
-              <div className={`flex-1 h-full flex flex-col min-w-0 print:hidden ${
-                viewMode === 'split' ? (isDark ? 'border-r border-slate-800/80' : 'border-r border-slate-200') : ''
-              }`}>
-                <Editor
-                  content={currentDoc.content}
-                  onChange={updateDocContent}
-                  settings={settings}
-                  onCursorChange={(line, col) => {
-                    setCursorLine(line);
-                    setCursorCol(col);
-                  }}
-                  onScrollSync={handleScrollSync}
-                  onImageDrop={handleDroppedFile}
-                  onDropFiles={handleDroppedFiles}
-                  doc={currentDoc}
-                  onUpdateTags={handleUpdateTags}
-                  onTextareaRef={(el) => { editorTextareaRef.current = el; }}
-                  isDark={isDark}
-                  isCsv={isCurrentCsv}
-                  isReadOnly={isCsvReadOnly}
-                  onToggleEditLock={handleToggleCsvEditLock}
-                  onLoadFullDoc={handleLoadFullDoc}
-                  onLoadMoreChunk={handleLoadMoreChunk}
-                />
-              </div>
-            )}
+            <div className={`flex-1 h-full flex flex-col min-w-0 print:hidden ${
+              viewMode === 'preview' ? 'hidden' : ''
+            } ${
+              viewMode === 'split' ? (isDark ? 'border-r border-slate-800/80' : 'border-r border-slate-200') : ''
+            }`}>
+              <Editor
+                content={currentDoc.content}
+                onChange={updateDocContent}
+                settings={settings}
+                onCursorChange={(line, col) => {
+                  setCursorLine(line);
+                  setCursorCol(col);
+                }}
+                onScrollSync={handleScrollSync}
+                onImageDrop={handleDroppedFile}
+                onDropFiles={handleDroppedFiles}
+                doc={currentDoc}
+                onUpdateTags={handleUpdateTags}
+                onTextareaRef={(el) => { editorTextareaRef.current = el; }}
+                isDark={isDark}
+                isCsv={isCurrentCsv}
+                isReadOnly={isCsvReadOnly}
+                onToggleEditLock={handleToggleCsvEditLock}
+                onLoadFullDoc={handleLoadFullDoc}
+                onLoadMoreChunk={handleLoadMoreChunk}
+              />
+            </div>
 
-            {/* プレビューパネル */}
+            {/* プレビューパネル (常時マウント＋CSS表示切替で即時レイアウト反映＆全ページ同期) */}
             <div className={`flex-1 h-full flex flex-col min-w-0 print:block print:w-full print:static print:p-0 print:m-0 ${
-              viewMode === 'editor' ? 'hidden' : ''
+              viewMode === 'editor' ? 'hidden print:block' : ''
             }`}>
               <Preview
+                key={currentDoc.id}
                 content={currentDoc.content}
+                docTitle={currentDoc.title}
                 onToggleTaskItem={handleToggleTaskItem}
                 onScrollRef={(el) => {
                   previewScrollRef.current = el;
                 }}
                 isDark={isDark}
                 fontSize={settings.fontSize}
+                lineHeight={settings.lineHeight}
+                fontFamily={settings.fontFamily}
                 headingTheme={settings.headingTheme}
                 isCsv={isCurrentCsv}
               />
@@ -1015,78 +1010,50 @@ export default function App() {
           settings={settings}
           onUpdateSettings={handleUpdateSettings}
           saveStatus={saveStatus}
+          lastSavedTime={lastSavedTime}
+          filePath={currentDoc.filePath}
+          isRemote={currentDoc.isRemote}
           updatedAt={currentDoc.updatedAt}
           encoding={currentDoc.encoding}
           onChangeEncoding={handleChangeEncoding}
+          onOpenStatsModal={() => setIsStatsModalOpen(true)}
           isDark={isDark}
           isCsv={isCurrentCsv}
           isReadOnly={isCsvReadOnly}
         />
       )}
 
-      {/* モーダル群 */}
-      <TableModal
-        isOpen={isTableModalOpen}
-        onClose={() => setIsTableModalOpen(false)}
-        onInsertTable={handleInsertTable}
-      />
-
-      <TemplateModal
-        isOpen={isTemplateModalOpen}
-        onClose={() => setIsTemplateModalOpen(false)}
-        onSelectTemplate={handleSelectTemplate}
-        isDark={isDark}
-      />
-
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
+      {/* モーダル群集約コンポーネント */}
+      <ModalGroup
+        isTableModalOpen={isTableModalOpen}
+        setIsTableModalOpen={setIsTableModalOpen}
+        isTemplateModalOpen={isTemplateModalOpen}
+        setIsTemplateModalOpen={setIsTemplateModalOpen}
+        isSettingsModalOpen={isSettingsModalOpen}
+        setIsSettingsModalOpen={setIsSettingsModalOpen}
+        isAboutModalOpen={isAboutModalOpen}
+        setIsAboutModalOpen={setIsAboutModalOpen}
+        isHelpGuideModalOpen={isHelpGuideModalOpen}
+        setIsHelpGuideModalOpen={setIsHelpGuideModalOpen}
+        isShortcutsModalOpen={isShortcutsModalOpen}
+        setIsShortcutsModalOpen={setIsShortcutsModalOpen}
+        isDiffModalOpen={isDiffModalOpen}
+        setIsDiffModalOpen={setIsDiffModalOpen}
+        isBatchConvertModalOpen={isBatchConvertModalOpen}
+        setIsBatchConvertModalOpen={setIsBatchConvertModalOpen}
+        isLogModalOpen={isLogModalOpen}
+        setIsLogModalOpen={setIsLogModalOpen}
+        isStatsModalOpen={isStatsModalOpen}
+        setIsStatsModalOpen={setIsStatsModalOpen}
+        currentDoc={currentDoc}
+        previousDoc={previousDoc}
+        docs={docs}
+        openTabIds={openTabIds}
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
-        onResetData={() => {
-          localStorage.clear();
-          window.location.reload();
-        }}
-        isDark={isDark}
-      />
-
-      <AboutModal
-        isOpen={isAboutModalOpen}
-        onClose={() => setIsAboutModalOpen(false)}
-        isDark={isDark}
-      />
-
-      <HelpGuideModal
-        isOpen={isHelpGuideModalOpen}
-        onClose={() => setIsHelpGuideModalOpen(false)}
-        isDark={isDark}
-      />
-
-      <ShortcutsModal
-        isOpen={isShortcutsModalOpen}
-        onClose={() => setIsShortcutsModalOpen(false)}
-        isDark={isDark}
-      />
-
-      <DiffModal
-        isOpen={isDiffModalOpen}
-        onClose={() => setIsDiffModalOpen(false)}
-        activeDoc={currentDoc}
-        previousDoc={previousDoc}
-        allDocs={docs}
-        openTabIds={openTabIds}
-        isDark={isDark}
-      />
-
-      <BatchConvertModal
-        isOpen={isBatchConvertModalOpen}
-        onClose={() => setIsBatchConvertModalOpen(false)}
-        isDark={isDark}
-      />
-
-      <LogModal
-        isOpen={isLogModalOpen}
-        onClose={() => setIsLogModalOpen(false)}
+        onInsertTable={handleInsertTable}
+        onSelectTemplate={handleSelectTemplate}
+        stats={stats}
         isDark={isDark}
       />
 

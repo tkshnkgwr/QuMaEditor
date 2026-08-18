@@ -88,6 +88,7 @@ interface TitleBarProps {
   onOpenDiffModal?: () => void;
   onOpenLogModal?: () => void;
   onOpenBatchConvert?: () => void;
+  onOpenStatsModal?: () => void;
   isZenMode?: boolean;
   onToggleZenMode?: () => void;
   isSidebarOpen: boolean;
@@ -123,6 +124,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   onOpenDiffModal,
   onOpenLogModal,
   onOpenBatchConvert,
+  onOpenStatsModal,
   isZenMode,
   onToggleZenMode,
   isSidebarOpen,
@@ -586,6 +588,18 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                     isDark ? 'bg-slate-800 text-cyan-300 border-slate-700' : 'bg-slate-100 text-cyan-700 border-slate-300'
                   }`}>F1</kbd>
                 </button>
+                {onOpenStatsModal && (
+                  <button
+                    onClick={() => {
+                      onOpenStatsModal();
+                      setActiveMenu(null);
+                    }}
+                    className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+                  >
+                    <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                    ドキュメント詳細統計
+                  </button>
+                )}
                 {onOpenLogModal && (
                   <button
                     onClick={() => {
@@ -650,92 +664,6 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             >
               プレビューのみ
             </button>
-          </div>
-
-          {/* 保存ステータス情報 (表示モードの右、Zenモードの左) */}
-          <div className="flex items-center gap-1 text-[11px] shrink-0">
-            {currentDoc.isRemote ? (
-              <span className="text-indigo-400 flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 font-medium">
-                <Globe className="w-3 h-3 text-indigo-400" />
-                リモート (保存OFF)
-              </span>
-            ) : (
-              <>
-                {saveStatus === 'editing' && (
-                  <span className="text-cyan-400 flex items-center gap-1 bg-cyan-400/10 px-2 py-0.5 rounded border border-cyan-400/20 font-medium animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                    編集中...
-                  </span>
-                )}
-                {saveStatus === 'saving' && (
-                  <span className="text-amber-400 flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
-                    保存中...
-                  </span>
-                )}
-                {saveStatus === 'saved_file' && (
-                  <span className="text-emerald-400 flex items-center gap-1 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 font-medium" title="PC上の実ファイル(.md)に保存済み">
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>実ファイルに保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
-                  </span>
-                )}
-                {saveStatus === 'saved_local' && (
-                  <span className="text-sky-400 flex items-center gap-1 bg-sky-500/15 px-2 py-0.5 rounded border border-sky-500/30 font-medium" title="アプリ内部(LocalStorage)に保護保存済み">
-                    <Check className="w-3.5 h-3.5 text-sky-400" />
-                    <span>アプリ内(LocalStorage)に保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
-                  </span>
-                )}
-                {saveStatus === 'saved' && (
-                  <span className="text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                    <Check className="w-3 h-3 text-emerald-400" />
-                    <span>保存完了 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
-                  </span>
-                )}
-                {saveStatus === 'unsaved' && (
-                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded ${isDark ? 'text-slate-400 bg-slate-800' : 'text-slate-500 bg-slate-200'}`}>
-                    <Save className="w-3 h-3" />
-                    未保存の変更
-                  </span>
-                )}
-              </>
-            )}
-
-            {/* PC上の実ファイルがある場合、フォルダを開くボタン */}
-            {currentDoc.filePath ? (
-              <button
-                onClick={async () => {
-                  if (currentDoc.filePath) {
-                    await openFolderNative(currentDoc.filePath);
-                  }
-                }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-medium transition-colors shadow-2xs ${
-                  isDark
-                    ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300 hover:bg-emerald-900/80 hover:text-emerald-200'
-                    : 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
-                }`}
-                title={`エクスプローラーで保存先フォルダを開く:\n${currentDoc.filePath}`}
-              >
-                <FolderOpen className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span className="hidden sm:inline">フォルダを開く</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  if (onSaveFile) {
-                    onSaveFile({ forceSaveAs: true });
-                  }
-                }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] transition-colors opacity-75 ${
-                  isDark
-                    ? 'bg-slate-800/50 border-slate-700/60 text-slate-400 hover:opacity-100 hover:text-slate-200'
-                    : 'bg-slate-100 border-slate-300 text-slate-600 hover:opacity-100 hover:text-slate-900'
-                }`}
-                title="PC上の実ファイルとして保存すると、エクスプローラーでフォルダを開けるようになります"
-              >
-                <FolderOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="hidden sm:inline text-[10px]">フォルダを開く (未保存)</span>
-              </button>
-            )}
           </div>
 
           {/* Zen集中モード切替 */}

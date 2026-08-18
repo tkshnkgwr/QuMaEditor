@@ -189,8 +189,8 @@ export async function searchDocumentsNative(query: string): Promise<SearchHit[] 
 /**
  * 複数ファイルの一括文字コード変換処理 (Rust ネイティブ並列処理)
  *
- * @param filePaths 対象ファイルパスの配列
- * @param targetEncoding 変換先エンコーディング名
+ * @param _filePaths 対象ファイルパスの配列
+ * @param _targetEncoding 変換先エンコーディング名
  * @returns 一括変換結果 (BatchConvertResult) または失敗時 null
  */
 export async function batchConvertFilesNative(
@@ -259,25 +259,6 @@ export async function generatePdfNative(_title: string, _content: string): Promi
  */
 export async function highlightCodeNative(_code: string, _language: string): Promise<string | null> {
   return null;
-}
-
-/**
- * Windows 「送る (SendTo)」ショートカット登録状態のチェック (互換性維持スタブ)
- *
- * @returns 常に false (機能保留中)
- */
-export async function checkSendToMenuNative(): Promise<boolean> {
-  return false;
-}
-
-/**
- * Windows 「送る (SendTo)」ショートカットの登録 / 解除 (互換性維持スタブ)
- *
- * @param _enable 登録する場合は true
- * @returns 処理結果
- */
-export async function registerSendToMenuNative(_enable: boolean): Promise<boolean> {
-  return false;
 }
 
 /**
@@ -498,3 +479,46 @@ export async function parseCsvPreviewNative(
     return null;
   }
 }
+
+/**
+ * Markdown ドキュメントを Rust ネイティブで自動整形（空行圧縮・見出し空行・表組み垂直整列）する
+ *
+ * @param markdownText 整形対象の Markdown 文字列
+ * @returns 整形後の Markdown 文字列、または失敗時 null
+ */
+export async function formatMarkdownNative(markdownText: string): Promise<string | null> {
+  try {
+    const res = await commands.formatMarkdownNative(markdownText);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native formatMarkdownNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * syntect による構文ハイライト付きネイティブ HTML をレンダリングする
+ *
+ * @param markdownText Markdown 文字列
+ * @param isDark ダークモードフラグ
+ * @returns ハイライト済み HTML 文字列、または失敗時 null
+ */
+export async function renderMarkdownHtmlNative(
+  markdownText: string,
+  isDark: boolean
+): Promise<string | null> {
+  try {
+    const res = await commands.renderMarkdownHtmlNative(markdownText, isDark);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native renderMarkdownHtmlNative failed:', err);
+    return null;
+  }
+}
+

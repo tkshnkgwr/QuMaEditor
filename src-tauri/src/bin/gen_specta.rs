@@ -20,6 +20,8 @@ fn main() {
             commands::toggle_task_native,
             commands::export_html_full_native,
             commands::parse_csv_preview_native,
+            commands::format_markdown_native,
+            commands::render_markdown_html_native,
         ]);
 
     let target_path = if std::path::Path::new("src-tauri").exists() {

@@ -5,9 +5,10 @@ import { getFileMetadataNative } from '../utils/tauriNative';
 interface UseFileWatcherProps {
   currentDoc: MarkdownDoc;
   onReloadFile: (filePath: string) => Promise<void>;
+  saveStatus?: string;
 }
 
-export function useFileWatcher({ currentDoc, onReloadFile }: UseFileWatcherProps) {
+export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFileWatcherProps) {
   // 各ファイルの直近 mtime (ミリ秒) を保持するマップ
   const fileMtimeMapRef = useRef<Map<string, number>>(new Map());
   // 自プロセス保存の直近タイムスタンプ
@@ -30,9 +31,9 @@ export function useFileWatcher({ currentDoc, onReloadFile }: UseFileWatcherProps
     }
   }, []);
 
-  // 外部変更チェック処理
-  const checkFileUpdate = useCallback(async () => {
-    const filePath = currentDoc?.filePath;
+  // 外部変更チェック処理（targetPath があればそれを、なければ currentDoc.filePath を対象）
+  const checkFileUpdate = useCallback(async (targetPath?: string) => {
+    const filePath = targetPath || currentDoc?.filePath;
     if (!filePath || currentDoc.isRemote || isReloadingRef.current) {
       return;
     }
@@ -73,17 +74,49 @@ export function useFileWatcher({ currentDoc, onReloadFile }: UseFileWatcherProps
     }
   }, [currentDoc?.filePath, currentDoc?.isRemote, onReloadFile]);
 
-  // ドキュメント切り替え時に mtime を初期登録
+  // 手動再読み込みハンドラー (Ctrl+R / F5 用)
+  const reloadCurrentDoc = useCallback(async () => {
+    const filePath = currentDoc?.filePath;
+    if (!filePath || currentDoc.isRemote || isReloadingRef.current) {
+      return false;
+    }
+
+    isReloadingRef.current = true;
+    try {
+      const meta = await getFileMetadataNative(filePath);
+      if (meta && meta.exists) {
+        fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
+      }
+      await onReloadFile(filePath);
+      return true;
+    } catch (err) {
+      console.error('[FileWatcher] 手動再読み込み失敗:', err);
+      return false;
+    } finally {
+      isReloadingRef.current = false;
+    }
+  }, [currentDoc?.filePath, currentDoc?.isRemote, onReloadFile]);
+
+  // ドキュメント切り替え時に mtime を確認し、外部更新があれば即時再読み込み
   useEffect(() => {
     const filePath = currentDoc?.filePath;
     if (!filePath || currentDoc.isRemote) return;
 
-    getFileMetadataNative(filePath).then((meta) => {
+    getFileMetadataNative(filePath).then(async (meta) => {
       if (meta && meta.exists && meta.mtimeMs > 0) {
-        fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
+        const recorded = fileMtimeMapRef.current.get(filePath);
+        if (recorded !== undefined && meta.mtimeMs > recorded + 50) {
+          // 切り替え先ファイルがバックグラウンドで外部更新されていた場合
+          fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
+          if (saveStatus !== 'editing') {
+            await onReloadFile(filePath);
+          }
+        } else {
+          fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
+        }
       }
     });
-  }, [currentDoc?.filePath, currentDoc?.isRemote]);
+  }, [currentDoc?.id, currentDoc?.filePath, currentDoc?.isRemote, onReloadFile, saveStatus]);
 
   // ウィンドウフォーカス時および定期ポーリング (2.5秒) による監視
   useEffect(() => {
@@ -92,7 +125,7 @@ export function useFileWatcher({ currentDoc, onReloadFile }: UseFileWatcherProps
     };
 
     window.addEventListener('focus', handleFocus);
-    const intervalId = setInterval(checkFileUpdate, 2500);
+    const intervalId = setInterval(() => checkFileUpdate(), 2500);
 
     return () => {
       window.removeEventListener('focus', handleFocus);
@@ -103,5 +136,6 @@ export function useFileWatcher({ currentDoc, onReloadFile }: UseFileWatcherProps
   return {
     recordLocalSave,
     checkFileUpdate,
+    reloadCurrentDoc,
   };
 }

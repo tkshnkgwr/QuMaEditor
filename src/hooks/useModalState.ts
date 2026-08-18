@@ -14,6 +14,7 @@ export function useModalState() {
   const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
   const [isBatchConvertModalOpen, setIsBatchConvertModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
 
   const toggleZenMode = () => setIsZenMode((prev) => !prev);
   const closeAllModals = () => {
@@ -26,6 +27,7 @@ export function useModalState() {
     setIsDiffModalOpen(false);
     setIsBatchConvertModalOpen(false);
     setIsLogModalOpen(false);
+    setIsStatsModalOpen(false);
   };
 
   return {
@@ -50,6 +52,8 @@ export function useModalState() {
     setIsBatchConvertModalOpen,
     isLogModalOpen,
     setIsLogModalOpen,
+    isStatsModalOpen,
+    setIsStatsModalOpen,
     closeAllModals,
   };
 }

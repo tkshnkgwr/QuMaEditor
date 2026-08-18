@@ -1,28 +1,51 @@
 # Test Execution Report (TEST_REPORT)
 
-## 1. Test Summary
+**English** | [日本語版](docs/ja/TEST_REPORT.md)
 
-- **Date**: 2026-08-03
+## 1. Test Overview
+
+- **Date**: 2026-08-18
 - **Version**: v1.4.0
-- **Environment**: Cloud Run Container / Chrome 127.0 (Linux/x86_64)
+- **Environment**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
-## 2. Test Cases & Verification Results
+---
 
-| ID    | Test Item                 | Verification Procedure                        | Expected Outcome                      | Status   |
-| :---- | :------------------------ | :-------------------------------------------- | :------------------------------------ | :------- |
-| TC-01 | UTF-8 File Opening        | Open UTF-8 `.md` file                         | No garbled text, detected as UTF-8    | **Pass** |
-| TC-02 | Shift_JIS File Opening    | Open SJIS `.txt` file                         | No garbled text, detected as Shift_JIS | **Pass** |
-| TC-03 | EUC-JP File Opening       | Open EUC-JP `.md` file                        | No garbled text, detected as EUC-JP   | **Pass** |
-| TC-04 | Shift_JIS Export          | Export with Shift_JIS selected                | Output line endings CRLF (`\r\n`)     | **Pass** |
-| TC-05 | EUC-JP Export             | Export with EUC-JP selected                   | Output line endings LF (`\n`)         | **Pass** |
-| TC-06 | SQL Syntax Highlight      | Write SQL code block                          | SELECT/FROM highlighted correctly     | **Pass** |
-| TC-07 | Version Modal Display     | Click info icon / menu                        | Displays v1.4.0 About dialog          | **Pass** |
-| TC-08 | Yama Front Matter Parsing | Load `.md` with Front Matter                  | Auto-extract title/tags/encoding      | **Pass** |
-| TC-09 | Front Matter Editor Lock  | Check editor UI                               | Front Matter block read-only          | **Pass** |
-| TC-10 | Tag Management UI         | Add/remove tags via UI                        | Badges update dynamically             | **Pass** |
-| TC-11 | Yama Front Matter Export  | Export document as `.md`                      | Front Matter header generated         | **Pass** |
-| TC-12 | Shortcuts Modal Display   | Click Help > Keyboard Shortcuts or press `F1` | Categorized hotkeys modal appears     | **Pass** |
-| TC-13 | Global Hotkeys Trigger    | Press `Ctrl+N` / `Ctrl+S` / `Ctrl+P`          | New doc, save, print dialog triggered | **Pass** |
-| TC-14 | TypeScript Compilation    | Execute `npm run lint`                        | Pass with 0 errors                    | **Pass** |
-| TC-15 | Production Build          | Execute `npm run build`                       | Build succeeds, `dist/` created       | **Pass** |
+## 2. Pre-Commit Verifications Results
 
+| #  | Verification Item             | Command                                                           | Result             |
+| :- | :---------------------------- | :---------------------------------------------------------------- | :----------------- |
+| 1  | **Rust Code Formatting**      | `cargo fmt --manifest-path src-tauri/Cargo.toml --check`          | ✅ PASS (0 diff)   |
+| 2  | **Rust Compilation & Types**  | `cargo check --manifest-path src-tauri/Cargo.toml`                | ✅ PASS (0 errors) |
+| 3  | **Rust Clippy Strict Linter** | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets` | ✅ PASS (0 warns)  |
+| 4  | **Rust Unit Tests**           | `cargo test --manifest-path src-tauri/Cargo.toml`                 | ✅ PASS (23/23 ok) |
+| 5  | **TypeScript Type Check**     | `npm run lint`                                                    | ✅ PASS (0 errors) |
+
+---
+
+## 3. Rust Unit Test Details (23 Tests Passed)
+
+| ID    | Test Function Name                                           | Module                      | Verification Summary                                                 | Result   |
+| :---- | :----------------------------------------------------------- | :-------------------------- | :------------------------------------------------------------------- | :------- |
+| UT-01 | `test_detect_and_convert_to_utf8_utf8`                       | `encoding`                  | UTF-8 byte array detection and conversion                            | **Pass** |
+| UT-02 | `test_detect_and_convert_to_utf8_shift_jis`                  | `encoding`                  | Shift_JIS byte array detection and UTF-8 conversion                  | **Pass** |
+| UT-03 | `test_convert_utf8_to_encoding_sjis`                         | `encoding`                  | UTF-8 string encoding to Shift_JIS bytes                             | **Pass** |
+| UT-04 | `test_convert_utf8_to_encoding_euc_jp`                       | `encoding`                  | UTF-8 string encoding to EUC-JP bytes                               | **Pass** |
+| UT-05 | `test_read_file_native_valid_file`                           | `file_io`                   | Real local file reading and encoding check                           | **Pass** |
+| UT-06 | `test_read_file_native_not_found`                            | `file_io`                   | Non-existent file path error handling                                | **Pass** |
+| UT-07 | `test_write_file_native`                                     | `file_io`                   | Direct UTF-8 string file write                                       | **Pass** |
+| UT-08 | `test_write_file_bytes_native`                               | `file_io`                   | Direct raw byte array file write                                     | **Pass** |
+| UT-09 | `test_get_file_metadata_native`                              | `file_io`                   | File existence, `mtime`, and size retrieval                          | **Pass** |
+| UT-10 | `test_open_folder_native`                                    | `file_io`                   | Windows Explorer opening with highlighted file                       | **Pass** |
+| UT-11 | `test_index_and_search_documents`                            | `search`                    | Inverted index insertion and keyword full-text search                | **Pass** |
+| UT-12 | `test_search_japanese_multibyte_slice_no_panic`              | `search`                    | Multibyte boundary safe slicing without panic                        | **Pass** |
+| UT-13 | `test_compute_text_diff_native`                              | `diff`                      | Line-by-line diff calculation (`similar`)                            | **Pass** |
+| UT-14 | `test_parse_markdown_native`                                 | `diff`                      | Fast Markdown to HTML conversion via `pulldown-cmark`                | **Pass** |
+| UT-15 | `test_calculate_text_stats_native`                           | `text_processing/stats`     | Real-time character, word, line, reading time calculation            | **Pass** |
+| UT-16 | `test_parse_yaml_front_matter_native`                        | `text_processing/yaml`      | YAML Front Matter metadata parsing                                   | **Pass** |
+| UT-17 | `test_extract_headings_native`                               | `text_processing/structure` | H1~H6 outline tree extraction                                        | **Pass** |
+| UT-18 | `test_toggle_task_native`                                    | `text_processing/structure` | Task checkbox toggle (`- [ ]` ↔ `- [x]`)                             | **Pass** |
+| UT-19 | `test_parse_csv_preview_native`                              | `text_processing/csv`       | Zero-copy CSV line counting and cell extraction                      | **Pass** |
+| UT-20 | `test_format_markdown_native`                                | `text_processing/formatter` | GFM table alignment, heading spacing, blank line collapsing          | **Pass** |
+| UT-21 | `test_format_markdown_native_front_matter_and_code_block...` | `text_processing/formatter` | Code block and front matter preservation                             | **Pass** |
+| UT-22 | `test_render_markdown_html_native`                           | `text_processing/html`      | Pre-rendering HTML with syntect syntax highlighting                  | **Pass** |
+| UT-23 | `test_export_html_full_native`                               | `text_processing/html`      | Standalone HTML document export generation                           | **Pass** |
