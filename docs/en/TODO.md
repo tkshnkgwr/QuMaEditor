@@ -5,7 +5,7 @@ List of completed features and upcoming development tasks for QuMaEditor.
 ---
 
 ## 🎯 Completed Tasks
- 
+
 ### v1.4.1 Release (2026-08-18)
 
 - [x] **Print Preview Overhaul & Multi-Page Pagination**: Real-time layout/paper size synchronization, document file name header, crisp task list printing.
@@ -36,16 +36,16 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🔮 Next Priority Roadmap
 
-| #  | Component              | Task Description                                                                                | Priority | Status      |
-| :- | :--------------------- | :---------------------------------------------------------------------------------------------- | :------- | :---------- |
-| 1  | `Sidebar / Navigation` | **Heading Outline Navigation** — Extract `# H1` ~ `### H3` for quick jumping to sections        | Medium   | 🔲 Proposed |
-| 2  | `ZenMode / Editor`     | **Zen Mode Audio Mute** — Automatically mute sounds/alerts during Zen focus mode                | Medium   | 🔲 Proposed |
-| 3  | `ZenMode / Editor`     | **Zen Mode Notification Suppression** — Suppress toasts/popups during Zen mode                  | Medium   | 🔲 Proposed |
-| 4  | `ZenMode / Editor`     | **Current Line Focus** — Dim non-active lines to emphasize the current cursor line              | Medium   | 🔲 Proposed |
-| 5  | `ZenMode / Editor`     | **Typewriter Scrolling** — Keep the active cursor line vertically centered                     | Low      | 🔲 Proposed |
-| 6  | `ZenMode / Editor`     | **Pomodoro / Focus Timer** — Integrated 25min focus + 5min break timer                          | Low      | 🔲 Proposed |
-| 7  | `ZenMode / Editor`     | **Ambient Background Sounds** — Rain, white noise, cafe sounds for concentration                | Low      | 🔲 Proposed |
-| 8  | `Preview / CSV`        | **Large CSV Virtual Scrolling / Pagination** — Full display extension beyond 100 preview rows   | Low      | 🔲 Proposed |
-| 9  | `Plugin System`        | **Plugin & Extension Architecture Exploration**                                                 | Low      | 🔲 Proposed |
-| 10 | `Cloud Storage`        | **Cloud Sync Prototype (Google Drive / OneDrive)**                                              | Low      | 🔲 Proposed |
-| 11 | `Multi Window`         | **Multi-Window / Tab Detachment Exploration**                                                   | Low      | 🔲 Proposed |
+| #  | Component            | Task Description                                                                                                        | Priority | Status      |
+| :- | :------------------- | :---------------------------------------------------------------------------------------------------------------------- | :------- | :---------- |
+| 1  | `Preview / CSV Drop` | **Complete CSV Preview Removal & Cleanup** — Purify QuMaEditor as a dedicated Markdown editor by removing all CSV logic | High     | 🔲 Planned  |
+| 2  | `Sidebar / Nav`      | **Heading Outline Navigation** — Extract `# H1` ~ `### H3` for quick jumping to sections                                | Medium   | 🔲 Proposed |
+| 3  | `ZenMode / Editor`   | **Zen Mode Audio Mute** — Automatically mute sounds/alerts during Zen focus mode                                        | Medium   | 🔲 Proposed |
+| 4  | `ZenMode / Editor`   | **Zen Mode Notification Suppression** — Suppress toasts/popups during Zen mode                                          | Medium   | 🔲 Proposed |
+| 5  | `ZenMode / Editor`   | **Current Line Focus** — Dim non-active lines to emphasize the current cursor line                                      | Medium   | 🔲 Proposed |
+| 6  | `ZenMode / Editor`   | **Typewriter Scrolling** — Keep the active cursor line vertically centered                                             | Low      | 🔲 Proposed |
+| 7  | `ZenMode / Editor`   | **Pomodoro / Focus Timer** — Integrated 25min focus + 5min break timer                                                  | Low      | 🔲 Proposed |
+| 8  | `ZenMode / Editor`   | **Ambient Background Sounds** — Rain, white noise, cafe sounds for concentration                                        | Low      | 🔲 Proposed |
+| 9  | `Plugin System`      | **Plugin & Extension Architecture Exploration**                                                                         | Low      | 🔲 Proposed |
+| 10 | `Cloud Storage`      | **Cloud Sync Prototype (Google Drive / OneDrive)**                                                                      | Low      | 🔲 Proposed |
+| 11 | `Multi Window`       | **Multi-Window / Tab Detachment Exploration**                                                                           | Low      | 🔲 Proposed |
