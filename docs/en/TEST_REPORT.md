@@ -4,8 +4,8 @@
 
 ## 1. Test Overview
 
-- **Date**: 2026-08-18
-- **Version**: v1.4.1
+- **Date**: 2026-08-21
+- **Version**: v1.4.2
 - **Environment**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
 ---
@@ -17,12 +17,12 @@
 | 1  | **Rust Code Formatting**      | `cargo fmt --manifest-path src-tauri/Cargo.toml --check`          | ✅ PASS (0 diff)   |
 | 2  | **Rust Compilation & Types**  | `cargo check --manifest-path src-tauri/Cargo.toml`                | ✅ PASS (0 errors) |
 | 3  | **Rust Clippy Strict Linter** | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets` | ✅ PASS (0 warns)  |
-| 4  | **Rust Unit Tests**           | `cargo test --manifest-path src-tauri/Cargo.toml`                 | ✅ PASS (23/23 ok) |
+| 4  | **Rust Unit Tests**           | `cargo test --manifest-path src-tauri/Cargo.toml`                 | ✅ PASS (22/22 ok) |
 | 5  | **TypeScript Type Check**     | `npm run lint`                                                    | ✅ PASS (0 errors) |
 
 ---
 
-## 3. Rust Unit Test Details (23 Tests Passed)
+## 3. Rust Unit Test Details (22 Tests Passed)
 
 | ID    | Test Function Name                                           | Module                      | Verification Summary                                                 | Result   |
 | :---- | :----------------------------------------------------------- | :-------------------------- | :------------------------------------------------------------------- | :------- |

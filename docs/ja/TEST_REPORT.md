@@ -4,8 +4,8 @@
 
 ## 1. テスト実施概要
 
-- **実施日**: 2026-08-18
-- **対象バージョン**: v1.4.1
+- **実施日**: 2026-08-21
+- **対象バージョン**: v1.4.2
 - **実施環境**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
 ---
@@ -17,12 +17,12 @@
 | 1  | **Rust コード整形検証**     | `cargo fmt --manifest-path src-tauri/Cargo.toml --check`          | ✅ PASS (0 diff)   |
 | 2  | **Rust コンパイル・型検証** | `cargo check --manifest-path src-tauri/Cargo.toml`                | ✅ PASS (0 errors) |
 | 3  | **Rust Clippy 品質検証**    | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets` | ✅ PASS (0 warns)  |
-| 4  | **Rust ユニットテスト検証** | `cargo test --manifest-path src-tauri/Cargo.toml`                 | ✅ PASS (23/23 ok) |
+| 4  | **Rust ユニットテスト検証** | `cargo test --manifest-path src-tauri/Cargo.toml`                 | ✅ PASS (22/22 ok) |
 | 5  | **TypeScript 型検証**       | `npm run lint`                                                    | ✅ PASS (0 errors) |
 
 ---
 
-## 3. Rust ユニットテスト詳細結果 (全23件 PASS)
+## 3. Rust ユニットテスト詳細結果 (全22件 PASS)
 
 | ID    | テスト関数名                                                 | モジュール                  | 検証内容                                                             | 結果     |
 | :---- | :----------------------------------------------------------- | :-------------------------- | :------------------------------------------------------------------- | :------- |

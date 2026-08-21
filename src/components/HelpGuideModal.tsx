@@ -144,11 +144,39 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose,
               >
                 <div className={`font-medium flex items-center gap-1.5 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-900 font-semibold'}`}>
                   <Tag className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                  4. タグ管理と超高速全文検索
+                  4. タグ管理と超高速全文検索 ＆ 📑 見出し目次 (アウトライン)
                 </div>
                 <p className={`text-[11px] pl-5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                  エディタ上部の YAML Front Matter ヘッダーからタグ（<span className="text-purple-300 font-mono">#ガイド</span> 等）を自在に追加可能。左サイドバーの検索欄からキーワードやタグ名で超高速絞り込み検索ができます。
+                  左サイドバー上部の <span className="text-amber-400 font-semibold">📑 目次</span> タブから、ドキュメント内の見出し（H1〜H6）一覧を階層表示。クリックで該当行とプレビューへ瞬時にジャンプできます。また、検索欄からキーワードやタグ名（<span className="text-purple-300 font-mono">#ガイド</span>）で高速絞り込みも可能です。
                 </p>
+              </div>
+
+              <div
+                className={`p-3.5 rounded-xl border ${
+                  isDark ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950/30 border-amber-500/30' : 'bg-gradient-to-r from-amber-50/80 via-white to-amber-50 border-amber-200 shadow-xs'
+                }`}
+              >
+                <div className={`font-bold flex items-center gap-1.5 mb-1.5 ${isDark ? 'text-amber-300' : 'text-amber-900'}`}>
+                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  5. 🧘 Zen集中執筆モード（Zen Mode）
+                </div>
+                <p className={`text-[11px] leading-relaxed mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  タイトルバー、ツールバー、サイドバー、ステータスバーをすべて非表示にし、<strong>画面全体をあなたの文章執筆だけに捧げる没入モード</strong>です。
+                </p>
+                <div className={`p-2.5 rounded-lg border text-[11px] space-y-1 ${
+                  isDark ? 'bg-slate-950/80 border-slate-700/80 text-slate-300' : 'bg-white border-amber-200 text-slate-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-amber-400">起動:</span>
+                    <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-amber-300 font-mono text-[10px]">Ctrl + Shift + Z</kbd>
+                    <span>または 上部メニューの「集中執筆」</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-rose-400">解除:</span>
+                    <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-rose-300 font-mono text-[10px]">Esc</kbd>
+                    <span>または 画面右上の浮遊ボタン「Zenモード解除」</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

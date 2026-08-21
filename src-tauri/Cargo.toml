@@ -1,6 +1,6 @@
 [package]
 name = "QuMaEditor"
-version = "1.4.1"
+version = "1.4.2"
 description = "High-Performance Desktop Markdown Editor with Native Encoding Support"
 authors = ["you"]
 edition = "2021"

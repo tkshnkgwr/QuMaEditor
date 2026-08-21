@@ -2,6 +2,28 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.4.2] - 2026-08-21
+
+### 📑 Heading Outline Navigation, LocalStorage Disk Export, Tab Nesting, Pure Markdown (v1.4.2)
+
+- **Heading Outline & TOC Navigation (`Sidebar / Navigation`)**:
+  - Added dual-tab switcher in sidebar for "📁 Documents" and "📑 Outline".
+  - Rust native fast extraction (`pulldown_cmark` offset + binary search) of H1~H6 headings with exact line numbers.
+  - Hierarchical indentation, level badges (`H1`~`H6`), line number badges, and real-time search filtering.
+  - Clicking any heading smoothly jumps both the editor cursor (scrolling into center view) and the preview heading.
+- **Dedicated "💾 Save to PC File" Button for LocalStorage Documents (`File / Storage`)**:
+  - Added one-click action button on StatusBar to easily export browser-cached documents to local `.md` files.
+- **Editor Tab Indentation & Nested Bullet Lists (`Editor / List`)**:
+  - Prevented Tab key from losing focus.
+  - Full support for single-line list prefix increment (`- ` ➔ `  - `), multi-line block indent, and `Shift + Tab` unindent.
+- **Fix Ordered List (<ol>) and Nested List Rendering Glitches (`Preview / Markdown`)**:
+  - Fixed issue where `<ol>` numbers broke onto separate lines.
+  - Optimized nested list bullet markers (disc ➔ circle ➔ square, 1. ➔ a.) and print styles.
+- **Complete CSV Removal & Pure Markdown Focus (`Preview / CSV Drop`)**:
+  - Purged all CSV native parsing and table preview components to optimize QuMaEditor as a lightweight Markdown editor.
+- **Zen Mode Documentation & Help Guide Expansion (`Help / Docs`)**:
+  - Added detailed Zen mode explanation, shortcut keys (`Ctrl+Shift+Z` / `Esc`), and benefits in both the app help modal and documentation.
+
 ## [1.4.1] - 2026-08-18
 
 ### 🖨️ Print Preview Overhaul, Mermaid Auto-Scaling, and Real-Time Layout Sync (v1.4.1)
