@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { MarkdownDoc, EditorSettings, SaveStatus } from '../types';
-import { openNativeFileDialog, saveNativeFile, openNativeFileFromPath, isCsvDoc } from '../utils/fileSystem';
+import { openNativeFileDialog, saveNativeFile, openNativeFileFromPath } from '../utils/fileSystem';
 import { decodeFileContent, prepareEncodedBlob } from '../utils/encodingUtils';
 import { parseYamlFrontMatter, buildFullMarkdownWithFrontMatter } from '../utils/yamlUtils';
 import { generatePdfNative, exportHtmlFullNative } from '../utils/tauriNative';
@@ -32,22 +32,18 @@ export function useFileOperations({
   fileInputRef,
   onSaveSuccess,
 }: FileOperationsProps) {
-  // Markdown/CSV ファイルとしてのエクスポート (ダウンロード)
+  // Markdown ファイルとしてのエクスポート (ダウンロード)
   const handleExportMarkdown = useCallback(() => {
-    const isCsv = isCsvDoc(currentDoc);
-    const exportText = isCsv ? currentDoc.content : buildFullMarkdownWithFrontMatter(currentDoc);
+    const exportText = buildFullMarkdownWithFrontMatter(currentDoc);
     const targetEncoding = currentDoc.encoding || 'UTF-8';
     const blob = prepareEncodedBlob(exportText, targetEncoding);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = isCsv ? `${currentDoc.title || 'table'}.csv` : `${currentDoc.title || 'document'}.md`;
+    a.download = `${currentDoc.title || 'document'}.md`;
     a.click();
     URL.revokeObjectURL(url);
-    logger.info(
-      isCsv ? `[エクスポート] CSVを出力しました (${targetEncoding})` : `[エクスポート] Markdownを出力しました (${targetEncoding})`,
-      `ファイル名: ${a.download}`
-    );
+    logger.info(`[エクスポート] Markdownを出力しました (${targetEncoding})`, `ファイル名: ${a.download}`);
   }, [currentDoc]);
 
   // 実ファイルへの保存（直上書き保存 または 名前を付けて保存）

@@ -31,7 +31,6 @@ pub fn export_specta_types() {
             commands::extract_headings_native,
             commands::toggle_task_native,
             commands::export_html_full_native,
-            commands::parse_csv_preview_native,
             commands::format_markdown_native,
             commands::render_markdown_html_native,
         ]);
@@ -129,7 +128,6 @@ pub fn run() {
             commands::extract_headings_native,
             commands::toggle_task_native,
             commands::export_html_full_native,
-            commands::parse_csv_preview_native,
             commands::format_markdown_native,
             commands::render_markdown_html_native,
             commands::open_folder_native,

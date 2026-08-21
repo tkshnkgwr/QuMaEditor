@@ -21,7 +21,7 @@ import {
   toggleTaskNative,
   formatMarkdownNative,
 } from './utils/tauriNative';
-import { openNativeFileFromPath, isCsvDoc, loadFullNativeDoc, loadMoreChunkNativeDoc } from './utils/fileSystem';
+import { openNativeFileFromPath, loadFullNativeDoc, loadMoreChunkNativeDoc } from './utils/fileSystem';
 import { commands } from './bindings';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -167,9 +167,6 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState<import('./types').SaveStatus>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
-  // CSV 編集ロック解除されたドキュメントID一覧
-  const [editableCsvDocIds, setEditableCsvDocIds] = useState<string[]>([]);
-
   // 全文一括読み込みハンドラー
   const handleLoadFullDoc = useCallback(async () => {
     if (!currentDoc.filePath) return;
@@ -198,22 +195,7 @@ export default function App() {
     }
   }, [currentDoc, setDocs]);
 
-  // 現在のドキュメントの CSV 判定と ReadOnly 判定
-  const isCurrentCsv = isCsvDoc(currentDoc);
-  const isCsvReadOnly = isCurrentCsv && !editableCsvDocIds.includes(currentDoc.id);
 
-  const handleToggleCsvEditLock = useCallback(async () => {
-    // 遅延読み込み中の場合は、編集有効化時に全文を自動ロード
-    if (currentDoc.isChunkedLoaded) {
-      await handleLoadFullDoc();
-    }
-
-    setEditableCsvDocIds((prev) =>
-      prev.includes(currentDoc.id)
-        ? prev.filter((id) => id !== currentDoc.id)
-        : [...prev, currentDoc.id]
-    );
-  }, [currentDoc.id, currentDoc.isChunkedLoaded, handleLoadFullDoc]);
 
   // トースト通知 state
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -366,12 +348,6 @@ export default function App() {
     }
 
     setSaveStatus('editing');
-
-    // CSV ファイルの場合は自動保存を一切行わない
-    if (isCurrentCsv) {
-      setSaveStatus('unsaved');
-      return;
-    }
 
     const delayMs = Math.max(2000, Math.min(10000, settings.autoSaveIntervalMs || 3000));
 
@@ -800,6 +776,47 @@ export default function App() {
     }
   };
 
+  // 見出しアウトラインクリック時の該当行＆プレビュージャンプ処理
+  const handleJumpToHeading = useCallback((lineNumber: number, headingText: string) => {
+    // 1. エディタ側の該当行へカーソル移動＆フォーカス＆スクロール
+    const textarea = editorTextareaRef.current;
+    if (textarea) {
+      const lines = currentDoc.content.split('\n');
+      let charIndex = 0;
+      for (let i = 0; i < Math.min(lineNumber - 1, lines.length); i++) {
+        charIndex += lines[i].length + 1; // +1 for '\n'
+      }
+      const targetLineText = lines[lineNumber - 1] || '';
+
+      textarea.focus();
+      textarea.setSelectionRange(charIndex, charIndex + targetLineText.length);
+
+      // 行の高さ概算でスムーズに画面中央近くへスクロール
+      const lineHeightPx = (settings.fontSize || 15) * (settings.lineHeight || 1.6);
+      textarea.scrollTop = Math.max(0, (lineNumber - 5) * lineHeightPx);
+
+      setCursorLine(lineNumber);
+      setCursorCol(1);
+    }
+
+    // 2. プレビュー側の該当見出し要素へスムーズスクロール
+    if (previewScrollRef.current) {
+      const headings = Array.from(
+        previewScrollRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6')
+      );
+      const cleanTarget = headingText.trim().toLowerCase();
+      // テキスト内容が一致する見出し要素を検索
+      const targetEl = headings.find((el) => {
+        const text = el.textContent?.trim().toLowerCase() || '';
+        return text === cleanTarget || text.includes(cleanTarget) || cleanTarget.includes(text);
+      });
+
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [currentDoc.content, settings.fontSize, settings.lineHeight]);
+
   return (
     <div
       className={`relative h-screen w-screen flex flex-col overflow-hidden font-sans print:h-auto print:w-full print:overflow-visible print:block print:bg-white print:text-slate-900 ${
@@ -885,11 +902,13 @@ export default function App() {
             onClose={() => setIsSidebarOpen(false)}
             docs={docs}
             activeDocId={activeDocId}
+            currentDoc={currentDoc}
             onSelectDoc={handleSelectDoc}
             onNewDoc={handleNewDoc}
             onDeleteDoc={handleDeleteDoc}
             onToggleFavorite={handleToggleFavorite}
             onOpenTemplates={() => setIsTemplateModalOpen(true)}
+            onJumpToHeading={handleJumpToHeading}
             isDark={isDark}
             width={sidebarWidth}
             onWidthChange={handleSidebarWidthChange}
@@ -969,9 +988,6 @@ export default function App() {
                 onUpdateTags={handleUpdateTags}
                 onTextareaRef={(el) => { editorTextareaRef.current = el; }}
                 isDark={isDark}
-                isCsv={isCurrentCsv}
-                isReadOnly={isCsvReadOnly}
-                onToggleEditLock={handleToggleCsvEditLock}
                 onLoadFullDoc={handleLoadFullDoc}
                 onLoadMoreChunk={handleLoadMoreChunk}
               />
@@ -994,7 +1010,6 @@ export default function App() {
                 lineHeight={settings.lineHeight}
                 fontFamily={settings.fontFamily}
                 headingTheme={settings.headingTheme}
-                isCsv={isCurrentCsv}
               />
             </div>
           </div>
@@ -1017,9 +1032,8 @@ export default function App() {
           encoding={currentDoc.encoding}
           onChangeEncoding={handleChangeEncoding}
           onOpenStatsModal={() => setIsStatsModalOpen(true)}
+          onSaveFile={handleSaveCurrentDoc}
           isDark={isDark}
-          isCsv={isCurrentCsv}
-          isReadOnly={isCsvReadOnly}
         />
       )}
 

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Upload, Lock, Unlock, Tag, Plus, X, ChevronDown, ChevronRight, Edit3, Layers, Download, Zap } from 'lucide-react';
 import { EditorSettings, MarkdownDoc } from '../types';
-import { handleAutoListContinuation, insertFormatting } from '../utils/markdownUtils';
+import { handleAutoListContinuation, insertFormatting, handleTabIndent } from '../utils/markdownUtils';
 
 interface EditorProps {
   content: string;
@@ -17,8 +17,6 @@ interface EditorProps {
   onTextareaRef?: (ref: HTMLTextAreaElement | null) => void;
   isDark?: boolean;
   isReadOnly?: boolean;
-  isCsv?: boolean;
-  onToggleEditLock?: () => void;
   onLoadFullDoc?: () => void;
   onLoadMoreChunk?: () => void;
 }
@@ -39,8 +37,6 @@ export const Editor: React.FC<EditorProps> = ({
   onTextareaRef,
   isDark = true,
   isReadOnly = false,
-  isCsv = false,
-  onToggleEditLock,
   onLoadFullDoc,
   onLoadMoreChunk,
 }) => {
@@ -194,6 +190,19 @@ export const Editor: React.FC<EditorProps> = ({
       return;
     }
 
+    // Tab / Shift + Tab (インデント・階層ネスト・アンインデント)
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const tabSize = settings.tabSize || 2;
+      const res = handleTabIndent(content, start, end, e.shiftKey, tabSize);
+      onChange(res.newText);
+      setTimeout(() => {
+        textareaRef.current?.setSelectionRange(res.newCursorStart, res.newCursorEnd);
+        updateCursorPos();
+      }, 0);
+      return;
+    }
+
     // Enterキーでのリスト自動継続
     if (e.key === 'Enter') {
       const continuation = handleAutoListContinuation(content, start);
@@ -281,72 +290,7 @@ export const Editor: React.FC<EditorProps> = ({
         </div>
       )}
 
-      {/* CSV ファイル用の ReadOnly / 編集モード切替バナー */}
-      {isCsv && (
-        <div
-          className={`px-3 py-2 border-b select-none flex items-center justify-between transition-colors ${
-            isReadOnly
-              ? isDark
-                ? 'bg-amber-950/40 border-amber-800/60 text-amber-200'
-                : 'bg-amber-50 border-amber-200 text-amber-900'
-              : isDark
-                ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-200'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-          }`}
-        >
-          <div className="flex items-center gap-2 text-xs">
-            {isReadOnly ? (
-              <>
-                <Lock className={`w-4 h-4 shrink-0 ${isDark ? 'text-amber-400' : 'text-amber-700'}`} />
-                <span className="font-bold">読み取り専用 (CSV)</span>
-                <span className={`text-[11px] hidden sm:inline ${isDark ? 'text-amber-300/80' : 'text-amber-800'}`}>
-                  — 安全のため保護されています。自動保存・LocalStorage保存は無効です。
-                </span>
-              </>
-            ) : (
-              <>
-                <Unlock className={`w-4 h-4 shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`} />
-                <span className="font-bold text-emerald-400">編集モード有効 (CSV)</span>
-                <span className={`text-[11px] hidden sm:inline ${isDark ? 'text-emerald-300/80' : 'text-emerald-800'}`}>
-                  — 編集内容を上書き保存する際は [Ctrl+S] を実行してください。
-                </span>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {onToggleEditLock && (
-              <button
-                onClick={onToggleEditLock}
-                className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
-                  isReadOnly
-                    ? isDark
-                      ? 'bg-amber-600 hover:bg-amber-500 text-white'
-                      : 'bg-amber-700 hover:bg-amber-800 text-white'
-                    : isDark
-                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
-                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-300'
-                }`}
-              >
-                {isReadOnly ? (
-                  <>
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>編集を有効化</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>保護（読み取り専用）に戻す</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Front Matter 設定アコーディオンパネル (CSV時は非表示) */}
-      {!isCsv && (
+      {/* Front Matter 設定アコーディオンパネル */}
       <div className={`border-b select-none transition-colors ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
         <button
           onClick={() => setIsFrontMatterOpen(!isFrontMatterOpen)}
@@ -474,7 +418,6 @@ export const Editor: React.FC<EditorProps> = ({
           </div>
         )}
       </div>
-      )}
 
       {/* エディタ＆行番号エリア */}
       <div className="flex-1 flex overflow-hidden relative">
@@ -515,7 +458,7 @@ export const Editor: React.FC<EditorProps> = ({
           onClick={updateCursorPos}
           onScroll={handleScroll}
           readOnly={isReadOnly}
-          placeholder={isCsv ? (isReadOnly ? "このCSVファイルは読み取り専用です。「編集を有効化」ボタンを押すと編集できます。" : "CSVデータを入力してください...") : "ここからMarkdown入力を開始してください..."}
+          placeholder="ここからMarkdown入力を開始してください..."
           spellCheck={false}
           className={`flex-1 w-full h-full p-3 font-mono resize-none focus:outline-none leading-relaxed transition-colors ${
             isDark

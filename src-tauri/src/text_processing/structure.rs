@@ -29,13 +29,26 @@ pub fn extract_headings_native(markdown_text: String) -> Result<Vec<HeadingItemD
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_TASKLISTS);
 
-    let parser = Parser::new_ext(&markdown_text, options);
+    // 行開始のバイトインデックスを事前構築して O(log N) で行番号を引けるように最適化
+    let line_starts: Vec<usize> = std::iter::once(0)
+        .chain(markdown_text.match_indices('\n').map(|(i, _)| i + 1))
+        .collect();
+
+    let get_line_number = |byte_offset: usize| -> u32 {
+        match line_starts.binary_search(&byte_offset) {
+            Ok(line_idx) => (line_idx + 1) as u32,
+            Err(line_idx) => line_idx as u32,
+        }
+    };
+
+    let parser = Parser::new_ext(&markdown_text, options).into_offset_iter();
     let mut headings = Vec::new();
 
     let mut current_heading_level: Option<u8> = None;
+    let mut current_heading_start_line = 1u32;
     let mut current_heading_text = String::new();
 
-    for event in parser {
+    for (event, range) in parser {
         match event {
             Event::Start(Tag::Heading { level, .. }) => {
                 let lvl = match level {
@@ -47,6 +60,7 @@ pub fn extract_headings_native(markdown_text: String) -> Result<Vec<HeadingItemD
                     HeadingLevel::H6 => 6,
                 };
                 current_heading_level = Some(lvl);
+                current_heading_start_line = get_line_number(range.start);
                 current_heading_text.clear();
             }
             Event::Text(text) | Event::Code(text) => {
@@ -61,7 +75,7 @@ pub fn extract_headings_native(markdown_text: String) -> Result<Vec<HeadingItemD
                         headings.push(HeadingItemDto {
                             level: lvl,
                             text: trimmed,
-                            line_number: 1,
+                            line_number: current_heading_start_line,
                         });
                     }
                 }
@@ -108,25 +122,31 @@ pub fn toggle_task_native(markdown_text: String, target_index: u32) -> Result<St
 
                 let new_state = if trimmed.chars().nth(3) == Some(' ') {
                     "/" // 未完了 -> 進行中
-                } else if trimmed.chars().nth(3) == Some('/') || trimmed.chars().nth(3) == Some('-')
-                {
+                } else if trimmed.chars().nth(3) == Some('/') {
                     "x" // 進行中 -> 完了
                 } else {
                     " " // 完了 -> 未完了
                 };
 
-                result.push_str(&format!("{}{} [{}] {}", indent, bullet, new_state, content));
+                result.push_str(indent);
+                result.push_str(bullet);
+                result.push_str(" [");
+                result.push_str(new_state);
+                result.push_str("] ");
+                result.push_str(content);
+                result.push('\n');
             } else {
                 result.push_str(line);
+                result.push('\n');
             }
             current_idx += 1;
         } else {
             result.push_str(line);
+            result.push('\n');
         }
-        result.push('\n');
     }
 
-    if !markdown_text.ends_with('\n') && result.ends_with('\n') {
+    if result.ends_with('\n') && !markdown_text.ends_with('\n') {
         result.pop();
     }
 
@@ -139,13 +159,20 @@ mod tests {
 
     #[test]
     fn test_extract_headings_native() {
-        let md = "# 見出し1\n本文\n## 見出し2\n### 見出し3";
+        let md = "# 見出し1\n本文1\n本文2\n## 見出し2\n\n### 見出し3";
         let headings = extract_headings_native(md.to_string()).unwrap();
         assert_eq!(headings.len(), 3);
         assert_eq!(headings[0].level, 1);
         assert_eq!(headings[0].text, "見出し1");
+        assert_eq!(headings[0].line_number, 1);
+
         assert_eq!(headings[1].level, 2);
         assert_eq!(headings[1].text, "見出し2");
+        assert_eq!(headings[1].line_number, 4);
+
+        assert_eq!(headings[2].level, 3);
+        assert_eq!(headings[2].text, "見出し3");
+        assert_eq!(headings[2].line_number, 6);
     }
 
     #[test]

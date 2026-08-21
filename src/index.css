@@ -166,6 +166,23 @@ body.light ::-webkit-scrollbar-thumb:hover {
     page-break-after: avoid !important;
   }
 
+  /* リスト（箇条書き・番号付き） */
+  .preview-markdown ul {
+    list-style-type: disc !important;
+    padding-left: 20pt !important;
+    margin: 4pt 0 8pt 0 !important;
+  }
+
+  .preview-markdown ol {
+    list-style-type: decimal !important;
+    padding-left: 20pt !important;
+    margin: 4pt 0 8pt 0 !important;
+  }
+
+  .preview-markdown li {
+    margin: 2pt 0 !important;
+  }
+
   /* 段落（孤行・未亡人行の防止） */
   .preview-markdown p {
     orphans: 3 !important;

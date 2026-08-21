@@ -6,9 +6,7 @@ use crate::diff::{self, TextDiffChunk};
 use crate::encoding::{self, EncodingDetectResult};
 use crate::file_io::{self, FileChunkResult, FileMetadataDto};
 use crate::search::{self, DocSearchInput, SearchResult};
-use crate::text_processing::{
-    self, CsvPreviewDto, HeadingItemDto, ParsedYamlDocResult, TextStatsDto,
-};
+use crate::text_processing::{self, HeadingItemDto, ParsedYamlDocResult, TextStatsDto};
 
 /// バイト配列から文字コード（UTF-8, Shift_JIS, EUC-JP）を自動判別し UTF-8 文字列へ変換する
 #[tauri::command]
@@ -131,13 +129,6 @@ pub fn export_html_full_native(
     is_dark: bool,
 ) -> Result<String, String> {
     text_processing::export_html_full_native(title, markdown_text, is_dark)
-}
-
-/// CSV データを高速解析し、プレビュー用サマリーと統計を返却する
-#[tauri::command]
-#[specta::specta]
-pub fn parse_csv_preview_native(content: String, max_rows: u32) -> Result<CsvPreviewDto, String> {
-    text_processing::parse_csv_preview_native(content, max_rows)
 }
 
 /// Markdown ドキュメントの高速ネイティブ自動整形（空行圧縮・見出し空行・表組み垂直整列）を実行する

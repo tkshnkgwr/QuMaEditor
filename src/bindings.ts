@@ -182,17 +182,6 @@ async exportHtmlFullNative(title: string, markdownText: string, isDark: boolean)
 }
 },
 /**
- * CSV データを高速解析し、プレビュー用サマリーと統計を返却する
- */
-async parseCsvPreviewNative(content: string, maxRows: number) : Promise<Result<CsvPreviewDto, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("parse_csv_preview_native", { content, maxRows }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
  * Markdown ドキュメントの高速ネイティブ自動整形（空行圧縮・見出し空行・表組み垂直整列）を実行する
  */
 async formatMarkdownNative(markdownText: string) : Promise<Result<string, string>> {
@@ -226,30 +215,6 @@ async renderMarkdownHtmlNative(markdownText: string, isDark: boolean) : Promise<
 
 /** user-defined types **/
 
-/**
- * CSV プレビュー解析結果 DTO
- */
-export type CsvPreviewDto = { 
-/**
- * ヘッダー列（1行目）
- */
-headers: string[]; 
-/**
- * プレビュー用データ行一覧
- */
-rows: string[][]; 
-/**
- * 総行数
- */
-total_lines: number; 
-/**
- * 最大列数
- */
-total_cols: number; 
-/**
- * 実際にプレビュー表示した行数
- */
-displayed_lines: number }
 /**
  * 検索インデックス登録用データ構造体
  */

@@ -1,5 +1,4 @@
 import { MarkdownDoc, EditorSettings, CustomTemplate } from '../types';
-import { isCsvDoc } from './fileSystem';
 
 /** LocalStorage のキー名マッピング定数 */
 export const STORAGE_KEYS = {
@@ -108,11 +107,8 @@ export function loadStoredDocs(): MarkdownDoc[] {
  */
 export function saveStoredDocs(docs: MarkdownDoc[]): void {
   try {
-    // CSV ファイルは内部ストレージ保存から完全除外
-    const nonCsvDocs = docs.filter((doc) => !isCsvDoc(doc));
-
     // 実ファイルが存在するドキュメントで本文が 5KB を超えている場合、LocalStorage 上はスリム化
-    const optimizedDocs = nonCsvDocs.map((doc) => {
+    const optimizedDocs = docs.map((doc) => {
       if (doc.filePath && !doc.isRemote && doc.content.length > 5000) {
         return {
           ...doc,
@@ -126,7 +122,7 @@ export function saveStoredDocs(docs: MarkdownDoc[]): void {
 
     // 全体サイズが 2MB を超える場合の自動ガベージコレクション (GC)
     if (serialized.length > 2 * 1024 * 1024) {
-      const gcDocs = nonCsvDocs.map((doc) => {
+      const gcDocs = docs.map((doc) => {
         if (doc.filePath && !doc.isRemote) {
           return {
             ...doc,
@@ -145,17 +141,15 @@ export function saveStoredDocs(docs: MarkdownDoc[]): void {
     console.error('Failed to save docs to localStorage, applying emergency cleanup:', e);
     // QuotaExceededError 発生時の緊急クリーンアップ (全保存済み実ファイルドキュメントのキャッシュ解放)
     try {
-      const emergencyDocs = docs
-        .filter((doc) => !isCsvDoc(doc))
-        .map((doc) => {
-          if (doc.filePath) {
-            return {
-              ...doc,
-              content: doc.content.substring(0, 200) + '\n\n<!-- [STORAGE_SLIMMED_LOAD_FROM_DISK] -->',
-            };
-          }
-          return doc;
-        });
+      const emergencyDocs = docs.map((doc) => {
+        if (doc.filePath) {
+          return {
+            ...doc,
+            content: doc.content.substring(0, 200) + '\n\n<!-- [STORAGE_SLIMMED_LOAD_FROM_DISK] -->',
+          };
+        }
+        return doc;
+      });
       localStorage.setItem(STORAGE_KEYS.DOCS, JSON.stringify(emergencyDocs));
     } catch (innerErr) {
       console.error('Emergency storage cleanup failed:', innerErr);

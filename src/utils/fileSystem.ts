@@ -17,19 +17,6 @@ export interface OpenedFileResult {
   filePath: string;
 }
 
-/**
- * 対象ドキュメントが CSV ファイルであるかを判定します
- *
- * @param doc 判定対象のドキュメント
- * @returns CSV の場合 true
- */
-export function isCsvDoc(doc?: MarkdownDoc | null): boolean {
-  if (!doc) return false;
-  if (doc.isCsv) return true;
-  if (doc.filePath && /\.csv$/i.test(doc.filePath)) return true;
-  if (doc.title && /\.csv$/i.test(doc.title)) return true;
-  return false;
-}
 
 /**
  * ファイル保存処理の結果インターフェース
@@ -66,8 +53,6 @@ export async function openNativeFileFromPath(
     let loadedBytes = 0;
     let totalSizeBytes = 0;
 
-    const isCsvFile = /\.csv$/i.test(cleanPath);
-
     // メタデータの確認 (大容量判定)
     let fileSize = 0;
     try {
@@ -80,8 +65,8 @@ export async function openNativeFileFromPath(
       // メタデータ取得不可時は通常ロードへ
     }
 
-    // 500KB 超のテキスト、または 300KB 超の CSV ファイルは大容量高速チャンクロード (0.01秒でオープン)
-    const isLargeFile = !options.loadFull && fileSize > (isCsvFile ? 300 * 1024 : 500 * 1024);
+    // 500KB 超のテキストは大容量高速チャンクロード (0.01秒でオープン)
+    const isLargeFile = !options.loadFull && fileSize > 500 * 1024;
 
     if (isLargeFile) {
       const initialChunkBytes = options.initialChunkSize || 150 * 1024; // 冒頭 約1,500行分
@@ -116,7 +101,7 @@ export async function openNativeFileFromPath(
       }
     }
 
-    const { body, metadata } = isCsvFile ? { body: text, metadata: {} as any } : parseYamlFrontMatter(text);
+    const { body, metadata } = parseYamlFrontMatter(text);
     const fileNameWithExt = cleanPath.split(/[/\\]/).pop() || '無題のドキュメント';
     const defaultTitle = fileNameWithExt.replace(/\.[^/.]+$/, '') || fileNameWithExt;
 
@@ -125,7 +110,7 @@ export async function openNativeFileFromPath(
       title: metadata.title || defaultTitle,
       author: metadata.author || 'Unknown',
       updatedBy: metadata.updatedBy || metadata.author || 'Unknown',
-      content: isCsvFile ? text : body,
+      content: body,
       encoding: (metadata.encoding as SupportedEncoding) || encoding,
       createdAt: metadata.created || new Date().toISOString(),
       updatedAt: metadata.updated || new Date().toISOString(),
@@ -133,7 +118,6 @@ export async function openNativeFileFromPath(
       filePath: cleanPath,
       isFavorite: false,
       isRemote: false,
-      isCsv: isCsvFile,
       isChunkedLoaded,
       loadedBytes,
       totalSizeBytes,
@@ -164,10 +148,6 @@ export async function openNativeFileDialog(): Promise<OpenedFileResult | null> {
         {
           name: 'Markdown / Text Document',
           extensions: ['md', 'markdown', 'txt', 'mdown', 'mkd'],
-        },
-        {
-          name: 'CSV File (*.csv)',
-          extensions: ['csv'],
         },
         {
           name: 'All Files',
@@ -201,41 +181,29 @@ export async function saveNativeFile(
   options: { forceSaveAs?: boolean; defaultAuthor?: string } = {}
 ): Promise<SaveFileResult> {
   try {
-    const isCsv = isCsvDoc(doc);
     let targetPath = doc.filePath;
     let isSaveAs = false;
 
     // パス未指定、または「名前を付けて保存」、またはリモートファイルの場合ダイアログ表示
     if (!targetPath || options.forceSaveAs || doc.isRemote) {
       isSaveAs = true;
-      const defaultFileName = isCsv ? `${doc.title || 'table'}.csv` : `${doc.title || 'document'}.md`;
+      const defaultFileName = `${doc.title || 'document'}.md`;
       const selected = await save({
         defaultPath: targetPath || defaultFileName,
-        filters: isCsv
-          ? [
-              {
-                name: 'CSV File (*.csv)',
-                extensions: ['csv'],
-              },
-              {
-                name: 'All Files',
-                extensions: ['*'],
-              },
-            ]
-          : [
-              {
-                name: 'Markdown Document (*.md)',
-                extensions: ['md'],
-              },
-              {
-                name: 'Text File (*.txt)',
-                extensions: ['txt'],
-              },
-              {
-                name: 'CSV File (*.csv)',
-                extensions: ['csv'],
-              },
-            ],
+        filters: [
+          {
+            name: 'Markdown Document (*.md)',
+            extensions: ['md'],
+          },
+          {
+            name: 'Text File (*.txt)',
+            extensions: ['txt'],
+          },
+          {
+            name: 'All Files',
+            extensions: ['*'],
+          },
+        ],
       });
 
       if (!selected) {
@@ -244,9 +212,7 @@ export async function saveNativeFile(
       targetPath = selected;
     }
 
-    // 保存先パスが CSV の場合、または CSV ドキュメントの場合は Front Matter を絶対に付与しない
-    const isFinalCsv = isCsv || /\.csv$/i.test(targetPath);
-    const textToSave = isFinalCsv ? doc.content : buildFullMarkdownWithFrontMatter(doc, options.defaultAuthor);
+    const textToSave = buildFullMarkdownWithFrontMatter(doc, options.defaultAuthor);
     const encoding = doc.encoding || 'UTF-8';
 
     // バイト配列の生成 (エンコーディング対応)

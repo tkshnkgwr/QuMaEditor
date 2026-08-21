@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   FileText,
   Plus,
@@ -15,20 +15,37 @@ import {
   Globe,
   Zap,
   FolderOpen,
+  ListTree,
+  Hash,
+  BookOpen,
 } from 'lucide-react';
 import { MarkdownDoc } from '../types';
-import { indexDocumentsNative, searchDocumentsNative, SearchHit, openFolderNative } from '../utils/tauriNative';
+import {
+  indexDocumentsNative,
+  searchDocumentsNative,
+  SearchHit,
+  openFolderNative,
+  extractHeadingsNative,
+} from '../utils/tauriNative';
+
+interface HeadingItem {
+  level: number;
+  text: string;
+  lineNumber: number;
+}
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   docs: MarkdownDoc[];
   activeDocId: string;
+  currentDoc?: MarkdownDoc;
   onSelectDoc: (id: string) => void;
   onNewDoc: () => void;
   onDeleteDoc: (id: string) => void;
   onToggleFavorite: (id: string) => void;
   onOpenTemplates: () => void;
+  onJumpToHeading?: (lineNumber: number, headingText: string) => void;
   isDark?: boolean;
   width?: number;
   onWidthChange?: (width: number) => void;
@@ -64,18 +81,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   docs,
   activeDocId,
+  currentDoc,
   onSelectDoc,
   onNewDoc,
   onDeleteDoc,
   onToggleFavorite,
   onOpenTemplates,
+  onJumpToHeading,
   isDark = true,
   width = 288,
   onWidthChange,
 }) => {
+  const [activeTab, setActiveTab] = useState<'docs' | 'outline'>('docs');
   const [searchQuery, setSearchQuery] = useState('');
+  const [outlineFilter, setOutlineFilter] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'favorites'>('all');
   const [nativeHits, setNativeHits] = useState<SearchHit[] | null>(null);
+  const [headings, setHeadings] = useState<HeadingItem[]>([]);
   const [isResizing, setIsResizing] = useState(false);
 
   // マウスドラッグによる幅変更処理
@@ -133,6 +155,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
   }, [searchQuery]);
 
+  // アクティブドキュメントの見出しアウトライン抽出
+  useEffect(() => {
+    let isMounted = true;
+    const content = currentDoc?.content || '';
+    if (!content.trim()) {
+      setHeadings([]);
+      return;
+    }
+
+    extractHeadingsNative(content).then((extracted) => {
+      if (isMounted && extracted) {
+        setHeadings(extracted);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentDoc?.content]);
+
   if (!isOpen) return null;
 
   const normalizedQuery = searchQuery.trim().toLowerCase().replace(/^#/, '');
@@ -146,6 +188,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const matchesFilter = filterMode === 'all' || (filterMode === 'favorites' && doc.isFavorite);
     return matchesSearch && matchesFilter;
   });
+
+  const normalizedOutlineFilter = outlineFilter.trim().toLowerCase();
+  const filteredHeadings = headings.filter((h) =>
+    h.text.toLowerCase().includes(normalizedOutlineFilter)
+  );
 
   const formatDate = (isoString: string) => {
     try {
@@ -169,68 +216,123 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize z-30 group hover:bg-cyan-500/50 ${
           isResizing ? 'bg-cyan-500' : ''
         }`}
-        title="ドラッグしてドキュメント一覧の幅を変更"
+        title="ドラッグしてサイドバーの幅を変更"
       >
         <div className="w-0.5 h-full bg-transparent group-hover:bg-cyan-400 mx-auto transition-colors" />
       </div>
-      {/* サイドバーヘッダー */}
-      <div className={`p-3 border-b flex items-center justify-between gap-2 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-        <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-cyan-500" />
-          <span className={`font-semibold text-xs tracking-wider uppercase ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>ドキュメント一覧</span>
-        </div>
+
+      {/* メインタブ切り替え (ドキュメント一覧 / 目次アウトライン) */}
+      <div className={`p-2 border-b flex items-center gap-1.5 ${isDark ? 'border-slate-800 bg-slate-900/60' : 'border-slate-200 bg-slate-100/70'}`}>
         <button
-          onClick={onNewDoc}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white p-1.5 rounded transition-all flex items-center gap-1 text-xs font-medium shadow-xs"
-          title="新規ドキュメント作成"
+          onClick={() => setActiveTab('docs')}
+          className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            activeTab === 'docs'
+              ? isDark
+                ? 'bg-slate-800 text-cyan-400 shadow-xs border border-slate-700'
+                : 'bg-white text-cyan-700 shadow-xs border border-slate-300'
+              : isDark
+              ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+          title="ドキュメント一覧を表示"
         >
-          <Plus className="w-3.5 h-3.5" />
-          <span>作成</span>
+          <FileText className="w-3.5 h-3.5" />
+          <span>ドキュメント</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+            activeTab === 'docs'
+              ? isDark ? 'bg-cyan-500/20 text-cyan-300' : 'bg-cyan-100 text-cyan-800 font-bold'
+              : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'
+          }`}>
+            {docs.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('outline')}
+          className={`flex-1 py-1.5 px-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            activeTab === 'outline'
+              ? isDark
+                ? 'bg-slate-800 text-amber-400 shadow-xs border border-slate-700'
+                : 'bg-white text-amber-700 shadow-xs border border-slate-300'
+              : isDark
+              ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+          title="現在のドキュメントの見出し目次（アウトライン）を表示"
+        >
+          <ListTree className="w-3.5 h-3.5 text-amber-400" />
+          <span>目次</span>
+          {headings.length > 0 && (
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+              activeTab === 'outline'
+                ? isDark ? 'bg-amber-500/20 text-amber-300' : 'bg-amber-100 text-amber-800 font-bold'
+                : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'
+            }`}>
+              {headings.length}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* 検索入力 (キーワード & #タグ検索対応) */}
-      <div className={`p-2.5 border-b ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
-        <div className="relative">
-          <Search className={`w-3.5 h-3.5 absolute left-2.5 top-2.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-          <input
-            type="text"
-            placeholder="キーワードや #タグ 名で検索..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full text-xs rounded pl-8 pr-3 py-1.5 focus:outline-none border transition-colors ${
-              isDark
-                ? 'bg-slate-900 border-slate-800 text-slate-200 focus:border-cyan-500/80 placeholder:text-slate-500'
-                : 'bg-white border-slate-300 text-slate-800 focus:border-cyan-600 placeholder:text-slate-400'
-            }`}
-          />
-        </div>
+      {activeTab === 'docs' ? (
+        <>
+          {/* ドキュメント一覧ヘッダー */}
+          <div className={`p-2.5 border-b flex items-center justify-between gap-2 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+            <span className={`font-medium text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              全 {docs.length} 件のドキュメント
+            </span>
+            <button
+              onClick={onNewDoc}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white px-2 py-1 rounded transition-all flex items-center gap-1 text-xs font-medium shadow-xs"
+              title="新規ドキュメント作成"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>作成</span>
+            </button>
+          </div>
 
-        {/* フィルター切り替えタブ */}
-        <div className="flex items-center gap-1 mt-2 text-[11px]">
-          <button
-            onClick={() => setFilterMode('all')}
-            className={`flex-1 py-1 rounded font-medium transition-colors ${
-              filterMode === 'all'
-                ? isDark ? 'bg-slate-800 text-cyan-400' : 'bg-slate-200 text-cyan-700 font-semibold'
-                : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            すべて ({docs.length})
-          </button>
-          <button
-            onClick={() => setFilterMode('favorites')}
-            className={`flex-1 py-1 rounded font-medium transition-colors flex items-center justify-center gap-1 ${
-              filterMode === 'favorites'
-                ? isDark ? 'bg-slate-800 text-amber-400' : 'bg-slate-200 text-amber-700 font-semibold'
-                : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            お気に入り ({docs.filter((d) => d.isFavorite).length})
-          </button>
-        </div>
-      </div>
+          {/* 検索入力 (キーワード & #タグ検索対応) */}
+          <div className={`p-2.5 border-b ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
+            <div className="relative">
+              <Search className={`w-3.5 h-3.5 absolute left-2.5 top-2.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+              <input
+                type="text"
+                placeholder="キーワードや #タグ 名で検索..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full text-xs rounded pl-8 pr-3 py-1.5 focus:outline-none border transition-colors ${
+                  isDark
+                    ? 'bg-slate-900 border-slate-800 text-slate-200 focus:border-cyan-500/80 placeholder:text-slate-500'
+                    : 'bg-white border-slate-300 text-slate-800 focus:border-cyan-600 placeholder:text-slate-400'
+                }`}
+              />
+            </div>
+
+            {/* フィルター切り替えタブ */}
+            <div className="flex items-center gap-1 mt-2 text-[11px]">
+              <button
+                onClick={() => setFilterMode('all')}
+                className={`flex-1 py-1 rounded font-medium transition-colors ${
+                  filterMode === 'all'
+                    ? isDark ? 'bg-slate-800 text-cyan-400' : 'bg-slate-200 text-cyan-700 font-semibold'
+                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                すべて ({docs.length})
+              </button>
+              <button
+                onClick={() => setFilterMode('favorites')}
+                className={`flex-1 py-1 rounded font-medium transition-colors flex items-center justify-center gap-1 ${
+                  filterMode === 'favorites'
+                    ? isDark ? 'bg-slate-800 text-amber-400' : 'bg-slate-200 text-amber-700 font-semibold'
+                    : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                お気に入り ({docs.filter((d) => d.isFavorite).length})
+              </button>
+            </div>
+          </div>
 
       {/* ドキュメントリストまたは Rust 全文検索ヒット結果 */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -394,7 +496,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* フッター */}
+      {/* フッター (ドキュメント一覧タブ時) */}
       <div className={`p-2.5 border-t text-[11px] flex items-center justify-between ${isDark ? 'border-slate-800/80 text-slate-500' : 'border-slate-200 text-slate-500'}`}>
         <button
           onClick={onOpenTemplates}
@@ -405,6 +507,128 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
         <span className="font-mono text-[10px]">{docs.length} 件</span>
       </div>
-    </aside>
+    </>
+  ) : (
+    <>
+      {/* アウトライン目次ヘッダー */}
+      <div className={`p-2.5 border-b flex items-center justify-between gap-2 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+        <span className={`font-medium text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+          見出し目次 ({headings.length} 項目)
+        </span>
+        <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${isDark ? 'bg-slate-900 text-slate-400' : 'bg-slate-200 text-slate-600'}`}>
+          クリックでジャンプ
+        </span>
+      </div>
+
+      {/* 目次内検索フィルター */}
+      <div className={`p-2.5 border-b ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
+        <div className="relative">
+          <Search className={`w-3.5 h-3.5 absolute left-2.5 top-2.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+          <input
+            type="text"
+            placeholder="見出しを絞り込み検索..."
+            value={outlineFilter}
+            onChange={(e) => setOutlineFilter(e.target.value)}
+            className={`w-full text-xs rounded pl-8 pr-3 py-1.5 focus:outline-none border transition-colors ${
+              isDark
+                ? 'bg-slate-900 border-slate-800 text-slate-200 focus:border-cyan-500/80 placeholder:text-slate-500'
+                : 'bg-white border-slate-300 text-slate-800 focus:border-cyan-600 placeholder:text-slate-400'
+            }`}
+          />
+        </div>
+      </div>
+
+      {/* アウトライン見出しツリーリスト */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        {headings.length === 0 ? (
+          <div className={`p-6 text-center text-xs select-none space-y-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <ListTree className="w-8 h-8 mx-auto opacity-30" />
+            <p className="font-medium">見出しがありません</p>
+            <p className="text-[11px] leading-relaxed opacity-80">
+              本文に <code className={`px-1 py-0.5 rounded font-mono ${isDark ? 'bg-slate-900 text-cyan-400' : 'bg-slate-200 text-cyan-800'}`}># 見出し</code> を記述すると<br />自動で目次が生成されます
+            </p>
+          </div>
+        ) : filteredHeadings.length === 0 ? (
+          <div className={`p-6 text-center text-xs select-none ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+            該当する見出しは見つかりません
+          </div>
+        ) : (
+          <div className="space-y-0.5">
+            {filteredHeadings.map((heading, idx) => {
+              // 見出しレベルに応じた階層インデントとバッジスタイル
+              const indentClass =
+                heading.level === 1
+                  ? 'pl-1.5'
+                  : heading.level === 2
+                  ? 'pl-4'
+                  : heading.level === 3
+                  ? 'pl-7'
+                  : heading.level === 4
+                  ? 'pl-9'
+                  : heading.level === 5
+                  ? 'pl-11'
+                  : 'pl-12';
+
+              const badgeStyle =
+                heading.level === 1
+                  ? isDark ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' : 'bg-cyan-100 text-cyan-800 border-cyan-300 font-bold'
+                  : heading.level === 2
+                  ? isDark ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-indigo-100 text-indigo-800 border-indigo-300 font-bold'
+                  : heading.level === 3
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold'
+                  : heading.level === 4
+                  ? isDark ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-amber-100 text-amber-800 border-amber-300 font-semibold'
+                  : isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-200 text-slate-700 border-slate-300';
+
+              const textStyle =
+                heading.level === 1
+                  ? isDark ? 'font-bold text-slate-100 text-xs' : 'font-bold text-slate-900 text-xs'
+                  : heading.level === 2
+                  ? isDark ? 'font-semibold text-slate-200 text-xs' : 'font-semibold text-slate-800 text-xs'
+                  : isDark ? 'text-slate-300 text-[11px]' : 'text-slate-700 text-[11px]';
+
+              return (
+                <div
+                  key={idx}
+                  onClick={() => onJumpToHeading?.(heading.lineNumber, heading.text)}
+                  className={`group flex items-center justify-between gap-1.5 py-1.5 pr-2 rounded-md cursor-pointer transition-all hover:bg-cyan-500/10 ${indentClass} ${
+                    isDark ? 'hover:text-cyan-300' : 'hover:text-cyan-900 hover:bg-cyan-50'
+                  }`}
+                  title={`行 ${heading.lineNumber}: ${heading.text} へジャンプ`}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    {/* レベルバッジ (H1, H2, H3...) */}
+                    <span className={`text-[9px] px-1 py-0.2 rounded font-mono border shrink-0 ${badgeStyle}`}>
+                      H{heading.level}
+                    </span>
+                    {/* 見出しタイトル */}
+                    <span className={`truncate ${textStyle}`}>
+                      {heading.text}
+                    </span>
+                  </div>
+
+                  {/* 行番号バッジ */}
+                  <span className={`text-[9px] font-mono shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+                    isDark ? 'text-cyan-400/80' : 'text-cyan-700'
+                  }`}>
+                    L{heading.lineNumber}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* アウトラインフッター */}
+      <div className={`p-2.5 border-t text-[11px] flex items-center justify-between ${isDark ? 'border-slate-800/80 text-slate-500' : 'border-slate-200 text-slate-500'}`}>
+        <span className="truncate max-w-[180px] font-medium text-[10px]" title={currentDoc?.title}>
+          {currentDoc?.title || '無題'}
+        </span>
+        <span className="font-mono text-[10px]">{headings.length} 見出し</span>
+      </div>
+    </>
+  )}
+</aside>
   );
 };

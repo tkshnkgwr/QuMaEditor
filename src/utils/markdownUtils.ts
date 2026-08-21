@@ -276,3 +276,123 @@ export function toggleTaskInMarkdown(markdown: string, targetIndex: number): str
   });
 }
 
+/**
+ * Tab / Shift+Tab キー押下時のインデント・アンインデント処理
+ * - リスト行または通常行でのインデント（ネスト階層化）
+ * - 複数行選択時の範囲インデント/アンインデント
+ */
+export function handleTabIndent(
+  text: string,
+  selectionStart: number,
+  selectionEnd: number,
+  isShift: boolean,
+  tabSize: number = 2
+): { newText: string; newCursorStart: number; newCursorEnd: number } {
+  const indentStr = ' '.repeat(tabSize);
+
+  // 複数行が選択されている場合
+  if (selectionStart !== selectionEnd && text.slice(selectionStart, selectionEnd).includes('\n')) {
+    const lineStart = text.lastIndexOf('\n', selectionStart - 1) + 1;
+    let lineEnd = text.indexOf('\n', selectionEnd);
+    if (lineEnd === -1) lineEnd = text.length;
+
+    const targetChunk = text.slice(lineStart, lineEnd);
+    const lines = targetChunk.split('\n');
+
+    let startOffsetDelta = 0;
+    let totalOffsetDelta = 0;
+
+    const newLines = lines.map((line, idx) => {
+      if (!isShift) {
+        // Tab: 各行の先頭にスペース追加
+        if (idx === 0) startOffsetDelta += tabSize;
+        totalOffsetDelta += tabSize;
+        return indentStr + line;
+      } else {
+        // Shift + Tab: 各行の先頭の空白（最大 tabSize 個）を削除
+        const match = line.match(/^[ ]{1,4}/);
+        if (match) {
+          const removedCount = Math.min(match[0].length, tabSize);
+          if (idx === 0) startOffsetDelta -= removedCount;
+          totalOffsetDelta -= removedCount;
+          return line.slice(removedCount);
+        } else if (line.startsWith('\t')) {
+          if (idx === 0) startOffsetDelta -= 1;
+          totalOffsetDelta -= 1;
+          return line.slice(1);
+        }
+        return line;
+      }
+    });
+
+    const replacement = newLines.join('\n');
+    const newText = text.slice(0, lineStart) + replacement + text.slice(lineEnd);
+    const newCursorStart = Math.max(lineStart, selectionStart + startOffsetDelta);
+    const newCursorEnd = Math.max(newCursorStart, selectionEnd + totalOffsetDelta);
+
+    return {
+      newText,
+      newCursorStart,
+      newCursorEnd,
+    };
+  }
+
+  // 単一行（または同一行内の選択）
+  const lineStart = text.lastIndexOf('\n', selectionStart - 1) + 1;
+  let lineEnd = text.indexOf('\n', selectionStart);
+  if (lineEnd === -1) lineEnd = text.length;
+  const currentLine = text.slice(lineStart, lineEnd);
+
+  // 行がリスト形式（箇条書き、番号付き、タスク）か、あるいは行頭での操作か判定
+  const isListLine = /^(\s*)([-*+]|\d+\.)(\s+)/.test(currentLine);
+
+  if (!isShift) {
+    // Tab
+    if (isListLine || selectionStart === lineStart) {
+      // リスト行または行頭の場合：行頭にインデントを追加してネスト
+      const newText = text.slice(0, lineStart) + indentStr + text.slice(lineStart);
+      return {
+        newText,
+        newCursorStart: selectionStart + tabSize,
+        newCursorEnd: selectionEnd + tabSize,
+      };
+    } else {
+      // 通常の行途中でのTab：カーソル位置にスペースを挿入
+      const newText = text.slice(0, selectionStart) + indentStr + text.slice(selectionEnd);
+      return {
+        newText,
+        newCursorStart: selectionStart + tabSize,
+        newCursorEnd: selectionStart + tabSize,
+      };
+    }
+  } else {
+    // Shift + Tab: 行頭のインデントを削除
+    const match = currentLine.match(/^[ ]{1,4}/);
+    if (match) {
+      const removedCount = Math.min(match[0].length, tabSize);
+      const newText = text.slice(0, lineStart) + currentLine.slice(removedCount) + text.slice(lineEnd);
+      const newPos = Math.max(lineStart, selectionStart - removedCount);
+      return {
+        newText,
+        newCursorStart: newPos,
+        newCursorEnd: newPos,
+      };
+    } else if (currentLine.startsWith('\t')) {
+      const newText = text.slice(0, lineStart) + currentLine.slice(1) + text.slice(lineEnd);
+      const newPos = Math.max(lineStart, selectionStart - 1);
+      return {
+        newText,
+        newCursorStart: newPos,
+        newCursorEnd: newPos,
+      };
+    }
+
+    return {
+      newText: text,
+      newCursorStart: selectionStart,
+      newCursorEnd: selectionEnd,
+    };
+  }
+}
+
+

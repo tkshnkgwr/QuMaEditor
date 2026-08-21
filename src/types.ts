@@ -27,7 +27,6 @@ export interface MarkdownDoc {
   filePath?: string;   // 実ファイルの絶対パス（ローカルファイル上書き保存用）
   isRemote?: boolean;   // リモートファイルフラグ（trueの場合は自動保存対象外）
   remoteUrl?: string;  // リモート参照元URL
-  isCsv?: boolean;      // CSVファイルフラグ（LocalStorage非保存・自動保存無効・通常ReadOnly）
   isChunkedLoaded?: boolean; // 遅延読み込み（部分表示中）フラグ
   loadedBytes?: number;     // 現在読み込み済みのバイト数
   totalSizeBytes?: number;  // ファイル全体の総バイト数

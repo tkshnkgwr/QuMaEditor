@@ -174,12 +174,20 @@ export function createMarkdownComponents({
       </p>
     ),
     ul: ({ children }) => (
-      <ul className={`list-disc list-inside mb-4 space-y-1.5 text-sm pl-2 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <ul
+        className={`list-disc list-outside pl-6 my-2 space-y-1 text-sm leading-relaxed [&>li>p]:inline [&>li>p]:my-0 [&_ul]:list-[circle] [&_ul_ul]:list-[square] [&_ul]:my-1 [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:pl-5 ${
+          isDark ? 'text-slate-200' : 'text-slate-800'
+        }`}
+      >
         {children}
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className={`list-decimal list-inside mb-4 space-y-1.5 text-sm pl-2 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <ol
+        className={`list-decimal list-outside pl-6 my-2 space-y-1 text-sm leading-relaxed [&>li>p]:inline [&>li>p]:my-0 [&_ol]:list-[lower-alpha] [&_ol_ol]:list-[lower-roman] [&_ol]:my-1 [&_ol]:pl-5 [&_ul]:my-1 [&_ul]:pl-5 ${
+          isDark ? 'text-slate-200' : 'text-slate-800'
+        }`}
+      >
         {children}
       </ol>
     ),
@@ -232,7 +240,7 @@ export function createMarkdownComponents({
           </li>
         );
       }
-      return <li className={`leading-relaxed font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{children}</li>;
+      return <li className={`my-0.5 leading-relaxed font-sans ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{children}</li>;
     },
     input: (props) => {
       if (props.type === 'checkbox') {

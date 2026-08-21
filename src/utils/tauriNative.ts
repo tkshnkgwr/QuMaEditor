@@ -1,5 +1,4 @@
-import { commands, CsvPreviewDto } from '../bindings';
-export type { CsvPreviewDto };
+import { commands } from '../bindings';
 
 /**
  * 文字コード自動判別結果のインターフェース
@@ -457,28 +456,6 @@ export async function getFileMetadataNative(filePath: string): Promise<FileMetad
   }
 }
 
-/**
- * CSV データを Rust ネイティブで高速解析し、プレビュー用サマリーと統計を取得する
- *
- * @param content CSV テキストデータ
- * @param maxRows プレビュー抽出する最大行数 (デフォルト: 100)
- * @returns CsvPreviewDto または失敗時 null
- */
-export async function parseCsvPreviewNative(
-  content: string,
-  maxRows: number = 100
-): Promise<CsvPreviewDto | null> {
-  try {
-    const res = await commands.parseCsvPreviewNative(content, maxRows);
-    if (res.status === 'ok') {
-      return res.data;
-    }
-    return null;
-  } catch (err) {
-    console.warn('Native parseCsvPreviewNative failed:', err);
-    return null;
-  }
-}
 
 /**
  * Markdown ドキュメントを Rust ネイティブで自動整形（空行圧縮・見出し空行・表組み垂直整列）する

@@ -17,9 +17,8 @@ interface StatusBarProps {
   encoding?: SupportedEncoding;
   onChangeEncoding?: (encoding: SupportedEncoding) => void;
   onOpenStatsModal?: () => void;
+  onSaveFile?: (options?: { forceSaveAs?: boolean }) => void;
   isDark?: boolean;
-  isCsv?: boolean;
-  isReadOnly?: boolean;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -36,9 +35,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   encoding = 'UTF-8',
   onChangeEncoding,
   onOpenStatsModal,
+  onSaveFile,
   isDark = true,
-  isCsv = false,
-  isReadOnly = false,
 }) => {
   const handleZoom = (delta: number) => {
     const newSize = Math.max(11, Math.min(28, settings.fontSize + delta));
@@ -89,20 +87,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <span className="hidden sm:inline">
             文字数: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{stats.characters.toLocaleString()}</strong>
           </span>
-          {!isCsv && (
-            <span className="hidden md:inline">
-              単語数: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{stats.words.toLocaleString()}</strong>
-            </span>
-          )}
+          <span className="hidden md:inline">
+            単語数: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{stats.words.toLocaleString()}</strong>
+          </span>
           <span className="hidden md:inline">
             行数: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{stats.lines.toLocaleString()}</strong>
           </span>
-          {!isCsv && (
-            <span className="hidden lg:flex items-center gap-1">
-              <Clock className="w-3 h-3 text-cyan-500" />
-              <span>読了目安: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{stats.readingTimeMinutes}分</strong></span>
-            </span>
-          )}
+          <span className="hidden lg:flex items-center gap-1">
+            <Clock className="w-3 h-3 text-cyan-500" />
+            <span>読了目安: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{stats.readingTimeMinutes}分</strong></span>
+          </span>
         </button>
 
         {formattedTime && (
@@ -116,25 +110,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         )}
       </div>
 
-      {/* 右側情報: CSVバッジ、文字エンコーディング、改行コード、ストレージ、ズーム */}
+      {/* 右側情報: 文字エンコーディング、改行コード、ストレージ、ズーム */}
       <div className="flex items-center gap-3">
-        {/* CSV モードバッジ */}
-        {isCsv && (
-          <span
-            className={`px-1.5 py-0.5 border rounded font-mono text-[10px] font-bold ${
-              isReadOnly
-                ? isDark
-                  ? 'bg-amber-950/60 border-amber-800/80 text-amber-300'
-                  : 'bg-amber-100 border-amber-300 text-amber-900 shadow-sm'
-                : isDark
-                  ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300'
-                  : 'bg-emerald-100 border-emerald-300 text-emerald-900 shadow-sm'
-            }`}
-          >
-            {isReadOnly ? 'CSV (ReadOnly)' : 'CSV (Edit)'}
-          </span>
-        )}
-
         {/* 文字コード選択・表示 */}
         <div className="flex items-center gap-1">
           <select
@@ -179,10 +156,27 @@ export const StatusBar: React.FC<StatusBarProps> = ({
                 </span>
               )}
               {saveStatus === 'saved_local' && (
-                <span className="text-sky-400 flex items-center gap-1 bg-sky-500/15 px-1.5 py-0.5 rounded border border-sky-500/30 font-medium text-[10px]" title="アプリ内部(LocalStorage)に保護保存済み">
-                  <Check className="w-3 h-3 text-sky-400" />
-                  <span>アプリ内保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sky-400 flex items-center gap-1 bg-sky-500/15 px-1.5 py-0.5 rounded border border-sky-500/30 font-medium text-[10px]" title="アプリ内部(LocalStorage)に保護保存済み">
+                    <Check className="w-3 h-3 text-sky-400" />
+                    <span>アプリ内保存 {lastSavedTime ? `(${lastSavedTime})` : ''}</span>
+                  </span>
+                  {!filePath && onSaveFile && (
+                    <button
+                      type="button"
+                      onClick={() => onSaveFile({ forceSaveAs: true })}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] font-semibold transition-all cursor-pointer ${
+                        isDark
+                          ? 'bg-cyan-950/70 border-cyan-600/80 text-cyan-300 hover:bg-cyan-900 hover:text-cyan-100 shadow-xs'
+                          : 'bg-cyan-50 border-cyan-300 text-cyan-800 hover:bg-cyan-100 shadow-xs'
+                      }`}
+                      title="LocalStorageで作成中のドキュメントをPC上の実ファイル(.md)として保存します"
+                    >
+                      <Save className="w-3 h-3 text-cyan-400 shrink-0" />
+                      <span>PCファイルに保存</span>
+                    </button>
+                  )}
+                </div>
               )}
               {saveStatus === 'saved' && (
                 <span className="text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 text-[10px]">
@@ -230,8 +224,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'} hidden sm:inline`}>|</span>
 
         <span className={`hidden sm:flex items-center gap-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          <HardDrive className={`w-3 h-3 ${isCsv ? 'text-amber-500' : 'text-cyan-500'}`} />
-          <span>{isCsv ? 'Memory Only' : 'Local Storage'}</span>
+          <HardDrive className="w-3 h-3 text-cyan-500" />
+          <span>Local Storage</span>
         </span>
 
         <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'} hidden sm:inline`}>|</span>
