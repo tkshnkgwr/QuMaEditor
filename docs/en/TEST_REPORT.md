@@ -4,8 +4,8 @@
 
 ## 1. Test Overview
 
-- **Date**: 2026-08-21
-- **Version**: v1.4.2
+- **Date**: 2026-08-26
+- **Target Version**: v1.4.3
 - **Environment**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
 ---

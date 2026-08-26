@@ -2,6 +2,19 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.4.3] - 2026-08-26
+
+### 🛠️ Save Dialog Cancel State Restoration, Documentation & Build Optimization (v1.4.3)
+
+- **Fix PC Save Dialog Cancel State Inconsistency (`File / Storage`)**:
+  - Resolved issue where canceling the native save dialog incorrectly shifted document save status to "saved", causing the "Save to PC File" action button in the status bar to disappear and preventing re-saving.
+  - Document status is now accurately preserved (`saved_local` / `saved_file` / `unsaved`) with appropriate cancel logging.
+- **Documentation Modernization & Table Alignment (`Docs`)**:
+  - Fully synchronized DEVELOPMENT, ARCHITECTURE, SPECIFICATION, TEST_REPORT, README, and CHANGELOG to current v1.4.3 specifications.
+  - Strictly aligned all Markdown tables.
+- **Stale Cache & Artifact Cleanup (`Build / Refactor`)**:
+  - Cleaned up build artifacts and temporary generation caches.
+
 ## [1.4.2] - 2026-08-21
 
 ### 📑 Heading Outline Navigation, LocalStorage Disk Export, Tab Nesting, Pure Markdown (v1.4.2)
