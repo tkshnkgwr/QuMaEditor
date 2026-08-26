@@ -94,7 +94,14 @@ export function useFileOperations({
         alert(`ファイルの保存に失敗しました:\n${res.error}`);
         setSaveStatus('unsaved');
       } else if (!res.success && res.error === 'Canceled by user') {
-        setSaveStatus('saved');
+        logger.info(`[保存キャンセル] ファイル保存ダイアログがキャンセルされました`);
+        // ダイアログキャンセル時は誤った saved 状態へ遷移させず、直前の適切な保存ステータスを維持
+        const fallbackStatus: SaveStatus = currentDoc.isRemote
+          ? 'unsaved'
+          : currentDoc.filePath
+          ? 'saved_file'
+          : 'saved_local';
+        setSaveStatus(fallbackStatus);
       } else {
         // フォールバック（Web環境ブラウザダウンロード）
         handleExportMarkdown();

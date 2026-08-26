@@ -21,6 +21,9 @@ All notable changes and release history for QuMaEditor.
   - Optimized nested list bullet markers (disc ➔ circle ➔ square, 1. ➔ a.) and print styles.
 - **Complete CSV Removal & Pure Markdown Focus (`Preview / CSV Drop`)**:
   - Purged all CSV native parsing and table preview components to optimize QuMaEditor as a lightweight Markdown editor.
+- **Fix PC Save Dialog Cancel State Inconsistency (`File / Storage`)**:
+  - Resolved issue where canceling the native save dialog incorrectly shifted document save status to "saved", causing the "Save to PC File" action button in the status bar to disappear and preventing re-saving.
+  - Document status is now accurately preserved (`saved_local` / `saved_file` / `unsaved`) with appropriate cancel logging.
 - **Zen Mode Documentation & Help Guide Expansion (`Help / Docs`)**:
   - Added detailed Zen mode explanation, shortcut keys (`Ctrl+Shift+Z` / `Esc`), and benefits in both the app help modal and documentation.
 

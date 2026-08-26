@@ -8,6 +8,7 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ### v1.4.2 Release (2026-08-21)
 
+- [x] **Fix PC Save Dialog Cancel State Inconsistency (`File / Storage`)**: Resolved issue where canceling the native save dialog incorrectly shifted document save status to "saved", causing the "Save to PC File" action button in the status bar to disappear and preventing re-saving. Document status is now accurately preserved (`saved_local` / `saved_file` / `unsaved`) with appropriate cancel logging.
 - [x] **Heading Outline / TOC Navigation (`Sidebar / Navigation`)**: Added tab switcher for "📁 Documents" and "📑 Outline" in the sidebar. Provides instant native parsing of H1~H6 headings with accurate line numbers, hierarchical indentation, level badges, keyword filtering, and two-way jump scrolling to both the editor cursor and preview headings.
 - [x] **Complete CSV Preview Removal & Pure Markdown Editor (`Preview / CSV Drop`)**: Removed all CSV native parsing (`csv.rs`), preview table renderers, and state logic to purify QuMaEditor as a dedicated, lightweight Markdown editor.
 - [x] **Save LocalStorage Markdown to PC File Button (`File / Storage`)**: Added a dedicated "💾 Save to PC File" action button on the status bar for documents currently stored solely in browser LocalStorage.
@@ -45,14 +46,14 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🔮 Next Priority Roadmap
 
-| # | Component          | Task Description                                                                                 | Priority | Status      |
-| :- | :----------------- | :----------------------------------------------------------------------------------------------- | :------- | :---------- |
-| 1 | `ZenMode / Editor` | **Zen Mode Audio Mute** — Automatically mute sounds/alerts during Zen focus mode                 | Medium   | 🔲 Proposed |
-| 2 | `ZenMode / Editor` | **Zen Mode Notification Suppression** — Suppress toasts/popups during Zen mode                   | Medium   | 🔲 Proposed |
-| 3 | `ZenMode / Editor` | **Current Line Focus** — Dim non-active lines to emphasize the current cursor line               | Medium   | 🔲 Proposed |
-| 4 | `ZenMode / Editor` | **Typewriter Scrolling** — Keep the active cursor line vertically centered                       | Low      | 🔲 Proposed |
-| 5 | `ZenMode / Editor` | **Pomodoro / Focus Timer** — Integrated 25min focus + 5min break timer                           | Low      | 🔲 Proposed |
-| 6 | `ZenMode / Editor` | **Ambient Background Sounds** — Rain, white noise, cafe sounds for concentration                 | Low      | 🔲 Proposed |
-| 7 | `Plugin System`    | **Plugin & Extension Architecture Exploration**                                                  | Low      | 🔲 Proposed |
-| 8 | `Cloud Storage`    | **Cloud Sync Prototype (Google Drive / OneDrive)**                                               | Low      | 🔲 Proposed |
-| 9 | `Multi Window`     | **Multi-Window / Tab Detachment Exploration**                                                    | Low      | 🔲 Proposed |
+| # | Component          | Task Description                                                                   | Priority | Status      |
+| :-| :----------------- | :--------------------------------------------------------------------------------- | :------- | :---------- |
+| 1 | `ZenMode / Editor` | **Zen Mode Audio Mute** — Automatically mute sounds/alerts during Zen focus mode   | Medium   | 🔲 Proposed |
+| 2 | `ZenMode / Editor` | **Zen Mode Notification Suppression** — Suppress toasts/popups during Zen mode     | Medium   | 🔲 Proposed |
+| 3 | `ZenMode / Editor` | **Current Line Focus** — Dim non-active lines to emphasize the current cursor line | Medium   | 🔲 Proposed |
+| 4 | `ZenMode / Editor` | **Typewriter Scrolling** — Keep the active cursor line vertically centered         | Low      | 🔲 Proposed |
+| 5 | `ZenMode / Editor` | **Pomodoro / Focus Timer** — Integrated 25min focus + 5min break timer             | Low      | 🔲 Proposed |
+| 6 | `ZenMode / Editor` | **Ambient Background Sounds** — Rain, white noise, cafe sounds for concentration   | Low      | 🔲 Proposed |
+| 7 | `Plugin System`    | **Plugin & Extension Architecture Exploration**                                    | Low      | 🔲 Proposed |
+| 8 | `Cloud Storage`    | **Cloud Sync Prototype (Google Drive / OneDrive)**                                 | Low      | 🔲 Proposed |
+| 9 | `Multi Window`     | **Multi-Window / Tab Detachment Exploration**                                      | Low      | 🔲 Proposed |

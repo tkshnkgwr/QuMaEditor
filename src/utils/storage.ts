@@ -100,8 +100,8 @@ export function loadStoredDocs(): MarkdownDoc[] {
 
 /**
  * ドキュメント一覧を LocalStorage に永続化保存します。
- * (CSVファイルはセキュリティ・容量配慮のため除外します。また実ファイルパスが存在し保存済みのドキュメントは、
- *  LocalStorage 肥大化防止のため本文データを自動スリム化して保存し QuotaExceededError を防止します)
+ * (実ファイルパスが存在し保存済みのドキュメントは、LocalStorage 肥大化防止のため本文データを自動スリム化して保存し
+ *  QuotaExceededError を防止します)
  *
  * @param docs 保存対象の MarkdownDoc 配列
  */

@@ -20,10 +20,10 @@
 │   │   ├── MarkdownRenderers.tsx   # ReactMarkdown custom renderers
 │   │   ├── MermaidRenderer.tsx     # Mermaid SVG renderer
 │   │   ├── ModalGroup.tsx          # Consolidated modal container
-│   │   ├── Preview.tsx             # Markdown / CSV real-time preview
+│   │   ├── Preview.tsx             # Markdown real-time preview & Mermaid renderer
 │   │   ├── SettingsModal.tsx       # Editor settings dialog
 │   │   ├── ShortcutsModal.tsx      # Keyboard shortcuts guide
-│   │   ├── Sidebar.tsx             # Document management sidebar
+│   │   ├── Sidebar.tsx             # Document management & outline sidebar
 │   │   ├── StatsModal.tsx          # Statistics dashboard modal
 │   │   ├── StatusBar.tsx           # Status bar (encoding/EOL/storage status)
 │   │   ├── TableModal.tsx          # Table generator dialog
@@ -59,7 +59,6 @@
 │   │   │   ├── stats.rs            # Text statistics counter
 │   │   │   ├── yaml.rs             # YAML front matter parser
 │   │   │   ├── structure.rs        # Outline extraction & task toggle
-│   │   │   ├── csv.rs              # Fast CSV line counting & parsing
 │   │   │   ├── formatter.rs        # GFM table alignment & line cleaner
 │   │   │   └── html_renderer.rs    # syntect syntax-highlighted HTML generator
 │   │   ├── commands.rs             # IPC command handlers
@@ -92,7 +91,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy strict quality check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust unit tests (23 tests)
+# 4. Rust unit tests (22 tests)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript type verification

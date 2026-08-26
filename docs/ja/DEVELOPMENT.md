@@ -20,10 +20,10 @@
 │   │   ├── MarkdownRenderers.tsx   # ReactMarkdown カスタム要素レンダラー
 │   │   ├── MermaidRenderer.tsx     # Mermaid SVG レンダラー
 │   │   ├── ModalGroup.tsx          # 10個の各種モーダル集約コンポーネント
-│   │   ├── Preview.tsx             # Markdown / CSV リアルタイムプレビュー
+│   │   ├── Preview.tsx             # Markdown リアルタイムプレビュー & Mermaid 描画
 │   │   ├── SettingsModal.tsx       # エディタ設定変更モーダル
 │   │   ├── ShortcutsModal.tsx      # キーボードショートカット一覧ダイアログ
-│   │   ├── Sidebar.tsx             # ドキュメント管理サイドバー
+│   │   ├── Sidebar.tsx             # ドキュメント管理＆見出しアウトラインサイドバー
 │   │   ├── StatsModal.tsx          # 詳細テキスト統計ダッシュボード
 │   │   ├── StatusBar.tsx           # ステータスバー（文字コード/改行/保存状態表示）
 │   │   ├── TableModal.tsx          # 表組生成ダイアログ
@@ -59,7 +59,6 @@
 │   │   │   ├── stats.rs            # テキスト統計計算 (文字数・単語数・読了時間)
 │   │   │   ├── yaml.rs             # YAML Front Matter パース
 │   │   │   ├── structure.rs        # 見出し抽出・タスク状態トグル
-│   │   │   ├── csv.rs              # CSV ゼロコピー行カウント・セル抽出
 │   │   │   ├── formatter.rs        # GFM 表組み整列・空行整理自動整形
 │   │   │   └── html_renderer.rs    # syntect 構文ハイライト付き HTML 出力
 │   │   ├── commands.rs             # IPC コマンドハンドラー
@@ -92,7 +91,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy 厳格品質検証
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust ユニットテスト検証 (全23件)
+# 4. Rust ユニットテスト検証 (全22件)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript 型検証

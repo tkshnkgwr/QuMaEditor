@@ -1,4 +1,4 @@
-# QuMaEditor — High-Performance Native Markdown & CSV Desktop Editor
+# QuMaEditor — High-Performance Native Markdown Desktop Editor
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
@@ -17,9 +17,9 @@ QuMaEditor (Quick & Minimal Markdown Editor) is an ultra-lightweight, high-perfo
 
 ### ⚡ Rust Native Acceleration
 
+- **Heading Outline & TOC Navigation**: Instant extraction of H1~H6 headings in the sidebar with hierarchical tree view, indentation badges, keyword filter, and bi-directional jump scrolling to editor and preview.
 - **Fast Markdown Auto-Formatting (`Ctrl + Shift + F`)**: Instantly formats Markdown by aligning tables vertically, adding appropriate blank lines before/after headings, and collapsing excessive blank lines while protecting code blocks.
 - **10MB+ Large File Streaming**: `read_file_chunk_native` reads files in memory-efficient chunks with on-demand expansion.
-- **Zero-Copy Native CSV Fast Parsing**: Parses massive CSV files with zero JS overhead, providing interactive tables with type auto-alignment (numbers right, dates center, strings left), sorting, and search.
 - **Inverted Index Full-Text Search**: Fast word-based in-memory inverted index search via Rust `LazyLock<Mutex<Vec<DocSearchInput>>>`.
 - **Parallel Multi-File Encoding Conversion**: Multi-threaded UTF-8 / Shift_JIS conversion engine powered by `rayon`.
 - **Native Text Diff**: Line-by-line diff calculation using Rust `similar` crate.
@@ -28,6 +28,7 @@ QuMaEditor (Quick & Minimal Markdown Editor) is an ultra-lightweight, high-perfo
 ### 🎨 Modern UI & High-Contrast Themes
 
 - **Zero-Latency Typing**: Bypasses preview parsing in "Editor Only" mode and uses asynchronous debounced parsing in "Split View" mode for zero typing lag.
+- **Tab Indentation & Nested Lists**: Single-line list indentation (`- ` ➔ `  - `), multi-line block indent, and `Shift+Tab` unindent.
 - **`Ctrl + E` Cursor Position & Focus Restoration**: Automatically restores cursor position and selection when switching between editor and preview.
 - **Real-Time Mermaid Diagram Rendering & Zoom**: Visualizes flowcharts, sequence diagrams, and state diagrams with interactive zoom (50%~600%), fullscreen modal, and code copy.
 - **Full Theme Synchronization**: Synchronizes dialog modals, scrollbars, and syntax highlighters with Light/Dark modes.
@@ -36,6 +37,7 @@ QuMaEditor (Quick & Minimal Markdown Editor) is an ultra-lightweight, high-perfo
 ### 💾 Direct Disk Save & Crash-Proof Dual Persistence
 
 - **Direct Disk Save (`Ctrl + S`)**: Keeps local file path and directly writes back to disk files via Rust native I/O.
+- **Save to PC File Action Button**: One-click action button in status bar for notes stored in LocalStorage, with seamless status restoration upon dialog cancellation.
 - **Crash-Proof LocalStorage Backup**: Saves inputs to LocalStorage in the background, recovering unsaved notes on next launch.
 - **External File Modification Detection & Reload (`F5`)**: Detects external modifications via `mtime` with toast alerts, plus manual reload shortcut (`F5` / `Ctrl + R`).
 - **Integrated Status Bar Badge**: Real-time status display in the status bar indicating "Saved to Disk" vs "Saved to LocalStorage".
