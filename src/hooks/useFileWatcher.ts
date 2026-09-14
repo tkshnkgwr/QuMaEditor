@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { MarkdownDoc } from '../types';
 import { getFileMetadataNative } from '../utils/tauriNative';
+import { commands } from '../bindings';
 
 interface UseFileWatcherProps {
   currentDoc: MarkdownDoc;
@@ -57,9 +58,9 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
         return;
       }
 
-      // 自プロセスの保存直後（3.0秒以内）であれば誤検知防止
+      // 自プロセスの保存直後（4.0秒以内）であれば誤検知防止
       const timeSinceLocalSave = Date.now() - lastLocalSaveTimeRef.current;
-      if (timeSinceLocalSave < 3000) {
+      if (timeSinceLocalSave < 4000) {
         fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
         return;
       }
@@ -107,9 +108,19 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
     const filePath = currentDoc?.filePath;
     if (!filePath || currentDoc.isRemote) return;
 
-    // 自プロセスの保存直後（3.0秒以内）であれば誤検知防止（最新mtimeを記録してスキップ）
+    // 自プロセスの保存アクション（saving / saved_file / saved_local）時は外部再読み込みを行わない
+    if (saveStatus === 'saving' || saveStatus === 'saved_file' || saveStatus === 'saved_local') {
+      getFileMetadataNative(filePath).then((meta) => {
+        if (meta && meta.exists && meta.mtimeMs > 0) {
+          fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
+        }
+      });
+      return;
+    }
+
+    // 自プロセスの保存直後（4.0秒以内）であれば誤検知防止（最新mtimeを記録してスキップ）
     const timeSinceLocalSave = Date.now() - lastLocalSaveTimeRef.current;
-    if (timeSinceLocalSave < 3000) {
+    if (timeSinceLocalSave < 4000) {
       getFileMetadataNative(filePath).then((meta) => {
         if (meta && meta.exists && meta.mtimeMs > 0) {
           fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
@@ -149,6 +160,48 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
     };
   }, [checkFileUpdate]);
 
+  // OS ネイティブ外部変更監視 (notify + Tauri イベント連携)
+  useEffect(() => {
+    const filePath = currentDoc?.filePath;
+    if (!filePath || currentDoc.isRemote) return;
+
+    let unlistenFn: (() => void) | null = null;
+
+    // ネイティブ監視の登録
+    commands.watchFileNative(filePath).catch((err) => {
+      console.warn('[NativeFileWatcher] watchFileNative 失敗:', err);
+    });
+
+    // Tauri イベント native-file-changed の購読
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen<{ file_path: string; mtime_ms: number }>('native-file-changed', async (event) => {
+        const changedPath = event.payload.file_path;
+        // 現在開いているファイルと一致し、再読み込み中でない場合
+        if (
+          changedPath.toLowerCase().replace(/\\/g, '/') === filePath.toLowerCase().replace(/\\/g, '/') &&
+          !isReloadingRef.current
+        ) {
+          isReloadingRef.current = true;
+          fileMtimeMapRef.current.set(filePath, event.payload.mtime_ms);
+          try {
+            await onReloadFile(filePath);
+          } finally {
+            isReloadingRef.current = false;
+          }
+        }
+      }).then((unlisten) => {
+        unlistenFn = unlisten;
+      });
+    });
+
+    return () => {
+      if (unlistenFn) {
+        unlistenFn();
+      }
+      commands.unwatchFileNative(filePath).catch(() => {});
+    };
+  }, [currentDoc?.filePath, currentDoc?.isRemote, onReloadFile]);
+
   return {
     markLocalSaving,
     recordLocalSave,
@@ -156,3 +209,4 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
     reloadCurrentDoc,
   };
 }
+

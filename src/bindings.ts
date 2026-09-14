@@ -105,9 +105,9 @@ async getFileMetadataNative(filePath: string) : Promise<Result<FileMetadataDto, 
 }
 },
 /**
- * 指定ファイルパスへ生バイト列を直接書き込み保存する
+ * 指定ファイルパスへ生バイト列を直接書き込み保存し、保存直後の mtime を返す
  */
-async writeFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<boolean, string>> {
+async writeFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<FileWriteResultDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("write_file_bytes_native", { filePath, bytes }) };
 } catch (e) {
@@ -116,9 +116,9 @@ async writeFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<b
 }
 },
 /**
- * 指定ファイルパスへ UTF-8 テキスト文字列を直接書き込み保存する
+ * 指定ファイルパスへ UTF-8 テキスト文字列を直接書き込み保存し、保存直後の mtime を返す
  */
-async writeFileNative(filePath: string, content: string) : Promise<Result<boolean, string>> {
+async writeFileNative(filePath: string, content: string) : Promise<Result<FileWriteResultDto, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("write_file_native", { filePath, content }) };
 } catch (e) {
@@ -202,6 +202,281 @@ async renderMarkdownHtmlNative(markdownText: string, isDark: boolean) : Promise<
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * 指定ファイルパスへ生バイト列をアトミックに書き込み保存し、保存直後の mtime を返す
+ */
+async atomicWriteFileBytesNative(filePath: string, bytes: number[]) : Promise<Result<FileWriteResultDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("atomic_write_file_bytes_native", { filePath, bytes }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 指定ファイルパスへ UTF-8 テキスト文字列をアトミックに書き込み保存し、保存直後の mtime を返す
+ */
+async atomicWriteFileNative(filePath: string, content: string) : Promise<Result<FileWriteResultDto, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("atomic_write_file_native", { filePath, content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * ワークスペースディレクトリを走査し rayon 並列で高速全文検索を行う
+ */
+async searchWorkspaceDirNative(dirPath: string, query: string, extensions: string[]) : Promise<Result<SearchResult[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_workspace_dir_native", { dirPath, query, extensions }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファを初期化する
+ */
+async ropeInitBuffer(id: string, text: string) : Promise<Result<RopeInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_init_buffer", { id, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファの情報を取得する
+ */
+async ropeGetInfo(id: string) : Promise<Result<RopeInfo | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_get_info", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファから指定文字範囲の文字列を取得する
+ */
+async ropeGetTextRange(id: string, startChar: number, endChar: number) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_get_text_range", { id, startChar, endChar }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファから指定行範囲の文字列を取得する
+ */
+async ropeGetLines(id: string, startLine: number, endLine: number) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_get_lines", { id, startLine, endLine }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファの指定位置に文字列を挿入する
+ */
+async ropeInsertText(id: string, charIndex: number, text: string) : Promise<Result<RopeInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_insert_text", { id, charIndex, text }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファの指定範囲の文字列を削除する
+ */
+async ropeRemoveText(id: string, startChar: number, endChar: number) : Promise<Result<RopeInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_remove_text", { id, startChar, endChar }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファの全文を取得する
+ */
+async ropeGetEntireText(id: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_get_entire_text", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Rope バッファを破棄する
+ */
+async ropeDropBuffer(id: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rope_drop_buffer", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * ファイル同期マネージャーにファイルと mtime を登録する
+ */
+async syncRegisterFile(filePath: string, mtimeMs: number) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("sync_register_file", { filePath, mtimeMs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 自プロセスによる保存開始をマークする
+ */
+async syncBeginSave(filePath: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("sync_begin_save", { filePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 自プロセスによる保存完了を記録する
+ */
+async syncFinishSave(filePath: string, mtimeMs: number) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("sync_finish_save", { filePath, mtimeMs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 自プロセスが保存中または直後かを判定する
+ */
+async syncIsSelfSaving(filePath: string, windowMs: number) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("sync_is_self_saving", { filePath, windowMs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * ネイティブファイル監視を開始する
+ */
+async watchFileNative(filePath: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("watch_file_native", { filePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * ネイティブファイル監視を解除する
+ */
+async unwatchFileNative(filePath: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unwatch_file_native", { filePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * すべてのネイティブファイル監視を解除する
+ */
+async unwatchAllNative() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unwatch_all_native") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 指定ファイルの親フォルダをエクスプローラーで選択表示して開く (Windows)
+ */
+async openFolderNative(filePath: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_folder_native", { filePath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 2つのテキスト間で行番号と単語レベルのインライン差分を含む詳細 Diff を高速計算する
+ */
+async computeDetailedDiffNative(oldText: string, newText: string) : Promise<Result<DetailedDiffResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("compute_detailed_diff_native", { oldText, newText }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * 複数ノートと画像アセットを一括で ZIP アーカイブに圧縮エクスポートする
+ */
+async exportNotesToZipNative(outputZipPath: string, entries: ZipEntryInput[]) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_notes_to_zip_native", { outputZipPath, entries }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Markdown ドキュメントの日本語校正および記法 lint をバックグラウンド高速実行する
+ */
+async lintMarkdownDocumentNative(content: string) : Promise<Result<ProofreadingIssue[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("lint_markdown_document_native", { content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Mermaid コードブロックの構文事前検証と SHA-256 ハッシュ計算を行う
+ */
+async validateMermaidSyntaxNative(code: string) : Promise<Result<MermaidValidationResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("validate_mermaid_syntax_native", { code }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * メモリマップドファイル (mmap) を用いて超巨大ファイルの指定オフセット・長さをゼロコピーで高速読み出し
+ */
+async mmapReadFileChunkNative(filePath: string, offset: number, length: number) : Promise<Result<MmapChunkResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mmap_read_file_chunk_native", { filePath, offset, length }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * ワークスペースディレクトリを .gitignore 準拠で並列高速走査し、ファイルツリーを構築する
+ */
+async scanWorkspaceTreeNative(rootDir: string, maxDepth: number) : Promise<Result<WorkspaceTreeNode, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("scan_workspace_tree_native", { rootDir, maxDepth }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -215,6 +490,50 @@ async renderMarkdownHtmlNative(markdownText: string, isDark: boolean) : Promise<
 
 /** user-defined types **/
 
+/**
+ * 行ごとの詳細差分情報
+ */
+export type DetailedDiffLine = { 
+/**
+ * 行の差分タグ ("equal", "insert", "delete")
+ */
+tag: string; 
+/**
+ * 比較元行番号 (1-indexed)
+ */
+old_line_no: number | null; 
+/**
+ * 比較先行番号 (1-indexed)
+ */
+new_line_no: number | null; 
+/**
+ * 行テキスト
+ */
+content: string; 
+/**
+ * 単語レベルのインライン詳細差分
+ */
+inline_changes: InlineChange[] }
+/**
+ * 詳細差分計算結果 DTO
+ */
+export type DetailedDiffResult = { 
+/**
+ * 行ごとの詳細差分リスト
+ */
+lines: DetailedDiffLine[]; 
+/**
+ * 追加行数
+ */
+added_lines: number; 
+/**
+ * 削除行数
+ */
+removed_lines: number; 
+/**
+ * 変更なし行数
+ */
+unchanged_lines: number }
 /**
  * 検索インデックス登録用データ構造体
  */
@@ -280,6 +599,18 @@ mtime_ms: number;
  */
 size_bytes: number }
 /**
+ * ファイル書き込み結果 DTO
+ */
+export type FileWriteResultDto = { 
+/**
+ * 書き込み成功フラグ
+ */
+success: boolean; 
+/**
+ * 書き込み直後の最終更新日時 (UNIXエポックからのミリ秒)
+ */
+mtime_ms: number }
+/**
  * 見出し（アウトライン）抽出結果 DTO
  */
 export type HeadingItemDto = { 
@@ -295,6 +626,62 @@ text: string;
  * 該当行番号 (1-indexed)
  */
 line_number: number }
+/**
+ * 単語・文字レベルのインライン差分
+ */
+export type InlineChange = { 
+/**
+ * 差分タグ ("equal", "insert", "delete")
+ */
+tag: string; 
+/**
+ * 該当テキスト
+ */
+text: string }
+/**
+ * Mermaid 構文検証結果 DTO
+ */
+export type MermaidValidationResult = { 
+/**
+ * 構文が有効と判定されたか
+ */
+is_valid: boolean; 
+/**
+ * 判定されたダイアグラム種別 (例: "flowchart", "sequenceDiagram", "unknown")
+ */
+diagram_type: string; 
+/**
+ * コンテンツの SHA-256 ハッシュ文字列 (キャッシュ照合用)
+ */
+content_hash: string; 
+/**
+ * 検出されたエラーメッセージ (無効時)
+ */
+error_message: string | null }
+/**
+ * mmap チャンク読み込み結果 DTO
+ */
+export type MmapChunkResult = { 
+/**
+ * 読み込まれたチャンク文字列データ
+ */
+chunk_text: string; 
+/**
+ * ファイル全体の総バイトサイズ
+ */
+total_file_size: number; 
+/**
+ * 読み込み開始オフセット (バイト)
+ */
+loaded_offset: number; 
+/**
+ * 読み込まれた実バイト数
+ */
+loaded_length: number; 
+/**
+ * ファイル終端 (EOF) に達したか
+ */
+is_eof: boolean }
 /**
  * YAML Front Matter パース結果 DTO
  */
@@ -332,15 +719,59 @@ encoding: string | null;
  */
 tags: string[] }
 /**
+ * 校正指摘項目 DTO
+ */
+export type ProofreadingIssue = { 
+/**
+ * 該当行番号 (1-indexed)
+ */
+line_number: number; 
+/**
+ * 該当列番号 (1-indexed)
+ */
+column: number; 
+/**
+ * 指摘メッセージ
+ */
+message: string; 
+/**
+ * 重要度 ("info" | "warning" | "error")
+ */
+severity: string; 
+/**
+ * 推奨修正案 (あれば)
+ */
+suggestion: string | null }
+/**
+ * Rope バッファのメタ情報 DTO
+ */
+export type RopeInfo = { 
+/**
+ * バッファ識別子（ファイルパスやUUIDなど）
+ */
+id: string; 
+/**
+ * 総文字数 (Unicode scalar / chars)
+ */
+total_chars: number; 
+/**
+ * 総行数
+ */
+total_lines: number; 
+/**
+ * 総バイト数
+ */
+total_bytes: number }
+/**
  * 検索結果構造体
  */
 export type SearchResult = { 
 /**
- * ヒットしたドキュメント ID
+ * ヒットしたドキュメント ID またはファイルパス
  */
 doc_id: string; 
 /**
- * ドキュメントタイトル
+ * ドキュメントタイトルまたはファイル名
  */
 title: string; 
 /**
@@ -350,7 +781,11 @@ snippet: string;
 /**
  * スコア (マッチ数)
  */
-score: number }
+score: number; 
+/**
+ * ヒットした行番号 (1-indexed)
+ */
+line_number: number | null }
 /**
  * 差分比較結果チャンク
  */
@@ -387,6 +822,46 @@ lines: number;
  * 読了予想時間 (分)
  */
 reading_time_minutes: number }
+/**
+ * ワークスペースファイルツリーノード DTO
+ */
+export type WorkspaceTreeNode = { 
+/**
+ * ファイル名またはフォルダ名
+ */
+name: string; 
+/**
+ * 絶対ファイルパス
+ */
+path: string; 
+/**
+ * ディレクトリフラグ
+ */
+is_dir: boolean; 
+/**
+ * ファイルサイズ (バイト)
+ */
+size_bytes: number; 
+/**
+ * 子ノードリスト (ディレクトリの場合)
+ */
+children: WorkspaceTreeNode[] | null }
+/**
+ * ZIP アーカイブ内に含めるエントリ DTO
+ */
+export type ZipEntryInput = { 
+/**
+ * ZIP 内での相対ファイルパス (例: "notes/memo.md", "assets/diagram.png")
+ */
+file_path_in_zip: string; 
+/**
+ * テキスト形式のコンテンツ (Markdown等)
+ */
+content_text: string | null; 
+/**
+ * バイナリ形式のコンテンツ (画像や添付ファイル等)
+ */
+content_bytes: number[] | null }
 
 /** tauri-specta globals **/
 

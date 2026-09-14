@@ -2,7 +2,7 @@
 
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue)](https://v2.tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
-[![Version](https://img.shields.io/badge/Version-v1.4.3-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.4.4-green)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 QuMaEditor (Quick & Minimal Markdown Editor) は、**Tauri v2**, **Rust**, **React 19**, **TypeScript** で構築された超軽量・超高速なデスクトップ Markdown エディタです。「Performance First」の設計思想のもと、メモリ消費量 (RAM ~35MB) を極限まで抑えながら、快適な執筆環境を提供します。
@@ -14,15 +14,22 @@ QuMaEditor (Quick & Minimal Markdown Editor) は、**Tauri v2**, **Rust**, **Rea
 ### ⚡ Rust ネイティブ・アクセラレーション
 
 - **見出し構造（アウトライン/目次）ナビゲーション**: サイドバーから H1〜H6 見出しを高速抽出し、階層ツリー表示。クリックでエディタ行およびプレビューへ瞬時に双方向ジャンプ。
-- **Markdown 高速自動整形 (`Ctrl + Shift + F`)**: Rust ネイティブエンジンにより、表組みの垂直整列、見出し前後の空行自動挿入、過剰連続空行の圧縮（コードブロック内は完全保護）を一瞬で実行。
-- **10MB+ 超大容量ファイルストリーミング**: `read_file_chunk_native` によりメモリを圧迫せず分割読み込み。
-- **転置インデックス爆速全文検索**: Rust `LazyLock<Mutex<Vec<DocSearchInput>>>` を用いた単語単位インデックス検索。
-- **マルチスレッドエンコーディング一括変換**: `rayon` 並列エンジンによる複数ファイルの UTF-8 / Shift_JIS 高速変換。
-- **ネイティブ Text Diff 差分比較**: Rust `similar` クレートによる高速な行単位テキスト比較。
-- **ネイティブエクスプローラー起動**: `open_folder_native` コマンドによりPC実ファイルの親フォルダをエクスプローラーでハイライト選択状態で安全にオープン。
+- **大容量編集用 Rope データ構造 (`ropey`)**: 数十万行・超巨大 Markdown でもメモリ負荷・コピー遅延なく行挿入・削除が可能な B ツリー Rope バッファ管理。
+- **ゼロコピー瞬時読込 (`memmap2`)**: メモリマップドファイルにより、GB 級の超巨大ファイルも OS 仮想メモリに直結し、ゼロコピーで瞬時にオープン・部分チャンク読込。
+- **アトミックファイル書き込み ＆ mtime 完全保証**: 一時ファイル書き込み＋アトミックリネームにより、クラッシュ時のファイル破損リスクをゼロ化。
+- **実ファイル・LocalStorage 双方向同期 (`FileSyncManager`)**: Rust 側でディスク更新日時 (mtime) を厳密追跡し、自プロセス保存ロックと外部変更の競合を安全に調停。
+- **外部ファイル変更監視の Rust ネイティブ化 (`notify`)**: OS カーネル直結イベントで外部エディタによる更新・削除をリアルタイム自動検知。
+- **ワークスペース並列ファイル走査 (`ignore`)**: `.gitignore` 準拠で不要なディレクトリ（`node_modules`, `target` 等）を高速除外しながら並列ファイルツリーを瞬時構築。
+- **ワークスペース横断の高速全文検索 (`rayon`)**: フォルダ内の全ドキュメントをマルチスレッド並列処理で爆速走査。
+- **詳細 Text Diff 差分比較 (`similar`)**: 行番号 Old/New および単語単位のインライン差分（`inline_changes`）を詳細解析。
+- **複数ノート一括エクスポート ＆ ZIP 圧縮 (`zip`)**: 複数ノートや画像アセットを一括で Deflate ZIP アーカイブ化。
+- **日本語校正 ＆ Markdown 構文 lint (`proofreading`)**: 助詞の連続重複（「のの」「はは」等）、表記ゆれ（「サーバ」と「サーバー」等）、未閉じコードブロックをバックグラウンド高速検出。
+- **Mermaid 構文検証 ＆ SVG 差分ハッシュキャッシュ (`sha2`)**: 構文妥当性を事前検証し、SHA-256 キャッシュにより同一ダイアグラムの再描画負荷を徹底排除。
+- **Markdown 高速自動整形 (`Ctrl + Shift + F`)**: Rust ネイティブエンジンにより、表組みの垂直整列、見出し前後の空行自動挿入、過剰連続空行の圧縮を一瞬で実行。
 
 ### 🎨 モダン UI & ハイコントラストテーマ
 
+- **タイプライター・スクロール**: カーソル行をエディタ画面の中央付近に自動維持し、長文執筆時でも目線がぶれない快適なタイピング環境。
 - **ゼロレイテンシ・タイピング**: 「編集のみ」モード時のプレビュー完全バイパス、および「分割表示」時の非同期ディバウンス処理により、打鍵遅延ゼロの快適なタイピングを実現。
 - **エディタ内 Tab インデント＆箇条書きネスト**: Tab キーでのフォーカス外れを抑止し、単一行箇条書き階層化（`- ` ➔ `  - `）や複数行ブロックインデントに対応。
 - **`Ctrl + E` カーソル自動復元**: プレビューからエディタへ戻った際、直前のカーソル位置・行選択を完全復元しエディタへ即座にフォーカス。
@@ -67,15 +74,18 @@ QuMaEditor (Quick & Minimal Markdown Editor) は、**Tauri v2**, **Rust**, **Rea
 +-------------------------------------------------------------------+
 |  フロントエンド (React 19 + TypeScript + Tailwind CSS)            |
 |   - ゼロレイテンシ・エディタ & Mermaid / GFM プレビュー           |
-|   - マルチタブ管理 & 浮遊型入力補助ツールバー                     |
-|   - キーワードハイライト (<mark>) & #タグ絞り込み検索              |
+|   - タイプライタースクロール & 浮遊型入力補助ツールバー           |
+|   - マルチタブ管理 & キーワードハイライト & #タグ絞り込み検索     |
 |   - ModalGroup / useGlobalShortcuts / MarkdownRenderers 分割構成  |
 +-------------------------------------------------------------------+
 |                       Tauri v2 IPC 通信                           |
 +-------------------------------------------------------------------+
-|  バックエンド (Rust ネイティブエンジン / text_processing/ 分割)  |
-|   - チャンクストリーミング (10MB+) | 転置インデックス爆速全文検索   |
-|   - Rayon マルチスレッド一括エンコード判別 | ネイティブ Diff 比較 |
+|  バックエンド (Rust ネイティブエンジン / 高度並列処理)            |
+|   - Rope 編集バッファ (ropey) | mmap ゼロコピー巨大ファイル読込   |
+|   - アトミック書き込み & FileSyncManager 双方向同期               |
+|   - notify 外部監視 | Rayon ワークスペース高速全文検索            |
+|   - similar 詳細 Diff | zip 一括エクスポート | 日本語校正 lint   |
+|   - Mermaid 構文検証 & SVG キャッシュ | ignore 並列ツリー走査      |
 |   - Markdown 自動整形 (formatter.rs) | syntect 高速 HTML 出力      |
 |   - open_folder_native による親フォルダエクスプローラー起動        |
 +-------------------------------------------------------------------+
@@ -113,7 +123,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Clippy 厳格品質検証
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust ユニットテスト (全23件)
+# 4. Rust ユニットテスト (全36件)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript 型検証

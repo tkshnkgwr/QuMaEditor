@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, GitCompare, ArrowLeftRight, FileText, Plus, Minus, Check, Zap } from 'lucide-react';
 import { MarkdownDoc } from '../types';
-import { computeTextDiffNative, DiffChange } from '../utils/tauriNative';
+import { computeDetailedDiffNative, DetailedDiffResult, DetailedDiffLine } from '../utils/tauriNative';
 
 interface DiffModalProps {
   isOpen: boolean;
@@ -32,19 +32,21 @@ export const DiffModal: React.FC<DiffModalProps> = ({
     return otherAny ? otherAny.id : activeDoc.id;
   });
 
-  const [rustChanges, setRustChanges] = useState<DiffChange[]>([]);
+  const [detailedDiff, setDetailedDiff] = useState<DetailedDiffResult | null>(null);
 
   const compareDoc = allDocs.find((d) => d.id === compareDocId) || previousDoc || activeDoc;
 
-  // Rust ネイティブ (similar クレート) での超高速 Text Diff
+  // Rust ネイティブ (similar クレート) での超高速 Detailed Text Diff
   useEffect(() => {
     let isMounted = true;
     if (isOpen && compareDoc && activeDoc && compareDoc.id !== activeDoc.id) {
-      computeTextDiffNative(compareDoc.content, activeDoc.content).then((res) => {
+      computeDetailedDiffNative(compareDoc.content, activeDoc.content).then((res) => {
         if (isMounted && res) {
-          setRustChanges(res);
+          setDetailedDiff(res);
         }
       });
+    } else if (compareDoc && activeDoc && compareDoc.id === activeDoc.id) {
+      setDetailedDiff(null);
     }
     return () => {
       isMounted = false;
@@ -53,13 +55,9 @@ export const DiffModal: React.FC<DiffModalProps> = ({
 
   if (!isOpen) return null;
 
-  let addedLines = 0;
-  let removedLines = 0;
-
-  rustChanges.forEach((c) => {
-    if (c.tag === 'insert') addedLines++;
-    else if (c.tag === 'delete') removedLines++;
-  });
+  const addedLines = detailedDiff?.added_lines ?? 0;
+  const removedLines = detailedDiff?.removed_lines ?? 0;
+  const diffLines: DetailedDiffLine[] = detailedDiff?.lines ?? [];
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs select-none transition-colors ${
@@ -165,18 +163,18 @@ export const DiffModal: React.FC<DiffModalProps> = ({
             </div>
           ) : (
             <div className={`rounded-lg border overflow-hidden ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-slate-50'}`}>
-              {rustChanges.map((change, index) => {
+              {diffLines.map((line, index) => {
                 let bgColor = isDark ? 'hover:bg-slate-900/50' : 'hover:bg-slate-100';
                 let textColor = isDark ? 'text-slate-300' : 'text-slate-700';
                 let prefix = ' ';
                 let prefixColor = isDark ? 'text-slate-600' : 'text-slate-400';
 
-                if (change.tag === 'insert') {
+                if (line.tag === 'insert') {
                   bgColor = isDark ? 'bg-emerald-950/40 hover:bg-emerald-900/50' : 'bg-emerald-50 hover:bg-emerald-100/80';
                   textColor = isDark ? 'text-emerald-300' : 'text-emerald-800';
                   prefix = '+';
                   prefixColor = 'text-emerald-500 font-bold';
-                } else if (change.tag === 'delete') {
+                } else if (line.tag === 'delete') {
                   bgColor = isDark ? 'bg-rose-950/40 hover:bg-rose-900/50' : 'bg-rose-50 hover:bg-rose-100/80';
                   textColor = isDark ? 'text-rose-300' : 'text-rose-800';
                   prefix = '-';
@@ -186,12 +184,54 @@ export const DiffModal: React.FC<DiffModalProps> = ({
                 return (
                   <div
                     key={index}
-                    className={`flex items-start px-3 py-0.5 transition-colors whitespace-pre-wrap break-words border-b ${
+                    className={`flex items-start px-2 py-0.5 transition-colors whitespace-pre-wrap break-words border-b font-mono ${
                       isDark ? 'border-slate-800/30' : 'border-slate-200/50'
                     } ${bgColor} ${textColor}`}
                   >
-                    <span className={`w-6 shrink-0 select-none text-right pr-2 ${prefixColor}`}>{prefix}</span>
-                    <span className="flex-1">{change.value.replace(/\n$/, '') || ' '}</span>
+                    {/* 行番号表示 (Old / New) */}
+                    <span className={`w-9 shrink-0 select-none text-right pr-2 text-[11px] ${
+                      isDark ? 'text-slate-600' : 'text-slate-400'
+                    }`}>
+                      {line.old_line_no ?? ''}
+                    </span>
+                    <span className={`w-9 shrink-0 select-none text-right pr-2 text-[11px] border-r ${
+                      isDark ? 'text-slate-600 border-slate-800' : 'text-slate-400 border-slate-200'
+                    }`}>
+                      {line.new_line_no ?? ''}
+                    </span>
+
+                    {/* 差分プレフィックス (+ / - / space) */}
+                    <span className={`w-6 shrink-0 select-none text-center ${prefixColor}`}>{prefix}</span>
+
+                    {/* 行コンテンツまたはインライン差分 */}
+                    <span className="flex-1">
+                      {line.inline_changes && line.inline_changes.length > 0 ? (
+                        line.inline_changes.map((ic, icIdx) => {
+                          if (ic.tag === 'insert') {
+                            return (
+                              <mark
+                                key={icIdx}
+                                className="bg-emerald-500/30 text-emerald-200 px-0.5 rounded-xs"
+                              >
+                                {ic.text}
+                              </mark>
+                            );
+                          } else if (ic.tag === 'delete') {
+                            return (
+                              <mark
+                                key={icIdx}
+                                className="bg-rose-500/30 text-rose-200 px-0.5 line-through rounded-xs"
+                              >
+                                {ic.text}
+                              </mark>
+                            );
+                          }
+                          return <span key={icIdx}>{ic.text}</span>;
+                        })
+                      ) : (
+                        line.content || ' '
+                      )}
+                    </span>
                   </div>
                 );
               })}

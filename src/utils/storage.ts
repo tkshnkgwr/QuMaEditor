@@ -22,6 +22,8 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   theme: 'dark',
   headingTheme: 'muted',
   defaultAuthor: '',
+  typewriterScroll: false,
+  previewEngine: 'rust',
 };
 
 /** サンプルドキュメントの初期データ */

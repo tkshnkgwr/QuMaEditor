@@ -62,12 +62,20 @@
 │   │   │   ├── formatter.rs        # GFM 表組み整列・空行整理自動整形
 │   │   │   └── html_renderer.rs    # syntect 構文ハイライト付き HTML 出力
 │   │   ├── commands.rs             # IPC コマンドハンドラー
-│   │   ├── diff.rs                 # Text Diff 計算
+│   │   ├── diff.rs                 # Text Diff 計算（行単位＆単語インライン詳細）
 │   │   ├── encoding.rs             # 文字コード自動判別・変換
-│   │   ├── file_io.rs              # ネイティブファイル I/O・チャンク読込
-│   │   ├── search.rs               # 転置インデックス全文検索
-│   │   ├── lib.rs                  # ライブラリ初期化
-│   │   └── main.rs                 # バイナリエントリーポイント
+│   │   ├── export_zip.rs           # 複数ノート＆アセット一括 ZIP 圧縮エクスポート
+│   │   ├── file_io.rs              # ネイティブファイル I/O・チャンク読込・アトミック保存
+│   │   ├── file_watcher.rs         # notify による外部ファイル変更監視
+│   │   ├── lib.rs                  # ライブラリ初期化・State 管理
+│   │   ├── main.rs                 # バイナリエントリーポイント
+│   │   ├── mermaid_validator.rs    # Mermaid 構文検証＆SVG 差分ハッシュキャッシュ
+│   │   ├── mmap_reader.rs          # memmap2 によるゼロコピー巨大ファイル読み込み
+│   │   ├── proofreading.rs         # 日本語校正（助詞重複・表記ゆれ）＆Markdown lint
+│   │   ├── rope_buffer.rs          # ropey による大容量 Rope 編集バッファ管理
+│   │   ├── search.rs               # 転置インデックス＆rayon 並列ワークスペース検索
+│   │   ├── sync_manager.rs         # 実ファイル・LocalStorage 双方向同期＆mtime 管理
+│   │   └── workspace_scanner.rs    # ignore による .gitignore 準拠並列ツリー走査
 │   ├── Cargo.toml                  # Rust依存関係・ビルドプロファイル定義
 │   └── tauri.conf.json             # Tauriアプリケーション設定
 ├── index.html                      # HTMLエントリーポイント
@@ -91,7 +99,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy 厳格品質検証
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust ユニットテスト検証 (全22件)
+# 4. Rust ユニットテスト検証 (全36件)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript 型検証

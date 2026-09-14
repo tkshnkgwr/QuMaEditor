@@ -9,16 +9,23 @@ import {
   ZoomOut,
   Maximize2,
   X,
+  Zap,
 } from 'lucide-react';
+import { validateMermaidSyntaxNative } from '../utils/tauriNative';
 
 interface MermaidRendererProps {
   chart: string;
   isDark?: boolean;
 }
 
+// SHA-256 ハッシュをキーとした Mermaid SVG レンダリング結果の高速インメモリキャッシュ
+const svgCache = new Map<string, string>();
+
 export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark = true }) => {
   const [svgHtml, setSvgHtml] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [diagramType, setDiagramType] = useState<string>('');
+  const [isCached, setIsCached] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(1.0); // デフォルト 100% (自動フィット・1ページ内収容)
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -42,45 +49,77 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
     let isMounted = true;
     const uniqueId = `mermaid-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
-    try {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: isDark ? 'dark' : 'default',
-        securityLevel: 'loose',
-        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial',
-        darkMode: isDark,
-        themeVariables: {
-          fontSize: '15px',
-        },
-      });
-
-      const trimmedChart = chart.trim();
-      if (!trimmedChart) {
-        setSvgHtml('');
-        setError(null);
-        return;
-      }
-
-      mermaid
-        .render(uniqueId, trimmedChart)
-        .then(({ svg }) => {
-          if (isMounted) {
-            setSvgHtml(svg);
-            setError(null);
-          }
-        })
-        .catch((err) => {
-          if (isMounted) {
-            setError(err?.message || 'Mermaid 構文の解析エラー');
-            setSvgHtml('');
-          }
-        });
-    } catch (err: any) {
-      if (isMounted) {
-        setError(err?.message || 'Mermaid 初期化エラー');
-        setSvgHtml('');
-      }
+    const trimmedChart = chart.trim();
+    if (!trimmedChart) {
+      setSvgHtml('');
+      setError(null);
+      setDiagramType('');
+      setIsCached(false);
+      return;
     }
+
+    // Rust ネイティブ構文事前検証 ＆ SHA-256 ハッシュ差分キャッシュチェック
+    validateMermaidSyntaxNative(trimmedChart).then((valRes) => {
+      if (!isMounted) return;
+
+      if (valRes) {
+        setDiagramType(valRes.diagram_type);
+
+        if (!valRes.is_valid && valRes.error_message) {
+          setError(valRes.error_message);
+          setSvgHtml('');
+          return;
+        }
+
+        const cacheKey = `${valRes.content_hash}-${isDark ? 'dark' : 'light'}`;
+        const cachedSvg = svgCache.get(cacheKey);
+        if (cachedSvg) {
+          setSvgHtml(cachedSvg);
+          setError(null);
+          setIsCached(true);
+          return;
+        }
+      }
+
+      setIsCached(false);
+
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? 'dark' : 'default',
+          securityLevel: 'loose',
+          fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial',
+          darkMode: isDark,
+          themeVariables: {
+            fontSize: '15px',
+          },
+        });
+
+        mermaid
+          .render(uniqueId, trimmedChart)
+          .then(({ svg }) => {
+            if (isMounted) {
+              if (valRes) {
+                const cacheKey = `${valRes.content_hash}-${isDark ? 'dark' : 'light'}`;
+                svgCache.set(cacheKey, svg);
+              }
+              setSvgHtml(svg);
+              setError(null);
+            }
+          })
+          .catch((err) => {
+            if (isMounted) {
+              setError(err?.message || 'Mermaid 構文の解析エラー');
+              setSvgHtml('');
+            }
+          });
+      } catch (err: any) {
+        if (isMounted) {
+          setError(err?.message || 'Mermaid 初期化エラー');
+          setSvgHtml('');
+        }
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -127,6 +166,17 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
             <div className="flex items-center gap-2 font-semibold">
               <Network className="w-4 h-4 text-cyan-400" />
               <span className={isDark ? 'text-cyan-300' : 'text-cyan-900'}>Mermaid ダイアグラム</span>
+              {diagramType && diagramType !== 'unknown' && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  {diagramType}
+                </span>
+              )}
+              {isCached && (
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" title="Rust SHA-256差分キャッシュヒット（再描画スキップ）">
+                  <Zap className="w-2.5 h-2.5 text-emerald-400 fill-emerald-400" />
+                  Cached
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-1.5">

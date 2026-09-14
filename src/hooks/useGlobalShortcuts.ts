@@ -63,6 +63,10 @@ export function useGlobalShortcuts({
       if ((e.ctrlKey || e.metaKey) && (e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
         if (viewMode === 'editor') {
+          // プレビューへ隠れる前にアクティブな textarea のカーソル・スクロール位置を確実に待避保存
+          if (document.activeElement instanceof HTMLTextAreaElement) {
+            document.activeElement.blur();
+          }
           setViewMode('preview');
         } else if (viewMode === 'preview') {
           setViewMode('editor');

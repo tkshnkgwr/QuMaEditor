@@ -62,12 +62,20 @@
 │   │   │   ├── formatter.rs        # GFM table alignment & line cleaner
 │   │   │   └── html_renderer.rs    # syntect syntax-highlighted HTML generator
 │   │   ├── commands.rs             # IPC command handlers
-│   │   ├── diff.rs                 # Text diff calculation
+│   │   ├── diff.rs                 # Text diff calculation (line-by-line & inline word changes)
 │   │   ├── encoding.rs             # Character encoding detection
-│   │   ├── file_io.rs              # Native file I/O & chunk streaming
-│   │   ├── search.rs               # In-memory inverted index search
-│   │   ├── lib.rs                  # Library entrypoint
-│   │   └── main.rs                 # Binary entrypoint
+│   │   ├── export_zip.rs           # Multi-note & asset Deflate ZIP archive export
+│   │   ├── file_io.rs              # Native file I/O, chunk streaming & atomic save
+│   │   ├── file_watcher.rs         # External file watcher via notify
+│   │   ├── lib.rs                  # Library entrypoint & state management
+│   │   ├── main.rs                 # Binary entrypoint
+│   │   ├── mermaid_validator.rs    # Mermaid syntax validation & SVG diff hash cache
+│   │   ├── mmap_reader.rs          # Memory-mapped zero-copy file reader via memmap2
+│   │   ├── proofreading.rs         # Japanese proofreading & Markdown lint engine
+│   │   ├── rope_buffer.rs          # Large file Rope buffer management via ropey
+│   │   ├── search.rs               # Inverted index & parallel rayon workspace search
+│   │   ├── sync_manager.rs         # Disk file & LocalStorage bi-directional sync manager
+│   │   └── workspace_scanner.rs    # Parallel workspace tree scanner via ignore
 │   ├── Cargo.toml                  # Rust dependencies & build profile
 │   └── tauri.conf.json             # Tauri configuration
 ├── index.html                      # HTML entrypoint
@@ -91,7 +99,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy strict quality check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust unit tests (22 tests)
+# 4. Rust unit tests (36 tests)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript type verification

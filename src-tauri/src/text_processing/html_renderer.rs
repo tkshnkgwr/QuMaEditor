@@ -169,9 +169,19 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
     let mut in_code_block = false;
     let mut current_lang = String::new();
     let mut code_buffer = String::new();
+    let mut task_index = 0;
 
     for event in parser {
         match event {
+            Event::TaskListMarker(checked) => {
+                let checked_attr = if checked { "checked " } else { "" };
+                let task_html = format!(
+                    r#"<input type="checkbox" class="task-list-item-checkbox cursor-pointer align-middle mr-1.5" data-task-index="{}" {}/>"#,
+                    task_index, checked_attr
+                );
+                task_index += 1;
+                events.push(Event::Html(task_html.into()));
+            }
             Event::Start(Tag::CodeBlock(kind)) => {
                 in_code_block = true;
                 current_lang = match kind {
@@ -198,9 +208,13 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
                     continue;
                 }
 
-                // syntect ハイライト
+                // syntect ハイライト (大文字・小文字の表記ゆれフォールバック対応)
+                let lang_lower = lang_trimmed.to_lowercase();
                 let syntax = ps
                     .find_syntax_by_token(lang_trimmed)
+                    .or_else(|| ps.find_syntax_by_token(&lang_lower))
+                    .or_else(|| ps.find_syntax_by_name(lang_trimmed))
+                    .or_else(|| ps.find_syntax_by_name(&lang_lower))
                     .unwrap_or_else(|| ps.find_syntax_plain_text());
 
                 let mut highlighter = HighlightLines::new(syntax, theme);
@@ -270,5 +284,7 @@ mod tests {
         assert!(html.contains("code-block-wrapper"));
         assert!(html.contains("mermaid-container"));
         assert!(html.contains("type=\"checkbox\""));
+        assert!(html.contains("data-task-index=\"0\""));
+        assert!(html.contains("data-task-index=\"1\""));
     }
 }

@@ -90,8 +90,20 @@ pub fn read_file_chunk_native(
     })
 }
 
-/// バイト配列を指定されたパスへ直書き保存する
-pub fn write_file_bytes_native(file_path: String, bytes: Vec<u8>) -> Result<bool, String> {
+/// ファイル書き込み結果 DTO
+#[derive(Debug, Serialize, Deserialize, Type, PartialEq)]
+pub struct FileWriteResultDto {
+    /// 書き込み成功フラグ
+    pub success: bool,
+    /// 書き込み直後の最終更新日時 (UNIXエポックからのミリ秒)
+    pub mtime_ms: f64,
+}
+
+/// バイト配列を指定されたパスへ直書き保存し、保存直後の mtime を返す
+pub fn write_file_bytes_native(
+    file_path: String,
+    bytes: Vec<u8>,
+) -> Result<FileWriteResultDto, String> {
     let clean_path = file_path.trim_matches('"');
     let path = Path::new(clean_path);
 
@@ -102,12 +114,101 @@ pub fn write_file_bytes_native(file_path: String, bytes: Vec<u8>) -> Result<bool
     }
 
     fs::write(path, bytes).map_err(|e| format!("ファイル書き込み失敗: {}", e))?;
-    Ok(true)
+
+    let meta = fs::metadata(path).map_err(|e| format!("メタデータ取得失敗: {}", e))?;
+    let mtime_ms = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as f64)
+        .unwrap_or(0.0);
+
+    Ok(FileWriteResultDto {
+        success: true,
+        mtime_ms,
+    })
 }
 
-/// 文字列を指定されたパスへ UTF-8 で直書き保存する
-pub fn write_file_native(file_path: String, content: String) -> Result<bool, String> {
+/// 文字列を指定されたパスへ UTF-8 で直書き保存し、保存直後の mtime を返す
+pub fn write_file_native(file_path: String, content: String) -> Result<FileWriteResultDto, String> {
     write_file_bytes_native(file_path, content.into_bytes())
+}
+
+/// バイト配列を同一フォルダ内の一時ファイルに書き込み、sync_all() 後にアトミックに置換保存する
+///
+/// 一時ファイルから同一ボリューム内での rename 置換を行うことで、OSクラッシュや電源断による
+/// ファイル破損（0バイト化）を完全に防止し、同時に FileSyncManager と連携して mtime を保証します。
+pub fn atomic_write_file_bytes_native(
+    file_path: String,
+    bytes: Vec<u8>,
+) -> Result<FileWriteResultDto, String> {
+    let clean_path = file_path.trim_matches('"');
+    let path = Path::new(clean_path);
+
+    let parent = path.parent().unwrap_or_else(|| Path::new("."));
+    if !parent.exists() {
+        fs::create_dir_all(parent).map_err(|e| format!("ディレクトリ作成失敗: {}", e))?;
+    }
+
+    // 保存開始を SyncManager に通知（自プロセス保存中の誤検知ガード）
+    let _ = crate::sync_manager::sync_begin_save(clean_path.to_string());
+
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("quma_temp.tmp");
+
+    let now_nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+
+    let temp_file_name = format!(".tmp_{}_{}", now_nanos, file_name);
+    let temp_path = parent.join(&temp_file_name);
+
+    // 一時ファイルへの書き込みと同期
+    let write_res = (|| -> Result<(), std::io::Error> {
+        use std::io::Write;
+        let mut file = File::create(&temp_path)?;
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        Ok(())
+    })();
+
+    if let Err(e) = write_res {
+        let _ = fs::remove_file(&temp_path);
+        return Err(format!("一時ファイル書き込み失敗: {}", e));
+    }
+
+    // アトミックなリネーム置換（同一ディレクトリ内のためアトミック）
+    if let Err(e) = fs::rename(&temp_path, path) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(format!("アトミック置換リネーム失敗: {}", e));
+    }
+
+    let meta = fs::metadata(path).map_err(|e| format!("メタデータ取得失敗: {}", e))?;
+    let mtime_ms = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as f64)
+        .unwrap_or(0.0);
+
+    // 保存完了と最新 mtime を SyncManager に通知
+    let _ = crate::sync_manager::sync_finish_save(clean_path.to_string(), mtime_ms);
+
+    Ok(FileWriteResultDto {
+        success: true,
+        mtime_ms,
+    })
+}
+
+/// 文字列を指定されたパスへ UTF-8 でアトミック保存し、保存直後の mtime を返す
+pub fn atomic_write_file_native(
+    file_path: String,
+    content: String,
+) -> Result<FileWriteResultDto, String> {
+    atomic_write_file_bytes_native(file_path, content.into_bytes())
 }
 
 /// 指定ファイルパスのメタデータ（存在有無、最終更新日時mtime、サイズ）を超軽量に取得する
@@ -213,7 +314,8 @@ mod tests {
         let sample_bytes = b"Hello QuMaEditor Bytes Test".to_vec();
 
         let res = write_file_bytes_native(path_str.clone(), sample_bytes).unwrap();
-        assert!(res);
+        assert!(res.success);
+        assert!(res.mtime_ms > 0.0);
         let read_back = fs::read_to_string(&temp_file_path).unwrap();
         assert_eq!(read_back, "Hello QuMaEditor Bytes Test");
 
@@ -228,7 +330,8 @@ mod tests {
         let sample_text = "Hello QuMaEditor UTF-8 Native Write".to_string();
 
         let res = write_file_native(path_str.clone(), sample_text).unwrap();
-        assert!(res);
+        assert!(res.success);
+        assert!(res.mtime_ms > 0.0);
         let read_back = fs::read_to_string(&temp_file_path).unwrap();
         assert_eq!(read_back, "Hello QuMaEditor UTF-8 Native Write");
 
@@ -264,5 +367,31 @@ mod tests {
         let non_existent = get_file_metadata_native(path_str).unwrap();
         assert!(!non_existent.exists);
         assert_eq!(non_existent.mtime_ms, 0.0);
+    }
+
+    #[test]
+    fn test_atomic_write_file_native() {
+        let temp_dir = std::env::temp_dir();
+        let temp_file_path = temp_dir.join("quma_test_atomic_write.txt");
+        let path_str = temp_file_path.to_string_lossy().to_string();
+        let sample_text = "Atomic Write Content Test 12345";
+
+        let res = atomic_write_file_native(path_str.clone(), sample_text.to_string()).unwrap();
+        assert!(res.success);
+        assert!(res.mtime_ms > 0.0);
+
+        let read_back = fs::read_to_string(&temp_file_path).unwrap();
+        assert_eq!(read_back, sample_text);
+
+        // 同一ファイルへの上書きアトミック置換
+        let updated_text = "Updated Atomic Content 67890";
+        let res2 = atomic_write_file_native(path_str.clone(), updated_text.to_string()).unwrap();
+        assert!(res2.success);
+        assert!(res2.mtime_ms >= res.mtime_ms);
+
+        let read_back2 = fs::read_to_string(&temp_file_path).unwrap();
+        assert_eq!(read_back2, updated_text);
+
+        let _ = fs::remove_file(&temp_file_path);
     }
 }

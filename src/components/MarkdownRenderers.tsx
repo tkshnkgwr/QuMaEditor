@@ -317,7 +317,7 @@ export function createMarkdownComponents({
       }
 
       // コードブロック判定: 言語指定があるか、クラス名にlanguage-があるか、複数行であるか
-      const isCodeBlock = Boolean(!inline && (rawLanguage || className?.includes('language-') || codeString.includes('\n')));
+      const isCodeBlock = Boolean(!inline && (cleanLang || className?.toLowerCase().includes('language-') || codeString.includes('\n')));
 
       if (isCodeBlock) {
         const langMap: Record<string, string> = {

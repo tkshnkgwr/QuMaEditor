@@ -2,7 +2,7 @@
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.4.3-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.4.4-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v19-61dafb?logo=react)](https://react.dev/)
@@ -18,15 +18,22 @@ QuMaEditor (Quick & Minimal Markdown Editor) is an ultra-lightweight, high-perfo
 ### ⚡ Rust Native Acceleration
 
 - **Heading Outline & TOC Navigation**: Instant extraction of H1~H6 headings in the sidebar with hierarchical tree view, indentation badges, keyword filter, and bi-directional jump scrolling to editor and preview.
-- **Fast Markdown Auto-Formatting (`Ctrl + Shift + F`)**: Instantly formats Markdown by aligning tables vertically, adding appropriate blank lines before/after headings, and collapsing excessive blank lines while protecting code blocks.
-- **10MB+ Large File Streaming**: `read_file_chunk_native` reads files in memory-efficient chunks with on-demand expansion.
-- **Inverted Index Full-Text Search**: Fast word-based in-memory inverted index search via Rust `LazyLock<Mutex<Vec<DocSearchInput>>>`.
-- **Parallel Multi-File Encoding Conversion**: Multi-threaded UTF-8 / Shift_JIS conversion engine powered by `rayon`.
-- **Native Text Diff**: Line-by-line diff calculation using Rust `similar` crate.
-- **Native Windows Explorer Launcher**: Opens parent folders in Explorer with target files highlighted via `open_folder_native`.
+- **Large Document Rope Buffer (`ropey`)**: B-tree Rope data structure handling hundreds of thousands of lines without memory lag or buffer copies during insertions and deletions.
+- **Zero-Copy Instant File Opening (`memmap2`)**: Memory-mapped file I/O linking gigabyte-scale documents directly to OS virtual memory for instant chunk reading.
+- **Atomic File Writes & mtime Preservation**: Crash-proof saving via temporary file write and atomic rename, eliminating corruption risk.
+- **Bi-Directional File & LocalStorage Sync (`FileSyncManager`)**: Strict disk mtime tracking in Rust, orchestrating self-save locks and external changes without data collision.
+- **Rust Native File Watching (`notify`)**: OS kernel events detect external modifications, deletions, and renames in real time.
+- **Parallel Workspace Scanning (`ignore`)**: Multi-threaded file tree construction respecting `.gitignore` rules while skipping heavy folders (`node_modules`, `target`, etc.).
+- **High-Speed Workspace Full-Text Search (`rayon`)**: Multi-threaded parallel traversal searching across all Markdown documents in a directory.
+- **Detailed Text Diff Calculation (`similar`)**: Line-by-line Old/New comparisons and word-level inline changes (`inline_changes`).
+- **Multi-Note Batch Export & ZIP Compression (`zip`)**: Bundles multiple notes and image assets into a Deflate ZIP archive in one operation.
+- **Japanese Proofreading & Markdown Linting (`proofreading`)**: Asynchronous background detection of duplicate particles, spelling variants, and unclosed code blocks.
+- **Mermaid Syntax Validation & SVG Diff Cache (`sha2`)**: Validates diagrams before rendering and caches SVG output by SHA-256 hash to eliminate redundant renders.
+- **Fast Markdown Auto-Formatting (`Ctrl + Shift + F`)**: Formats Markdown by aligning tables vertically, adding appropriate blank lines, and collapsing excessive spacing.
 
 ### 🎨 Modern UI & High-Contrast Themes
 
+- **Typewriter Scrolling**: Keeps the active cursor line vertically centered on the screen for fatigue-free long-form writing.
 - **Zero-Latency Typing**: Bypasses preview parsing in "Editor Only" mode and uses asynchronous debounced parsing in "Split View" mode for zero typing lag.
 - **Tab Indentation & Nested Lists**: Single-line list indentation (`- ` ➔ `  - `), multi-line block indent, and `Shift+Tab` unindent.
 - **`Ctrl + E` Cursor Position & Focus Restoration**: Automatically restores cursor position and selection when switching between editor and preview.
@@ -71,15 +78,18 @@ QuMaEditor (Quick & Minimal Markdown Editor) is an ultra-lightweight, high-perfo
 +-------------------------------------------------------------------+
 |  Frontend (React 19 + TypeScript + Tailwind CSS)                  |
 |   - Zero-latency editor & Mermaid / GFM live preview              |
-|   - Multi-tab management & floating formatting toolbar            |
-|   - Keyword highlight (<mark>) & #tag filter search               |
+|   - Typewriter scrolling & floating formatting toolbar            |
+|   - Multi-tab management, keyword highlight & #tag filter search  |
 |   - Modularized: ModalGroup / useGlobalShortcuts / Renderers      |
 +-------------------------------------------------------------------+
 |                       Tauri v2 IPC Gateway                        |
 +-------------------------------------------------------------------+
-|  Backend (Rust Native Engine / Modularized text_processing/)      |
-|   - Chunk streaming (10MB+) | Inverted index full-text search     |
-|   - Rayon multi-threaded encoding conversion | Native Text Diff   |
+|  Backend (Rust Native Engine / High-Concurrency Architecture)     |
+|   - Rope buffer (ropey) | mmap zero-copy large file reader        |
+|   - Atomic disk write & FileSyncManager bi-directional sync       |
+|   - notify file watcher | Rayon parallel workspace search         |
+|   - similar detailed diff | zip batch export | proofreading lint  |
+|   - Mermaid validator & SVG cache | ignore parallel tree scanner  |
 |   - Markdown auto-formatter (formatter.rs) | syntect HTML export  |
 |   - Windows Explorer launcher with highlight selection            |
 +-------------------------------------------------------------------+
@@ -117,7 +127,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy linter
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust unit tests (23 tests)
+# 4. Rust unit tests (36 tests)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript type verification

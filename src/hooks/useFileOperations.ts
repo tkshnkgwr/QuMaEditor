@@ -17,7 +17,8 @@ interface FileOperationsProps {
   handleAddOpenedDoc: (doc: MarkdownDoc) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onBeforeSave?: () => void;
-  onSaveSuccess?: (filePath: string) => void;
+  onSaveSuccess?: (filePath: string, mtimeMs?: number) => void;
+  onCancelAutoSave?: () => void;
   setToast?: (toast: ToastMessage) => void;
 }
 
@@ -35,6 +36,7 @@ export function useFileOperations({
   fileInputRef,
   onBeforeSave,
   onSaveSuccess,
+  onCancelAutoSave,
   setToast,
 }: FileOperationsProps) {
   // Markdown ファイルとしてのエクスポート (ダウンロード)
@@ -54,6 +56,7 @@ export function useFileOperations({
   // 実ファイルへの保存（直上書き保存 または 名前を付けて保存）
   const handleSaveCurrentDoc = useCallback(
     async (options: { forceSaveAs?: boolean } = {}) => {
+      onCancelAutoSave?.();
       onBeforeSave?.();
       setSaveStatus('saving');
 
@@ -64,6 +67,9 @@ export function useFileOperations({
         const updatedDocPath = res.filePath;
         const fileNameWithExt = updatedDocPath.split(/[/\\]/).pop() || currentDoc.title;
         const newTitle = res.isSaveAs ? fileNameWithExt.replace(/\.[^/.]+$/, '') || currentDoc.title : currentDoc.title;
+
+        // 最新の mtime を即座に記録し、ステータス変更時の外部変更誤検知を確実に防止
+        onSaveSuccess?.(updatedDocPath, res.mtimeMs);
 
         setDocs((prevDocs) => {
           const updated = prevDocs.map((doc) =>
@@ -86,7 +92,6 @@ export function useFileOperations({
         setSaveStatus('saved_file');
         const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setLastSavedTime(timeStr);
-        onSaveSuccess?.(updatedDocPath);
 
         setToast?.({
           id: Date.now().toString(),
@@ -129,7 +134,7 @@ export function useFileOperations({
         });
       }
     },
-    [currentDoc, settings.defaultAuthor, setDocs, setSaveStatus, setLastSavedTime, handleExportMarkdown, onBeforeSave, onSaveSuccess, setToast]
+    [currentDoc, settings.defaultAuthor, setDocs, setSaveStatus, setLastSavedTime, handleExportMarkdown, onBeforeSave, onSaveSuccess, onCancelAutoSave, setToast]
   );
 
   // PC/ファイルサーバーのローカルファイルを開く

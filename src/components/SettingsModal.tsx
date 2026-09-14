@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Settings as SettingsIcon, RotateCcw, HardDrive, Trash2, Copy, Check, Folder } from 'lucide-react';
+import { X, Settings as SettingsIcon, RotateCcw, HardDrive, Trash2, Copy, Check, Folder, Archive, Download } from 'lucide-react';
 import { appDataDir, appLocalDataDir } from '@tauri-apps/api/path';
+import { save } from '@tauri-apps/plugin-dialog';
 import { EditorSettings } from '../types';
+import { exportNotesToZipNative } from '../utils/tauriNative';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -89,6 +91,48 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       onResetData();
     } catch (e) {
       console.error('Cache cleanup error:', e);
+    }
+  };
+
+  // 全ノート一括 ZIP エクスポート (Rust Deflate 高速圧縮)
+  const handleExportAllZip = async () => {
+    try {
+      const docsRaw = localStorage.getItem('markdown_editor_docs_v1');
+      if (!docsRaw) {
+        alert('エクスポート対象のドキュメントがありません。');
+        return;
+      }
+      const parsed = JSON.parse(docsRaw);
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        alert('エクスポート対象のドキュメントがありません。');
+        return;
+      }
+
+      const filePath = await save({
+        filters: [{ name: 'ZIP アーカイブ', extensions: ['zip'] }],
+        defaultPath: `QuMaEditor_backup_${new Date().toISOString().slice(0, 10)}.zip`,
+      });
+
+      if (!filePath) return;
+
+      const entries = parsed.map((doc: any, index: number) => {
+        const title = (doc.title || `untitled_${index + 1}`).replace(/[\\/:*?"<>|]/g, '_');
+        return {
+          file_path_in_zip: `${title}.md`,
+          content_text: doc.content || '',
+          content_bytes: null,
+        };
+      });
+
+      const bytes = await exportNotesToZipNative(filePath, entries);
+      if (bytes !== null) {
+        alert(`全 ${entries.length} 件のノートを ZIP アーカイブへ一括エクスポートしました！\n出力先: ${filePath}\nサイズ: ${(bytes / 1024).toFixed(1)} KB`);
+      } else {
+        alert('ZIP エクスポートに失敗しました。');
+      }
+    } catch (err) {
+      console.error('ZIP エクスポートエラー:', err);
+      alert(`ZIP エクスポート中にエラーが発生しました: ${err}`);
     }
   };
 
@@ -255,6 +299,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             />
           </div>
 
+          {/* タイプライタースクロール */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>タイプライタースクロール</div>
+              <div className="text-[10px] text-slate-400 font-sans">入力中のカーソル行を画面中央に自動維持</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={!!settings.typewriterScroll}
+              onChange={(e) => onUpdateSettings({ typewriterScroll: e.target.checked })}
+              className="w-4 h-4 rounded accent-cyan-500 cursor-pointer"
+            />
+          </div>
+
+          {/* プレビュー描画エンジン */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>プレビュー描画エンジン</div>
+              <div className="text-[10px] text-slate-400 font-sans">長大文書でも打鍵遅延ゼロのRustネイティブ</div>
+            </div>
+            <select
+              value={settings.previewEngine || 'rust'}
+              onChange={(e) => onUpdateSettings({ previewEngine: e.target.value as any })}
+              className={`border rounded px-2 py-1 outline-none text-xs ${
+                isDark
+                  ? 'bg-slate-950 border-slate-700 text-slate-200 focus:border-cyan-500'
+                  : 'bg-slate-50 border-slate-300 text-slate-800 focus:border-cyan-600 font-medium'
+              }`}
+            >
+              <option value="rust">⚡ Rust Native (超高速・推奨)</option>
+              <option value="react">ReactMarkdown (従来互換)</option>
+            </select>
+          </div>
+
           {/* 表示テーマ */}
           <div className="flex items-center justify-between">
             <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>表示テーマ</span>
@@ -352,15 +430,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
 
-            {/* キャッシュクリアボタン */}
-            <div className="pt-1">
+            {/* アクションボタン (ZIP一括エクスポート & キャッシュ整理) */}
+            <div className="pt-1 flex items-center gap-2">
+              <button
+                onClick={handleExportAllZip}
+                className={`flex-1 py-1.5 px-2 rounded border text-[11px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                  isDark
+                    ? 'bg-cyan-950/40 hover:bg-cyan-900/60 border-cyan-800/60 text-cyan-300'
+                    : 'bg-cyan-50 hover:bg-cyan-100 border-cyan-300 text-cyan-800 font-medium'
+                }`}
+                title="全ドキュメントを単一の ZIP ファイルとしてまとめてバックアップ"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                全ノート一括 ZIP 出力
+              </button>
+
               <button
                 onClick={() => {
                   if (confirm('肥大化した一時キャッシュ・未保存データを削除してメモリをクリアしますか？\n(実ファイルパス付きのドキュメントは保持されます)')) {
                     handleCleanCache();
                   }
                 }}
-                className={`py-1.5 px-2 rounded border text-[11px] transition-colors flex items-center justify-center gap-1.5 ${
+                className={`py-1.5 px-2 rounded border text-[11px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
                   isDark
                     ? 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-800/60 text-amber-300'
                     : 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-800 font-medium'
@@ -368,7 +459,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 title="一時データをクリアして内部領域を軽量再作成"
               >
                 <Trash2 className="w-3 h-3" />
-                一時キャッシュを整理
+                一時キャッシュ整理
               </button>
             </div>
 

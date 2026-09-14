@@ -84,6 +84,10 @@ export interface EditorSettings {
   headingTheme?: HeadingTheme;
   /** 既定の作成者名 (YAML Front Matter 自動付与用) */
   defaultAuthor?: string;
+  /** タイプライタースクロール（カーソル行を画面中央に維持）有効フラグ */
+  typewriterScroll?: boolean;
+  /** Markdown プレビュー描画エンジン ('rust' | 'react') */
+  previewEngine?: 'rust' | 'react';
 }
 
 export interface TextStats {

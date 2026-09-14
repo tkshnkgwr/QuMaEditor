@@ -2,6 +2,50 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.4.4] - 2026-09-14
+
+### ⚡ Massive Native Core Modernization: 13 Rust Features & Parallel Architecture (v1.4.4)
+
+- **Large Document Rope Buffer (`Rope / Editor`)**:
+  - Implemented B-tree Rope buffer management via `ropey` (`rope_buffer.rs`).
+  - Enables instant line-based insertions, deletions, and slicing for massive multi-megabyte / hundreds of thousands of lines Markdown files without buffer copy overhead.
+- **Zero-Copy Instant File Opening via Memory-Mapped Files (`mmap / File I/O`)**:
+  - Implemented zero-copy file reader via `memmap2` (`mmap_reader.rs`).
+  - Maps multi-gigabyte files directly to OS virtual memory for instant chunk loading without memory exhaustion.
+- **Atomic File Writing & Strict mtime Preservation (`File I/O / Atomic`)**:
+  - Implemented robust atomic file replacement via temporary write and atomic rename.
+  - Eliminates data corruption risks during power outages or unexpected crashes while guaranteeing exact `mtime` synchronization.
+- **Bi-Directional Disk File & LocalStorage Synchronization (`SyncManager`)**:
+  - Implemented `FileSyncManager` (`sync_manager.rs`) to centrally manage synchronization state between disk files and browser LocalStorage.
+  - Strictly distinguishes internal save locks from external edits, eradicating false-positive "external modification" alerts after saving.
+- **Rust Native File Watching (`FileWatcher / notify`)**:
+  - Introduced kernel-level filesystem event watching using `notify` (`file_watcher.rs`).
+  - Detects external edits, saves, renames, and deletions with near-zero latency and CPU overhead.
+- **Parallel Workspace File Tree Scanning (`Workspace / ignore`)**:
+  - Implemented multi-threaded directory scanner via `ignore` (`workspace_scanner.rs`).
+  - Builds directory trees instantly while respecting `.gitignore` rules and ignoring heavy directories (`node_modules`, `target`, `.git`).
+- **Parallel Multi-Threaded Workspace Full-Text Search (`Search / rayon`)**:
+  - Implemented workspace-wide keyword search command (`search_workspace_dir_native`) via `rayon` parallel iterators.
+  - Concurrently traverses and searches all Markdown files across directory hierarchies.
+- **Rust Native Detailed Text Diff Engine (`Diff / similar`)**:
+  - Implemented fine-grained text diff calculation (`compute_detailed_diff_native`) via `similar`.
+  - Computes exact line-by-line differences with Old/New line numbers and inline word-level modification ranges (`inline_changes`).
+- **Multi-Note Batch Export & Deflate ZIP Compression (`Export / zip`)**:
+  - Implemented fast Deflate archive exporter via `zip` (`export_zip.rs`).
+  - Bundles multiple notes and image assets into a single ZIP archive while preserving relative folder structures.
+- **Asynchronous Japanese Proofreading & Markdown Linting (`Proofreading / Lint`)**:
+  - Implemented background grammar and syntax linting engine (`proofreading.rs`).
+  - Automatically identifies duplicate particles (e.g. "のの", "はは"), spelling variants (e.g. "サーバ" vs "サーバー"), and unclosed code blocks (```` ``` ````).
+- **Mermaid Syntax Validation & SVG Diff Hash Caching (`Mermaid / Cache`)**:
+  - Pre-validates Mermaid diagrams in Rust (`mermaid_validator.rs`) prior to frontend SVG rendering.
+  - Avoids redundant re-rendering calculations by caching SVG results against SHA-256 hashes of diagram source code.
+- **Rust Native Markdown Preview & Syntax-Highlighted HTML Generation (`Markdown / syntect`)**:
+  - Integrated `pulldown-cmark` HTML parsing with `syntect` syntax-highlighted code block generation (`html_renderer.rs`).
+  - Offloads heavy JavaScript highlighting computations to the Rust native backend.
+- **Typewriter Scrolling Mode (`Editor / UI`)**:
+  - Added typewriter scrolling functionality that automatically centers the active editing cursor line vertically.
+  - Minimizes eye and neck strain during long-form typing sessions.
+
 ## [1.4.3] - 2026-08-26
 
 ### 🛠️ Save Dialog Cancel State Restoration, Documentation & Build Optimization (v1.4.3)

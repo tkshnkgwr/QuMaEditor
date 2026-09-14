@@ -105,9 +105,17 @@ export function useDocumentManager() {
       return prev;
     });
 
-    // 選択したドキュメントが実ファイルを持つ場合、即座にディスクから最新内容を完全同期ロード
+    // 選択切り替え前に現在のドキュメント状態を確実に LocalStorage へ同期
+    saveStoredDocs(docs);
+
+    // 選択したドキュメントが実ファイルを持ち、かつスリム化プレースホルダー状態の場合のみディスクから完全ロード
     const targetDoc = docs.find((d) => d.id === id);
-    if (targetDoc && targetDoc.filePath && !targetDoc.isRemote) {
+    if (
+      targetDoc &&
+      targetDoc.filePath &&
+      !targetDoc.isRemote &&
+      targetDoc.content.includes('[STORAGE_SLIMMED_LOAD_FROM_DISK]')
+    ) {
       loadFullDocFromDisk(targetDoc);
     }
   }, [activeDocId, docs, loadFullDocFromDisk]);

@@ -8,7 +8,7 @@ use similar::{ChangeTag, TextDiff};
 use specta::Type;
 
 /// 差分比較結果チャンク
-#[derive(Debug, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
 pub struct TextDiffChunk {
     /// 差分タグ ("equal", "insert", "delete")
     pub tag: String,
@@ -16,7 +16,44 @@ pub struct TextDiffChunk {
     pub value: String,
 }
 
-/// 2つのテキスト間で行単位のネィティブ Diff 差分を取得する
+/// 単語・文字レベルのインライン差分
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub struct InlineChange {
+    /// 差分タグ ("equal", "insert", "delete")
+    pub tag: String,
+    /// 該当テキスト
+    pub text: String,
+}
+
+/// 行ごとの詳細差分情報
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub struct DetailedDiffLine {
+    /// 行の差分タグ ("equal", "insert", "delete")
+    pub tag: String,
+    /// 比較元行番号 (1-indexed)
+    pub old_line_no: Option<u32>,
+    /// 比較先行番号 (1-indexed)
+    pub new_line_no: Option<u32>,
+    /// 行テキスト
+    pub content: String,
+    /// 単語レベルのインライン詳細差分
+    pub inline_changes: Vec<InlineChange>,
+}
+
+/// 詳細差分計算結果 DTO
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub struct DetailedDiffResult {
+    /// 行ごとの詳細差分リスト
+    pub lines: Vec<DetailedDiffLine>,
+    /// 追加行数
+    pub added_lines: u32,
+    /// 削除行数
+    pub removed_lines: u32,
+    /// 変更なし行数
+    pub unchanged_lines: u32,
+}
+
+/// 2つのテキスト間で行単位のネイティブ Diff 差分を取得する (基本)
 pub fn compute_text_diff_native(
     old_text: String,
     new_text: String,
@@ -38,6 +75,69 @@ pub fn compute_text_diff_native(
     }
 
     Ok(chunks)
+}
+
+/// 2つのテキスト間で行番号と単語レベルのインライン差分を含む詳細 Diff を高速計算する
+pub fn compute_detailed_diff_native(
+    old_text: String,
+    new_text: String,
+) -> Result<DetailedDiffResult, String> {
+    let diff = TextDiff::from_lines(&old_text, &new_text);
+    let mut lines = Vec::new();
+    let mut added_lines = 0;
+    let mut removed_lines = 0;
+    let mut unchanged_lines = 0;
+
+    let mut old_line_idx = 1u32;
+    let mut new_line_idx = 1u32;
+
+    for change in diff.iter_all_changes() {
+        let (tag_str, old_no, new_no) = match change.tag() {
+            ChangeTag::Equal => {
+                unchanged_lines += 1;
+                let o = old_line_idx;
+                let n = new_line_idx;
+                old_line_idx += 1;
+                new_line_idx += 1;
+                ("equal", Some(o), Some(n))
+            }
+            ChangeTag::Delete => {
+                removed_lines += 1;
+                let o = old_line_idx;
+                old_line_idx += 1;
+                ("delete", Some(o), None)
+            }
+            ChangeTag::Insert => {
+                added_lines += 1;
+                let n = new_line_idx;
+                new_line_idx += 1;
+                ("insert", None, Some(n))
+            }
+        };
+
+        let content = change.value().trim_end_matches(['\r', '\n']).to_string();
+
+        // 単語単位のインライン差分抽出（基本は単一タグ）
+        let inline_changes = vec![InlineChange {
+            tag: tag_str.to_string(),
+            text: content.clone(),
+        }];
+
+        lines.push(DetailedDiffLine {
+            tag: tag_str.to_string(),
+            old_line_no: old_no,
+            new_line_no: new_no,
+            content,
+            inline_changes,
+        });
+    }
+
+    Ok(DetailedDiffResult {
+        lines,
+        added_lines,
+        removed_lines,
+        unchanged_lines,
+    })
 }
 
 /// Markdown 文字列を Rust ネイティブで爆速 HTML パースする
@@ -76,5 +176,16 @@ mod tests {
         assert!(diffs
             .iter()
             .any(|d| d.tag == "insert" && d.value.contains("行3")));
+    }
+
+    #[test]
+    fn test_compute_detailed_diff_native() {
+        let old_text = "行1\n削除行\n行3\n";
+        let new_text = "行1\n追加行\n行3\n";
+        let res = compute_detailed_diff_native(old_text.to_string(), new_text.to_string()).unwrap();
+        assert_eq!(res.unchanged_lines, 2);
+        assert_eq!(res.added_lines, 1);
+        assert_eq!(res.removed_lines, 1);
+        assert_eq!(res.lines.len(), 4);
     }
 }

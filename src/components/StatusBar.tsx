@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TextStats, EditorSettings, SupportedEncoding, SaveStatus } from '../types';
-import { ZoomIn, ZoomOut, HardDrive, FileText, Clock, Check, Save, Globe, FolderOpen } from 'lucide-react';
-import { openFolderNative } from '../utils/tauriNative';
+import { ZoomIn, ZoomOut, HardDrive, FileText, Clock, Check, Save, Globe, FolderOpen, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { openFolderNative, ProofreadingIssue } from '../utils/tauriNative';
 
 interface StatusBarProps {
   stats: TextStats;
@@ -18,6 +18,7 @@ interface StatusBarProps {
   onChangeEncoding?: (encoding: SupportedEncoding) => void;
   onOpenStatsModal?: () => void;
   onSaveFile?: (options?: { forceSaveAs?: boolean }) => void;
+  proofreadingIssues?: ProofreadingIssue[];
   isDark?: boolean;
 }
 
@@ -36,6 +37,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onChangeEncoding,
   onOpenStatsModal,
   onSaveFile,
+  proofreadingIssues,
   isDark = true,
 }) => {
   const handleZoom = (delta: number) => {
@@ -61,17 +63,102 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     }
   };
 
+  const [showIssues, setShowIssues] = useState<boolean>(false);
   const formattedTime = formatUpdatedAt(updatedAt);
+  const issues = proofreadingIssues || [];
 
   return (
-    <footer className={`h-7 border-t px-3 text-[11px] select-none flex items-center justify-between shrink-0 z-20 font-sans transition-colors print:hidden ${
+    <footer className={`relative h-7 border-t px-3 text-[11px] select-none flex items-center justify-between shrink-0 z-20 font-sans transition-colors print:hidden ${
       isDark ? 'bg-slate-950 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
     }`}>
-      {/* 左側情報: 行/列およびドキュメント統計・更新日時 */}
+      {/* 校正指摘フライアウトパネル */}
+      {showIssues && (
+        <div
+          className={`absolute bottom-8 left-3 w-80 max-h-64 rounded-lg border shadow-xl flex flex-col overflow-hidden z-50 transition-colors ${
+            isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-300 text-slate-800'
+          }`}
+        >
+          <div className={`p-2 border-b flex items-center justify-between font-semibold text-xs ${
+            isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+              日本語校正 ＆ 記法 Lint 指摘 ({issues.length}件)
+            </span>
+            <button
+              onClick={() => setShowIssues(false)}
+              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2 space-y-1.5 text-[11px]">
+            {issues.length === 0 ? (
+              <div className="py-4 text-center text-emerald-400 flex flex-col items-center gap-1">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <span>校正上の問題は検出されませんでした</span>
+              </div>
+            ) : (
+              issues.map((iss, idx) => (
+                <div
+                  key={idx}
+                  className={`p-1.5 rounded border text-[10.5px] leading-tight space-y-0.5 ${
+                    iss.severity === 'error'
+                      ? isDark ? 'bg-rose-950/30 border-rose-800/40 text-rose-300' : 'bg-rose-50 border-rose-200 text-rose-800'
+                      : isDark ? 'bg-amber-950/30 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-mono text-[10px] opacity-75">
+                    <span>行 {iss.line_number}, 列 {iss.column}</span>
+                    <span className="uppercase text-[9px] px-1 rounded bg-black/20 font-bold">{iss.severity}</span>
+                  </div>
+                  <div>{iss.message}</div>
+                  {iss.suggestion && (
+                    <div className="text-[10px] text-cyan-400 font-mono">
+                      💡 推奨: {iss.suggestion}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 左側情報: 行/列、校正、ドキュメント統計・更新日時 */}
       <div className="flex items-center gap-3">
         <span className="font-mono">
           行 <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{cursorLine}</strong>, 列 <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{cursorCol}</strong>
         </span>
+
+        {/* 日本語校正インジケーター */}
+        <button
+          type="button"
+          onClick={() => setShowIssues((prev) => !prev)}
+          className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer border ${
+            issues.length === 0
+              ? isDark
+                ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/40 hover:bg-emerald-900/40'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+              : isDark
+                ? 'bg-amber-950/40 text-amber-300 border-amber-800/60 hover:bg-amber-900/60'
+                : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+          }`}
+          title="Rust バックグラウンド校正 & Lint の検出結果を表示"
+        >
+          {issues.length === 0 ? (
+            <>
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              <span>校正 OK</span>
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="w-3 h-3 text-amber-400 animate-pulse" />
+              <span>校正 {issues.length}件</span>
+            </>
+          )}
+        </button>
 
         <span className={`${isDark ? 'text-slate-700' : 'text-slate-300'} hidden sm:inline`}>|</span>
 

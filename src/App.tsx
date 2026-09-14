@@ -20,6 +20,8 @@ import {
   calculateTextStatsNative,
   toggleTaskNative,
   formatMarkdownNative,
+  lintMarkdownDocumentNative,
+  ProofreadingIssue,
 } from './utils/tauriNative';
 import { openNativeFileFromPath, loadFullNativeDoc, loadMoreChunkNativeDoc } from './utils/fileSystem';
 import { commands } from './bindings';
@@ -211,7 +213,15 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // 外部プロセス更新時のドキュメント自動再読み込み処理
+  // 自動保存タイマーの明示的キャンセルハンドラー
+  const handleCancelAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = null;
+    }
+  }, []);
+
+  // 外部プロセス更新時のドキュメント自動再読み込み処理 (filePath 完全一致で安全に対象特定)
   const handleReloadExternalFile = useCallback(
     async (filePath: string) => {
       try {
@@ -219,7 +229,7 @@ export default function App() {
         if (result && result.doc) {
           setDocs((prevDocs) => {
             const updated = prevDocs.map((doc) =>
-              doc.id === currentDoc.id
+              doc.filePath === filePath
                 ? {
                     ...doc,
                     title: result.doc.title,
@@ -254,7 +264,7 @@ export default function App() {
         console.error('外部ファイル再読み込み失敗:', err);
       }
     },
-    [currentDoc.id, setDocs]
+    [setDocs]
   );
 
   // 外部ファイル変更監視フック (useFileWatcher)
@@ -300,6 +310,7 @@ export default function App() {
     fileInputRef,
     onBeforeSave: markLocalSaving,
     onSaveSuccess: recordLocalSave,
+    onCancelAutoSave: handleCancelAutoSave,
     setToast,
   });
 
@@ -323,6 +334,25 @@ export default function App() {
   }, [currentDoc.content]);
 
   const stats: TextStats = nativeStats || calculateTextStats(currentDoc.content);
+
+  // 日本語校正 ＆ Markdown 構文 lint (Rust 非同期バックグラウンド高速解析 + 250ms ディバウンス)
+  const [proofreadingIssues, setProofreadingIssues] = useState<ProofreadingIssue[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      lintMarkdownDocumentNative(currentDoc.content).then((issues) => {
+        if (isMounted) {
+          setProofreadingIssues(issues);
+        }
+      });
+    }, 250);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [currentDoc.content]);
 
   // 前回のドキュメント情報（差分比較用）
   const previousDoc = docs.find((d) => d.id === previousDocId);
@@ -376,11 +406,12 @@ export default function App() {
       setSaveStatus('saving');
       let savedToFile = false;
       if (targetFilePath) {
+        markLocalSaving();
         const { saveNativeFile } = await import('./utils/fileSystem');
         const res = await saveNativeFile(docToSave, { forceSaveAs: false, defaultAuthor: settings.defaultAuthor });
         if (res.success && res.filePath) {
           savedToFile = true;
-          recordLocalSave(res.filePath);
+          recordLocalSave(res.filePath, res.mtimeMs);
         }
       }
 
@@ -1015,6 +1046,7 @@ export default function App() {
                 lineHeight={settings.lineHeight}
                 fontFamily={settings.fontFamily}
                 headingTheme={settings.headingTheme}
+                previewEngine={settings.previewEngine}
               />
             </div>
           </div>
@@ -1038,6 +1070,7 @@ export default function App() {
           onChangeEncoding={handleChangeEncoding}
           onOpenStatsModal={() => setIsStatsModalOpen(true)}
           onSaveFile={handleSaveCurrentDoc}
+          proofreadingIssues={proofreadingIssues}
           isDark={isDark}
         />
       )}

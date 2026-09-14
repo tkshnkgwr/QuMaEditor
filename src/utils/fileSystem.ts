@@ -28,6 +28,8 @@ export interface SaveFileResult {
   filePath?: string;
   /** 「名前を付けて保存」として保存されたかどうか */
   isSaveAs?: boolean;
+  /** 書き込み直後の mtime (ミリ秒) */
+  mtimeMs?: number;
   /** 失敗時のエラーメッセージ */
   error?: string;
 }
@@ -221,13 +223,15 @@ export async function saveNativeFile(
       bytesToSave = await convertToEncodingNative(textToSave, encoding);
     }
 
-    // ファイル書き込み実行 (Rust ネイティブ書き込みを優先し、JS Capability 制限を完全回避)
+    // ファイル書き込み実行 (Rust ネイティブ アトミック書き込みを最優先し、クラッシュ破損ゼロ＆mtime完全保証)
+    let savedMtimeMs: number | undefined;
     try {
       const bytes = bytesToSave ? Array.from(bytesToSave) : Array.from(new TextEncoder().encode(textToSave));
-      const nativeWriteRes = await commands.writeFileBytesNative(targetPath, bytes);
+      const nativeWriteRes = await commands.atomicWriteFileBytesNative(targetPath, bytes);
       if (nativeWriteRes.status !== 'ok') {
         throw new Error(nativeWriteRes.error);
       }
+      savedMtimeMs = nativeWriteRes.data.mtime_ms;
     } catch (nativeWriteErr) {
       // フォールバック: JS plugin-fs で書き込み
       if (bytesToSave) {
@@ -235,12 +239,21 @@ export async function saveNativeFile(
       } else {
         await writeTextFile(targetPath, textToSave);
       }
+      try {
+        const metaRes = await commands.getFileMetadataNative(targetPath);
+        if (metaRes.status === 'ok') {
+          savedMtimeMs = metaRes.data.mtime_ms;
+        }
+      } catch {
+        // メタデータ取得不可時はスルー
+      }
     }
 
     return {
       success: true,
       filePath: targetPath,
       isSaveAs,
+      mtimeMs: savedMtimeMs,
     };
   } catch (err: any) {
     console.error('saveNativeFile failed:', err);

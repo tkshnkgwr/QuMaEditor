@@ -1,4 +1,25 @@
 import { commands } from '../bindings';
+import type {
+  DetailedDiffResult,
+  DetailedDiffLine,
+  InlineChange,
+  ZipEntryInput,
+  ProofreadingIssue,
+  MermaidValidationResult,
+  MmapChunkResult,
+  WorkspaceTreeNode,
+} from '../bindings';
+
+export type {
+  DetailedDiffResult,
+  DetailedDiffLine,
+  InlineChange,
+  ZipEntryInput,
+  ProofreadingIssue,
+  MermaidValidationResult,
+  MmapChunkResult,
+  WorkspaceTreeNode,
+};
 
 /**
  * 文字コード自動判別結果のインターフェース
@@ -498,4 +519,118 @@ export async function renderMarkdownHtmlNative(
     return null;
   }
 }
+
+/**
+ * 2つのテキスト間で行番号と単語レベルのインライン差分を含む詳細 Diff を高速計算する
+ */
+export async function computeDetailedDiffNative(
+  oldText: string,
+  newText: string
+): Promise<DetailedDiffResult | null> {
+  try {
+    const res = await commands.computeDetailedDiffNative(oldText, newText);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native computeDetailedDiffNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * 複数ノートと画像アセットを一括で ZIP アーカイブに圧縮エクスポートする
+ */
+export async function exportNotesToZipNative(
+  outputZipPath: string,
+  entries: ZipEntryInput[]
+): Promise<number | null> {
+  try {
+    const res = await commands.exportNotesToZipNative(outputZipPath, entries);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native exportNotesToZipNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * Markdown ドキュメントの日本語校正および記法 lint をバックグラウンド高速実行する
+ */
+export async function lintMarkdownDocumentNative(
+  content: string
+): Promise<ProofreadingIssue[]> {
+  try {
+    const res = await commands.lintMarkdownDocumentNative(content);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return [];
+  } catch (err) {
+    console.warn('Native lintMarkdownDocumentNative failed:', err);
+    return [];
+  }
+}
+
+/**
+ * Mermaid コードブロックの構文事前検証と SHA-256 ハッシュ計算を行う
+ */
+export async function validateMermaidSyntaxNative(
+  code: string
+): Promise<MermaidValidationResult | null> {
+  try {
+    const res = await commands.validateMermaidSyntaxNative(code);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native validateMermaidSyntaxNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * メモリマップドファイル (mmap) を用いて超巨大ファイルの指定オフセット・長さをゼロコピーで高速読み出し
+ */
+export async function mmapReadFileChunkNative(
+  filePath: string,
+  offset: number,
+  length: number
+): Promise<MmapChunkResult | null> {
+  try {
+    const res = await commands.mmapReadFileChunkNative(filePath, offset, length);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native mmapReadFileChunkNative failed:', err);
+    return null;
+  }
+}
+
+/**
+ * ワークスペースディレクトリを .gitignore 準拠で並列高速走査し、ファイルツリーを構築する
+ */
+export async function scanWorkspaceTreeNative(
+  rootDir: string,
+  maxDepth = 20
+): Promise<WorkspaceTreeNode | null> {
+  try {
+    const res = await commands.scanWorkspaceTreeNative(rootDir, maxDepth);
+    if (res.status === 'ok') {
+      return res.data;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Native scanWorkspaceTreeNative failed:', err);
+    return null;
+  }
+}
+
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -15,6 +15,7 @@ import { parseYamlFrontMatter } from '../utils/yamlUtils';
 import { renderMarkdownHtmlNative } from '../utils/tauriNative';
 import { HeadingTheme } from '../types';
 import { getHeadingColors, createMarkdownComponents } from './MarkdownRenderers';
+import mermaid from 'mermaid';
 
 interface PreviewProps {
   content: string;
@@ -26,6 +27,7 @@ interface PreviewProps {
   lineHeight?: number;
   fontFamily?: string;
   headingTheme?: HeadingTheme;
+  previewEngine?: 'rust' | 'react';
 }
 
 export const Preview: React.FC<PreviewProps> = ({
@@ -38,12 +40,14 @@ export const Preview: React.FC<PreviewProps> = ({
   lineHeight,
   fontFamily,
   headingTheme = 'muted',
+  previewEngine = 'rust',
 }) => {
   const headingColors = getHeadingColors(headingTheme, isDark);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [nativeHtml, setNativeHtml] = useState<string | null>(null);
   const [isNativeUsed, setIsNativeUsed] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   const handleCopyCode = (codeText: string, id: string) => {
     navigator.clipboard.writeText(codeText);
@@ -91,14 +95,21 @@ export const Preview: React.FC<PreviewProps> = ({
 
   const hasFrontmatter = Object.keys(metadata).length > 0;
 
+  // プレビューレンダリング (Rust ネイティブ最優先)
   useEffect(() => {
     let isMounted = true;
-    // 超大容量テキストかつ Mermaid ダイアグラムを含まない場合のみ高速ネイティブ HTML レンダラーを適用
-    if (body.length > 100000 && !body.includes('```mermaid')) {
+    const shouldUseRust = previewEngine !== 'react';
+
+    if (shouldUseRust) {
       renderMarkdownHtmlNative(body, isDark).then((html) => {
         if (isMounted && html) {
           setNativeHtml(html);
           setIsNativeUsed(true);
+        }
+      }).catch(() => {
+        if (isMounted) {
+          setNativeHtml(null);
+          setIsNativeUsed(false);
         }
       });
     } else {
@@ -108,7 +119,28 @@ export const Preview: React.FC<PreviewProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [body, isDark]);
+  }, [body, isDark, previewEngine]);
+
+  // Rust ネイティブ HTML 内の Mermaid ブロックの動的レンダリング
+  useEffect(() => {
+    if (nativeHtml && previewContainerRef.current) {
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: isDark ? 'dark' : 'default',
+          securityLevel: 'loose',
+        });
+        const mermaidNodes = previewContainerRef.current.querySelectorAll('.mermaid');
+        if (mermaidNodes.length > 0) {
+          mermaid.run({ nodes: Array.from(mermaidNodes) as HTMLElement[] }).catch((err) => {
+            console.warn('[Mermaid Run Error in Native Preview]:', err);
+          });
+        }
+      } catch (e) {
+        console.warn('[Mermaid Init Error]:', e);
+      }
+    }
+  }, [nativeHtml, isDark]);
 
   const effectiveFontFamily = useMemo(() => {
     if (fontFamily === 'monospace') {
@@ -271,11 +303,20 @@ export const Preview: React.FC<PreviewProps> = ({
 
           {nativeHtml ? (
             <div
+              ref={previewContainerRef}
               className={`prose max-w-none text-sm leading-relaxed ${isDark ? 'prose-invert text-slate-200' : 'text-slate-900'}`}
               dangerouslySetInnerHTML={{ __html: nativeHtml }}
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 if (target && target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
+                  const taskIdxStr = target.getAttribute('data-task-index');
+                  if (taskIdxStr !== null) {
+                    const idx = parseInt(taskIdxStr, 10);
+                    if (!isNaN(idx) && onToggleTaskItem) {
+                      onToggleTaskItem(idx);
+                      return;
+                    }
+                  }
                   const container = e.currentTarget;
                   const checkboxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
                   const idx = checkboxes.indexOf(target as HTMLInputElement);

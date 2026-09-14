@@ -95,8 +95,12 @@ export const Editor: React.FC<EditorProps> = ({
     return result;
   }, [lineCount]);
 
-  // カーソル・スクロール位置の保存 (正常表示時のみ更新)
+  // カーソル復元処理中の誤保存ガードフラグ
+  const isRestoringCursorRef = React.useRef(false);
+
+  // カーソル・スクロール位置の保存 (正常表示時かつ復元中以外のみ更新)
   const saveCursorState = () => {
+    if (isRestoringCursorRef.current) return;
     const el = textareaRef.current;
     if (!el || !doc?.id) return;
     // 非表示 (display: none / offsetParent === null) 時の0リセットによる上書きを防ぐ
@@ -107,6 +111,21 @@ export const Editor: React.FC<EditorProps> = ({
         scrollTop: el.scrollTop,
       });
     }
+  };
+
+  // タイプライタースクロール処理 (カーソル行を画面中央に維持)
+  const applyTypewriterScroll = (line: number) => {
+    if (!settings.typewriterScroll || !textareaRef.current) return;
+    const el = textareaRef.current;
+    const numericLineHeight = typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625;
+    const computedLineHeight = (settings.fontSize || 15) * numericLineHeight;
+    const cursorTop = (line - 1) * computedLineHeight;
+    const targetScrollTop = Math.max(0, cursorTop - el.clientHeight / 2 + computedLineHeight / 2);
+
+    el.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth',
+    });
   };
 
   // カーソル位置の行・列番号を高速更新 (split を使わないゼロアロケーション走査)
@@ -124,6 +143,10 @@ export const Editor: React.FC<EditorProps> = ({
     }
     const col = pos - lastLineStart + 1;
     onCursorChange(line, col);
+
+    if (settings.typewriterScroll) {
+      applyTypewriterScroll(line);
+    }
   };
 
   // 行番号およびプレビューとのスクロール同期処理
@@ -146,30 +169,51 @@ export const Editor: React.FC<EditorProps> = ({
       return;
     }
 
-    const restoreCursor = () => {
+    isRestoringCursorRef.current = true;
+
+    const applyRestore = () => {
       const el = textareaRef.current;
-      if (!el || !doc?.id) return;
+      if (!el || !doc?.id) {
+        isRestoringCursorRef.current = false;
+        return;
+      }
 
       const history = docCursorHistoryMap.get(doc.id);
       if (history) {
         const safeStart = Math.min(history.start, el.value.length);
         const safeEnd = Math.min(history.end, el.value.length);
-        el.setSelectionRange(safeStart, safeEnd);
-        el.scrollTop = history.scrollTop;
+        try {
+          el.focus({ preventScroll: true });
+          el.setSelectionRange(safeStart, safeEnd);
+          el.scrollTop = history.scrollTop;
+        } catch {
+          // フォーカス例外防止
+        }
+      } else {
+        try {
+          el.focus({ preventScroll: true });
+        } catch {
+          // フォーカス例外防止
+        }
       }
-      el.focus();
+
+      isRestoringCursorRef.current = false;
       updateCursorPos();
     };
 
-    // 1. 即座に復元
-    restoreCursor();
+    // 2フレーム (requestAnimationFrame) 待機してブラウザの display: block レンダリング完了を確実に待つ
+    let animId2: number;
+    const animId1 = requestAnimationFrame(() => {
+      animId2 = requestAnimationFrame(() => {
+        applyRestore();
+      });
+    });
 
-    // 2. ブラウザのレイアウト再計算後（display: block 反映後）に確実に適用
-    const timer = setTimeout(() => {
-      restoreCursor();
-    }, 25);
-
-    return () => clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(animId1);
+      if (animId2) cancelAnimationFrame(animId2);
+      isRestoringCursorRef.current = false;
+    };
   }, [doc?.id, viewMode]);
 
   // キーバインドと特殊動作
@@ -452,6 +496,7 @@ export const Editor: React.FC<EditorProps> = ({
               style={{
                 fontFamily: effectiveFontFamily,
                 lineHeight: effectiveLineHeight,
+                paddingBottom: settings.typewriterScroll ? '50vh' : undefined,
               }}
             >
               {lineNumbersText}
@@ -486,6 +531,7 @@ export const Editor: React.FC<EditorProps> = ({
             lineHeight: effectiveLineHeight,
             fontFamily: effectiveFontFamily,
             tabSize: effectiveTabSize,
+            paddingBottom: settings.typewriterScroll ? '50vh' : undefined,
           }}
         />
       </div>

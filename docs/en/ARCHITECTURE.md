@@ -93,11 +93,19 @@ graph TD
     end
 
     subgraph DomainModules["Domain Modules"]
-        FileIO["file_io.rs<br/>(Native File I/O & Chunks)"]
+        FileIO["file_io.rs<br/>(Native File I/O & Atomic Write)"]
         Encoding["encoding.rs<br/>(Multi-Encoding Detection)"]
-        Search["search.rs<br/>(In-Memory Full-Text Search)"]
+        Search["search.rs<br/>(In-Memory & rayon Parallel Search)"]
         Diff["diff.rs<br/>(Text Diff & pulldown-cmark)"]
         TextProc["text_processing/<br/>(Stats, Headings, Formatter, HTML)"]
+        Rope["rope_buffer.rs<br/>(ropey B-Tree Buffer)"]
+        SyncMgr["sync_manager.rs<br/>(FileSyncManager)"]
+        Watcher["file_watcher.rs<br/>(notify OS Watcher)"]
+        ZipMod["export_zip.rs<br/>(zip Archive Deflate)"]
+        ProofMod["proofreading.rs<br/>(Grammar & Markdown Lint)"]
+        MermaidMod["mermaid_validator.rs<br/>(Syntax Check & Hash)"]
+        MmapMod["mmap_reader.rs<br/>(memmap2 Zero-Copy)"]
+        ScannerMod["workspace_scanner.rs<br/>(ignore Parallel Tree)"]
     end
 
     Lib --> Commands
@@ -107,15 +115,32 @@ graph TD
     Commands --> Search
     Commands --> Diff
     Commands --> TextProc
+    Commands --> Rope
+    Commands --> SyncMgr
+    Commands --> Watcher
+    Commands --> ZipMod
+    Commands --> ProofMod
+    Commands --> MermaidMod
+    Commands --> MmapMod
+    Commands --> ScannerMod
 ```
 
-| Module Name       | File Path                             | Responsibilities & Description                                                                                   |
-| :---------------- | :------------------------------------ | :--------------------------------------------------------------------------------------------------------------- |
-| `lib`             | [`src-tauri/src/lib.rs`](../../src-tauri/src/lib.rs) | Main entrypoint, plugin initialization, and Specta TypeScript binding generator handler                         |
-| `commands`        | [`src-tauri/src/commands.rs`](../../src-tauri/src/commands.rs) | IPC command handlers exposed to TypeScript and Specta macro mappings                                             |
-| `encoding`        | [`src-tauri/src/encoding.rs`](../../src-tauri/src/encoding.rs) | Multi-encoding auto-detection (UTF-8, Shift_JIS, EUC-JP) and conversion via `encoding_rs`                         |
-| `file_io`         | [`src-tauri/src/file_io.rs`](../../src-tauri/src/file_io.rs) | Native file reading, chunked streaming, direct byte writing, and Windows Explorer folder opening                 |
-| `search`          | [`src-tauri/src/search.rs`](../../src-tauri/src/search.rs) | Fast inverted index search engine using `LazyLock<Mutex<Vec<DocSearchInput>>>`                                   |
-| `diff`            | [`src-tauri/src/diff.rs`](../../src-tauri/src/diff.rs) | Line-by-line text diffing via `similar` crate and native Markdown HTML parsing via `pulldown-cmark`              |
-| `text_processing` | [`src-tauri/src/text_processing/`](../../src-tauri/src/text_processing/) | Text stats calculation, YAML front matter parser, heading outline, table alignment formatting, syntect HTML |
+| Module Name         | File Path                                                                 | Responsibilities & Description                                                                                   |
+| :------------------ | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------- |
+| `lib`               | [`src-tauri/src/lib.rs`](../../src-tauri/src/lib.rs)                      | Main entrypoint, plugin initialization, and Specta TypeScript binding generator handler                         |
+| `commands`          | [`src-tauri/src/commands.rs`](../../src-tauri/src/commands.rs)            | IPC command handlers exposed to TypeScript and Specta macro mappings                                             |
+| `encoding`          | [`src-tauri/src/encoding.rs`](../../src-tauri/src/encoding.rs)            | Multi-encoding auto-detection (UTF-8, Shift_JIS, EUC-JP) and conversion via `encoding_rs`                         |
+| `file_io`           | [`src-tauri/src/file_io.rs`](../../src-tauri/src/file_io.rs)              | Native file reading, atomic file persistence, chunked streaming, direct byte writing, and folder opening        |
+| `search`            | [`src-tauri/src/search.rs`](../../src-tauri/src/search.rs)                | Inverted index search engine and `rayon` multithreaded directory full-text search                                |
+| `diff`              | [`src-tauri/src/diff.rs`](../../src-tauri/src/diff.rs)                    | Line-by-line and token-level diffing via `similar` crate and native Markdown HTML parsing via `pulldown-cmark`    |
+| `text_processing`   | [`src-tauri/src/text_processing/`](../../src-tauri/src/text_processing/) | Text stats calculation, YAML front matter parser, heading outline, table alignment formatting, syntect HTML     |
+| `rope_buffer`       | [`src-tauri/src/rope_buffer.rs`](../../src-tauri/src/rope_buffer.rs)      | `ropey` crate B-tree Rope buffer management ($O(\log N)$ edits, slicing, and chunking for 100MB+ files)           |
+| `sync_manager`      | [`src-tauri/src/sync_manager.rs`](../../src-tauri/src/sync_manager.rs)    | `FileSyncManager` engine for disk mtime synchronization, self-save locks, and race condition prevention          |
+| `file_watcher`      | [`src-tauri/src/file_watcher.rs`](../../src-tauri/src/file_watcher.rs)    | OS kernel-connected external file modification monitoring via the `notify` crate                                 |
+| `export_zip`        | [`src-tauri/src/export_zip.rs`](../../src-tauri/src/export_zip.rs)        | Fast in-memory Deflate compression and batch ZIP export for documents and assets via `zip` crate                 |
+| `proofreading`      | [`src-tauri/src/proofreading.rs`](../../src-tauri/src/proofreading.rs)    | Non-blocking asynchronous background analysis of duplicate particles, variant spellings, brackets, and lint rules |
+| `mermaid_validator` | [`src-tauri/src/mermaid_validator.rs`](../../src-tauri/src/mermaid_validator.rs) | Mermaid syntax pre-validation, diagram type detection, and SHA-256 hash calculation for SVG diff caching        |
+| `mmap_reader`       | [`src-tauri/src/mmap_reader.rs`](../../src-tauri/src/mmap_reader.rs)      | OS virtual memory page cache integration via `memmap2` for zero-copy instant opening of massive log files       |
+| `workspace_scanner` | [`src-tauri/src/workspace_scanner.rs`](../../src-tauri/src/workspace_scanner.rs) | Multithreaded parallel directory tree traversal respecting `.gitignore` via `ignore` crate                       |
+
 
