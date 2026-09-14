@@ -5,7 +5,7 @@
 ## 1. Test Overview
 
 - **Date**: 2026-09-14
-- **Target Version**: Next Release (v1.4.4 / Current Trunk)
+- **Target Version**: v1.4.5 (Release)
 - **Environment**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
 ---
@@ -17,12 +17,12 @@
 | 1  | **Rust Code Formatting**      | `cargo fmt --manifest-path src-tauri/Cargo.toml --check`                         | ✅ PASS (0 diff)   |
 | 2  | **Rust Compilation & Types**  | `cargo check --manifest-path src-tauri/Cargo.toml`                               | ✅ PASS (0 errors) |
 | 3  | **Rust Clippy Strict Linter** | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings` | ✅ PASS (0 warns)  |
-| 4  | **Rust Unit Tests**           | `cargo test --manifest-path src-tauri/Cargo.toml`                                | ✅ PASS (36/36 ok) |
+| 4  | **Rust Unit Tests**           | `cargo test --manifest-path src-tauri/Cargo.toml`                                | ✅ PASS (39/39 ok) |
 | 5  | **TypeScript Type Check**     | `npm run lint`                                                                   | ✅ PASS (0 errors) |
 
 ---
 
-## 3. Rust Unit Test Details (All 36 Tests Passed)
+## 3. Rust Unit Test Details (All 39 Tests Passed)
 
 | ID    | Test Function Name                                                     | Module                        | Verification Summary                                                   | Result   |
 | :---- | :--------------------------------------------------------------------- | :---------------------------- | :--------------------------------------------------------------------- | :------- |
@@ -62,3 +62,7 @@
 | UT-34 | `test_validate_unbalanced_brackets`                                    | `mermaid_validator`           | Unbalanced bracket detection in Mermaid syntax                         | **Pass** |
 | UT-35 | `test_mmap_read_file_chunk_native`                                     | `mmap_reader`                 | Memory-mapped zero-copy file chunk reading via `memmap2`               | **Pass** |
 | UT-36 | `test_scan_workspace_tree_native`                                      | `workspace_scanner`           | Parallel workspace file tree scanning respecting `.gitignore`          | **Pass** |
+| UT-37 | `test_obsidian_soft_break_to_hard_break`                               | `text_processing/html`        | Obsidian single Enter line break (<br /> generation) test              | **Pass** |
+| UT-38 | `test_obsidian_highlight_and_wikilink`                                 | `text_processing/html`        | Highlight ==text== and wikilink [[note]] conversion test               | **Pass** |
+| UT-39 | `test_obsidian_callout_rendering`                                      | `text_processing/html`        | Obsidian callouts ([!NOTE] etc.) card HTML conversion test             | **Pass** |
+

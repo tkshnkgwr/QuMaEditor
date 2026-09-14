@@ -2,7 +2,7 @@
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
-[![Version](https://img.shields.io/badge/Version-v1.4.4-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.4.5-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v19-61dafb?logo=react)](https://react.dev/)
@@ -127,7 +127,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy linter
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust unit tests (36 tests)
+# 4. Rust unit tests (39 tests)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript type verification

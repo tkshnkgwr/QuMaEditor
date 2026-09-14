@@ -2,6 +2,22 @@
 
 QuMaEditor の主要な変更点およびリリース履歴です。
 
+## [1.4.5] - 2026-09-14
+
+### 💎 Markdown プレビューの Obsidian 完全互換化 (v1.4.5)
+
+- **Enter 1回での自動改行対応 (`Preview / LineBreak`)**:
+  - 行末スペース2個不要で Enter 1回（単一改行）で `<br />` 改行を生成する Obsidian 互換の改行仕様を実装。連続空行による段落分けは維持。
+- **Obsidian コールアウト記法の完全カードレンダリング (`Preview / Callout`)**:
+  - `> [!NOTE] タイトル`, `> [!WARNING]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!CAUTION]`, `> [!TODO]`, `> [!SUCCESS]`, `> [!BUG]` 等の主要コールアウト記法に対応。
+  - 左境界線アクセントカラー（4px）、タイトル・アイコン・角丸背景カードのスタイルを適用し、ライト／ダーク／印刷（PDF 出力）の全テーマで最適化。
+- **蛍光ペンハイライト記法 (`Preview / Highlight`)**:
+  - `==重要なテキスト==` を `<mark class="obsidian-highlight">` に自動変換し、Obsidian 準拠の半透明イエロー背景＆丸角パディングを適用。
+- **内部 Wiki リンク記法 (`Preview / Wikilink`)**:
+  - `[[ノート名]]` および `[[ノート名|別名エイリアス]]` を `<a class="internal-link">` に自動変換し、Obsidian 固有のパープルカラー・下線スタイルを適用。
+- **箇条書き・リスト表示の完全復元 (`Preview / Typography`)**:
+  - Tailwind CSS v4 の Preflight リセットで消えていた箇条書きマーカー（`disc`, `circle`, `square`, `decimal` 等）とインデント幅を完全復元。
+
 ## [1.4.4] - 2026-09-14
 
 ### ⚡ 大規模編集基盤刷新・Rust ネイティブ13大機能統合 ＆ 高速並列化 (v1.4.4)

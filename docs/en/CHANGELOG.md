@@ -2,6 +2,22 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.4.5] - 2026-09-14
+
+### 💎 Markdown Preview Obsidian Full Compatibility (v1.4.5)
+
+- **Single Enter Line Break Support (`Preview / LineBreak`)**:
+  - Implemented Obsidian-compatible line break semantics where a single Enter creates `<br />` breaks without requiring two trailing spaces. Multi-line paragraph breaks remain intact.
+- **Obsidian Callouts Card Rendering (`Preview / Callout`)**:
+  - Full card rendering for Obsidian callouts (`> [!NOTE]`, `> [!WARNING]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!CAUTION]`, `> [!TODO]`, `> [!SUCCESS]`, `> [!BUG]`, etc.).
+  - Includes colored left accent borders, custom icons, title text, and rounded background cards for dark, light, and print modes.
+- **Highlight Syntax (`Preview / Highlight`)**:
+  - Automatically transforms `==text==` into `<mark class="obsidian-highlight">` with translucent yellow background and rounded padding.
+- **Internal Wikilink Syntax (`Preview / Wikilink`)**:
+  - Transforms `[[Note]]` and `[[Note|Alias]]` into `<a class="internal-link">` with Obsidian-style purple underline.
+- **List & Typography Restoration (`Preview / Typography`)**:
+  - Completely restored nested list markers (`disc`, `circle`, `square`, `decimal`, etc.) and padding previously reset by Tailwind CSS v4 Preflight.
+
 ## [1.4.4] - 2026-09-14
 
 ### ⚡ Massive Native Core Modernization: 13 Rust Features & Parallel Architecture (v1.4.4)

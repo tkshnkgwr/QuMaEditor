@@ -5,7 +5,7 @@
 ## 1. テスト実施概要
 
 - **実施日**: 2026-09-14
-- **対象バージョン**: 次期リリース版 (v1.4.4 / Current Trunk)
+- **対象バージョン**: v1.4.5 (Release)
 - **実施環境**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
 ---
@@ -17,12 +17,12 @@
 | 1  | **Rust コード整形検証**     | `cargo fmt --manifest-path src-tauri/Cargo.toml --check`                         | ✅ PASS (0 diff)   |
 | 2  | **Rust コンパイル・型検証** | `cargo check --manifest-path src-tauri/Cargo.toml`                               | ✅ PASS (0 errors) |
 | 3  | **Rust Clippy 品質検証**    | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings` | ✅ PASS (0 warns)  |
-| 4  | **Rust ユニットテスト検証** | `cargo test --manifest-path src-tauri/Cargo.toml`                                | ✅ PASS (36/36 ok) |
+| 4  | **Rust ユニットテスト検証** | `cargo test --manifest-path src-tauri/Cargo.toml`                                | ✅ PASS (39/39 ok) |
 | 5  | **TypeScript 型検証**       | `npm run lint`                                                                   | ✅ PASS (0 errors) |
 
 ---
 
-## 3. Rust ユニットテスト詳細結果 (全36件 PASS)
+## 3. Rust ユニットテスト詳細結果 (全39件 PASS)
 
 | ID    | テスト関数名                                                           | モジュール                  | 検証内容                                                                   | 結果     |
 | :---- | :--------------------------------------------------------------------- | :-------------------------- | :------------------------------------------------------------------------- | :------- |
@@ -62,4 +62,8 @@
 | UT-34 | `test_validate_unbalanced_brackets`                                    | `mermaid_validator`         | 未閉じ括弧を含む不正 Mermaid 構文の事前検出                                | **Pass** |
 | UT-35 | `test_mmap_read_file_chunk_native`                                     | `mmap_reader`               | `memmap2` によるメモリマップドファイル部分チャンクゼロコピー読み出し       | **Pass** |
 | UT-36 | `test_scan_workspace_tree_native`                                      | `workspace_scanner`         | `ignore` による .gitignore 準拠・隠しフォルダ除外並列ファイルツリー構築    | **Pass** |
+| UT-37 | `test_obsidian_soft_break_to_hard_break`                               | `text_processing/html`      | Obsidian 互換 Enter 1回改行（`<br />` 生成）検証                           | **Pass** |
+| UT-38 | `test_obsidian_highlight_and_wikilink`                                 | `text_processing/html`      | 蛍光ペン `==text==` 及び Wiki リンク `[[note]]` 変換検証                   | **Pass** |
+| UT-39 | `test_obsidian_callout_rendering`                                      | `text_processing/html`      | Obsidian コールアウト記法 (`[!NOTE]`等) のカード HTML 変換検証             | **Pass** |
+
 

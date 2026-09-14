@@ -30,6 +30,129 @@ fn escape_html_attr(text: &str) -> String {
         .replace('\'', "&#39;")
 }
 
+fn escape_html(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
+#[derive(Clone, Debug)]
+struct CalloutInfo {
+    kind: String,
+    title: String,
+    icon: &'static str,
+}
+
+fn parse_callout_header(text: &str) -> Option<CalloutInfo> {
+    let trimmed = text.trim();
+    if !trimmed.starts_with("[!") {
+        return None;
+    }
+
+    let close_bracket = trimmed.find(']')?;
+    let kind_str = trimmed[2..close_bracket].trim().to_lowercase();
+    let rest = trimmed[close_bracket + 1..].trim();
+
+    let (icon, default_title, normalized_kind) = match kind_str.as_str() {
+        "note" => ("ℹ️", "Note", "note"),
+        "tip" | "hint" => ("💡", "Tip", "tip"),
+        "important" => ("⚡", "Important", "important"),
+        "warning" | "warn" => ("⚠️", "Warning", "warning"),
+        "caution" | "attention" => ("🛑", "Caution", "caution"),
+        "info" => ("ℹ️", "Info", "info"),
+        "todo" => ("📋", "Todo", "todo"),
+        "success" | "check" | "done" => ("✅", "Success", "success"),
+        "question" | "help" | "faq" => ("❓", "Question", "question"),
+        "failure" | "fail" | "missing" => ("❌", "Failure", "failure"),
+        "danger" | "error" => ("🔴", "Danger", "danger"),
+        "bug" => ("🐛", "Bug", "bug"),
+        "example" => ("📝", "Example", "example"),
+        "quote" | "cite" => ("💬", "Quote", "quote"),
+        _ => return None,
+    };
+
+    let title = if rest.is_empty() {
+        default_title.to_string()
+    } else {
+        rest.to_string()
+    };
+
+    Some(CalloutInfo {
+        kind: normalized_kind.to_string(),
+        title,
+        icon,
+    })
+}
+
+fn transform_inline_obsidian(text: &str) -> Option<String> {
+    let has_highlight = text.contains("==");
+    let has_wikilink = text.contains("[[");
+
+    if !has_highlight && !has_wikilink {
+        return None;
+    }
+
+    let chars: Vec<char> = text.chars().collect();
+    let len = chars.len();
+    let mut result = String::with_capacity(text.len() + 32);
+    let mut i = 0;
+    let mut modified = false;
+
+    while i < len {
+        // ==highlight==
+        if i + 3 < len && chars[i] == '=' && chars[i + 1] == '=' {
+            if let Some(close_pos) =
+                (i + 2..len - 1).find(|&p| chars[p] == '=' && chars[p + 1] == '=')
+            {
+                let inner: String = chars[i + 2..close_pos].iter().collect();
+                if !inner.trim().is_empty() {
+                    result.push_str("<mark class=\"obsidian-highlight\">");
+                    result.push_str(&escape_html(&inner));
+                    result.push_str("</mark>");
+                    i = close_pos + 2;
+                    modified = true;
+                    continue;
+                }
+            }
+        }
+
+        // [[wikilink]] or [[wikilink|alias]]
+        if i + 3 < len && chars[i] == '[' && chars[i + 1] == '[' {
+            if let Some(close_pos) =
+                (i + 2..len - 1).find(|&p| chars[p] == ']' && chars[p + 1] == ']')
+            {
+                let inner: String = chars[i + 2..close_pos].iter().collect();
+                if !inner.trim().is_empty() {
+                    let parts: Vec<&str> = inner.splitn(2, '|').collect();
+                    let target = parts[0].trim();
+                    let label = if parts.len() > 1 {
+                        parts[1].trim()
+                    } else {
+                        target
+                    };
+                    result.push_str(&format!(
+                        r#"<a class="internal-link" data-href="{}" href="javascript:void(0)">{}</a>"#,
+                        escape_html_attr(target),
+                        escape_html(label)
+                    ));
+                    i = close_pos + 2;
+                    modified = true;
+                    continue;
+                }
+            }
+        }
+
+        result.push(chars[i]);
+        i += 1;
+    }
+
+    if modified {
+        Some(result)
+    } else {
+        None
+    }
+}
+
 /// 完全なスタンドアロン HTML ドキュメントを Rust ネイティブで高速エクスポートする
 ///
 /// # Arguments
@@ -165,13 +288,128 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
         .ok_or_else(|| "No theme found".to_string())?;
 
     let parser = Parser::new_ext(&markdown_text, options);
-    let mut events = Vec::new();
+
+    // Step 1: 連続する Text の結合 ＆ SoftBreak -> HardBreak (Enter 1回で改行 = Obsidian デフォルト動作)
+    let mut raw_events = Vec::new();
+    let mut text_acc: Option<String> = None;
+
+    for event in parser {
+        match event {
+            Event::Text(t) => {
+                if let Some(ref mut acc) = text_acc {
+                    acc.push_str(&t);
+                } else {
+                    text_acc = Some(t.to_string());
+                }
+            }
+            _ => {
+                if let Some(acc) = text_acc.take() {
+                    raw_events.push(Event::Text(acc.into()));
+                }
+                match event {
+                    Event::SoftBreak => {
+                        raw_events.push(Event::HardBreak);
+                    }
+                    _ => {
+                        raw_events.push(event);
+                    }
+                }
+            }
+        }
+    }
+    if let Some(acc) = text_acc.take() {
+        raw_events.push(Event::Text(acc.into()));
+    }
+
+    // Step 2: コールアウト (> [!NOTE]) のインターセプト
+    let mut processed_events = Vec::new();
+    let mut i = 0;
+    while i < raw_events.len() {
+        match &raw_events[i] {
+            Event::Start(Tag::BlockQuote(kind)) => {
+                let start_kind = *kind;
+                let mut depth = 1;
+                let mut j = i + 1;
+                while j < raw_events.len() && depth > 0 {
+                    match &raw_events[j] {
+                        Event::Start(Tag::BlockQuote(_)) => depth += 1,
+                        Event::End(TagEnd::BlockQuote(_)) => depth -= 1,
+                        _ => {}
+                    }
+                    j += 1;
+                }
+
+                let bq_slice = &raw_events[i + 1..j - 1];
+                let mut callout_found = None;
+                let mut first_text_idx = None;
+
+                for (idx, ev) in bq_slice.iter().enumerate() {
+                    match ev {
+                        Event::Start(Tag::Paragraph) => continue,
+                        Event::Text(t) => {
+                            if let Some(info) = parse_callout_header(t) {
+                                callout_found = Some(info);
+                                first_text_idx = Some(idx);
+                            }
+                            break;
+                        }
+                        _ => break,
+                    }
+                }
+
+                if let Some(info) = callout_found {
+                    let text_idx = first_text_idx.unwrap();
+                    let callout_start_html = format!(
+                        r#"<div class="callout callout-{}" data-callout="{}"><div class="callout-title"><span class="callout-icon">{}</span><span class="callout-title-text">{}</span></div><div class="callout-content">"#,
+                        info.kind,
+                        info.kind,
+                        info.icon,
+                        escape_html(&info.title)
+                    );
+                    processed_events.push(Event::Html(callout_start_html.into()));
+
+                    // タイトル行となった最初の Text および直後の改行をスキップ
+                    let mut skip_next_break = false;
+                    for (idx, ev) in bq_slice.iter().enumerate() {
+                        if idx == text_idx {
+                            skip_next_break = true;
+                            continue;
+                        }
+                        if skip_next_break {
+                            skip_next_break = false;
+                            if matches!(ev, Event::HardBreak | Event::SoftBreak) {
+                                continue;
+                            }
+                        }
+                        processed_events.push(ev.clone());
+                    }
+
+                    processed_events.push(Event::Html("</div></div>".into()));
+                } else {
+                    processed_events.push(Event::Start(Tag::BlockQuote(start_kind)));
+                    for ev in bq_slice {
+                        processed_events.push(ev.clone());
+                    }
+                    processed_events.push(Event::End(TagEnd::BlockQuote(start_kind)));
+                }
+
+                i = j;
+            }
+            _ => {
+                processed_events.push(raw_events[i].clone());
+                i += 1;
+            }
+        }
+    }
+
+    // Step 3: コードブロック・インライン記法・タスクリスト
+    let mut final_events = Vec::new();
     let mut in_code_block = false;
     let mut current_lang = String::new();
     let mut code_buffer = String::new();
     let mut task_index = 0;
 
-    for event in parser {
+    for event in processed_events {
         match event {
             Event::TaskListMarker(checked) => {
                 let checked_attr = if checked { "checked " } else { "" };
@@ -180,7 +418,7 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
                     task_index, checked_attr
                 );
                 task_index += 1;
-                events.push(Event::Html(task_html.into()));
+                final_events.push(Event::Html(task_html.into()));
             }
             Event::Start(Tag::CodeBlock(kind)) => {
                 in_code_block = true;
@@ -204,7 +442,7 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
                         r#"<div class="mermaid-container my-4 p-4 rounded-xl border select-none overflow-x-auto text-center" data-mermaid="{}"><pre class="mermaid font-mono text-xs opacity-70">{}</pre></div>"#,
                         escaped_mermaid, escaped_mermaid
                     );
-                    events.push(Event::Html(mermaid_html.into()));
+                    final_events.push(Event::Html(mermaid_html.into()));
                     continue;
                 }
 
@@ -246,18 +484,25 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
                     highlighted_code
                 );
 
-                events.push(Event::Html(pre_html.into()));
+                final_events.push(Event::Html(pre_html.into()));
+            }
+            Event::Text(text) if !in_code_block => {
+                if let Some(transformed) = transform_inline_obsidian(&text) {
+                    final_events.push(Event::Html(transformed.into()));
+                } else {
+                    final_events.push(Event::Text(text));
+                }
             }
             _ => {
                 if !in_code_block {
-                    events.push(event);
+                    final_events.push(event);
                 }
             }
         }
     }
 
     let mut html_output = String::new();
-    html::push_html(&mut html_output, events.into_iter());
+    html::push_html(&mut html_output, final_events.into_iter());
 
     Ok(html_output)
 }
@@ -286,5 +531,43 @@ mod tests {
         assert!(html.contains("type=\"checkbox\""));
         assert!(html.contains("data-task-index=\"0\""));
         assert!(html.contains("data-task-index=\"1\""));
+    }
+
+    #[test]
+    fn test_obsidian_soft_break_to_hard_break() {
+        let md = "行1\n行2";
+        let html = render_markdown_html_native(md.to_string(), true).unwrap();
+        assert!(
+            html.contains("<br />") || html.contains("<br>"),
+            "Should convert single Enter to br"
+        );
+    }
+
+    #[test]
+    fn test_obsidian_callout_rendering() {
+        let md = "> [!NOTE] メモタイトル\n> 本文";
+        let parser = Parser::new_ext(md, Options::all());
+        for ev in parser {
+            println!("Ev: {:?}", ev);
+        }
+        let html = render_markdown_html_native(md.to_string(), true).unwrap();
+        println!("Callout HTML: {}", html);
+        assert!(html.contains("callout callout-note"));
+        assert!(html.contains("メモタイトル"));
+        assert!(html.contains("本文"));
+    }
+
+    #[test]
+    fn test_obsidian_highlight_and_wikilink() {
+        let md = "これは ==重要ハイライト== と [[マイノート|別名リンク]] です。";
+        let parser = Parser::new_ext(md, Options::all());
+        for ev in parser {
+            println!("WikiEv: {:?}", ev);
+        }
+        let html = render_markdown_html_native(md.to_string(), true).unwrap();
+        println!("Wikilink HTML: {}", html);
+        assert!(html.contains("<mark class=\"obsidian-highlight\">重要ハイライト</mark>"));
+        assert!(html.contains("<a class=\"internal-link\" data-href=\"マイノート\""));
+        assert!(html.contains("別名リンク</a>"));
     }
 }

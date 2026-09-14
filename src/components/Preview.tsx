@@ -304,7 +304,7 @@ export const Preview: React.FC<PreviewProps> = ({
           {nativeHtml ? (
             <div
               ref={previewContainerRef}
-              className={`prose max-w-none text-sm leading-relaxed ${isDark ? 'prose-invert text-slate-200' : 'text-slate-900'}`}
+              className={`prose max-w-none text-sm leading-relaxed preview-native-html ${isDark ? 'prose-invert text-slate-200' : 'text-slate-900'}`}
               dangerouslySetInnerHTML={{ __html: nativeHtml }}
               onClick={(e) => {
                 const target = e.target as HTMLElement;

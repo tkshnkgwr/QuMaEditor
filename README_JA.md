@@ -2,7 +2,7 @@
 
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue)](https://v2.tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
-[![Version](https://img.shields.io/badge/Version-v1.4.4-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.4.5-green)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 QuMaEditor (Quick & Minimal Markdown Editor) は、**Tauri v2**, **Rust**, **React 19**, **TypeScript** で構築された超軽量・超高速なデスクトップ Markdown エディタです。「Performance First」の設計思想のもと、メモリ消費量 (RAM ~35MB) を極限まで抑えながら、快適な執筆環境を提供します。
@@ -123,7 +123,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Clippy 厳格品質検証
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust ユニットテスト (全36件)
+# 4. Rust ユニットテスト (全39件)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript 型検証

@@ -69,6 +69,517 @@ body.light ::-webkit-scrollbar-thumb:hover {
 }
 
 /* -----------------------------------------------------------------------------
+ * Markdown プレビュー通常表示スタイル (.preview-markdown)
+ * Rust ネイティブ HTML / ReactMarkdown 共通スタイリング
+ * ----------------------------------------------------------------------------- */
+
+/* リスト（箇条書き & 番号付きリスト）の表示復元 */
+.preview-markdown ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.preview-markdown ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.preview-markdown li {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  line-height: 1.6 !important;
+}
+
+/* 多階層ネストリストのスタイル */
+.preview-markdown ul ul {
+  list-style-type: circle !important;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  padding-left: 1.25rem !important;
+}
+
+.preview-markdown ul ul ul {
+  list-style-type: square !important;
+}
+
+.preview-markdown ol ol {
+  list-style-type: lower-alpha !important;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  padding-left: 1.25rem !important;
+}
+
+.preview-markdown ol ol ol {
+  list-style-type: lower-roman !important;
+}
+
+.preview-markdown ul ol {
+  list-style-type: decimal !important;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  padding-left: 1.25rem !important;
+}
+
+.preview-markdown ol ul {
+  list-style-type: disc !important;
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  padding-left: 1.25rem !important;
+}
+
+/* リスト項目内の p タグが不必要に大きな余白を作らないように調整 */
+.preview-markdown li > p {
+  display: inline !important;
+  margin: 0 !important;
+}
+
+/* GFM タスクリストのスタイル (チェックボックス付きリスト) */
+.preview-markdown ul.contains-task-list {
+  list-style-type: none !important;
+  padding-left: 0.5rem !important;
+}
+
+.preview-markdown li.task-list-item,
+.preview-markdown li:has(input.task-list-item-checkbox),
+.preview-markdown li:has(input[type="checkbox"]) {
+  list-style-type: none !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.5rem !important;
+}
+
+.preview-markdown input.task-list-item-checkbox,
+.preview-markdown input[type="checkbox"] {
+  margin-right: 0.25rem !important;
+  margin-top: 0.3rem !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+/* 見出し (h1〜h6) */
+.preview-markdown h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  padding-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid currentColor;
+  opacity: 0.95;
+}
+
+.preview-markdown h1:first-child {
+  margin-top: 0;
+}
+
+.preview-markdown h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  padding-bottom: 0.35rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.preview-markdown h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.preview-markdown h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.preview-markdown h5 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.preview-markdown h6 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.65rem;
+  margin-bottom: 0.25rem;
+  opacity: 0.8;
+}
+
+/* 段落 */
+.preview-markdown p {
+  margin-top: 0;
+  margin-bottom: 0.85rem;
+  line-height: 1.7;
+}
+
+/* 引用 (Blockquote) */
+.preview-markdown blockquote {
+  border-left: 4px solid #0284c7;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 0.375rem 0.375rem 0;
+  font-style: italic;
+}
+
+.dark .preview-markdown blockquote {
+  background-color: rgba(15, 23, 42, 0.6);
+  border-left-color: #38bdf8;
+  color: #cbd5e1;
+}
+
+.light .preview-markdown blockquote {
+  background-color: rgba(240, 249, 255, 0.8);
+  border-left-color: #0284c7;
+  color: #334155;
+}
+
+/* テーブル (Table) */
+.preview-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.preview-markdown th,
+.preview-markdown td {
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.dark .preview-markdown table {
+  border: 1px solid #334155;
+}
+
+.dark .preview-markdown th {
+  background-color: #0f172a;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.dark .preview-markdown td {
+  border-color: #1e293b;
+}
+
+.dark .preview-markdown tr:hover {
+  background-color: rgba(30, 41, 59, 0.4);
+}
+
+.light .preview-markdown table {
+  border: 1px solid #cbd5e1;
+}
+
+.light .preview-markdown th {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.light .preview-markdown td {
+  border-color: #e2e8f0;
+}
+
+.light .preview-markdown tr:hover {
+  background-color: #f8fafc;
+}
+
+/* インラインコード */
+.preview-markdown :not(pre) > code {
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dark .preview-markdown :not(pre) > code {
+  background-color: rgba(30, 41, 59, 0.8);
+  color: #38bdf8;
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.light .preview-markdown :not(pre) > code {
+  background-color: #f1f5f9;
+  color: #0369a1;
+  border: 1px solid #e2e8f0;
+}
+
+/* リンク */
+.preview-markdown a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.dark .preview-markdown a {
+  color: #38bdf8;
+}
+
+.dark .preview-markdown a:hover {
+  color: #7dd3fc;
+}
+
+.light .preview-markdown a {
+  color: #0284c7;
+}
+
+.light .preview-markdown a:hover {
+  color: #0369a1;
+}
+
+/* 水平線 */
+.preview-markdown hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* -----------------------------------------------------------------------------
+ * Obsidian 互換スタイル (コールアウト、蛍光ペンハイライト、内部Wikiリンク)
+ * ----------------------------------------------------------------------------- */
+
+/* 蛍光ペンハイライト */
+.preview-markdown mark.obsidian-highlight {
+  background-color: rgba(253, 224, 71, 0.35);
+  color: inherit;
+  padding: 0.1em 0.3em;
+  margin: 0 0.1em;
+  border-radius: 0.25rem;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.dark .preview-markdown mark.obsidian-highlight {
+  background-color: rgba(234, 179, 8, 0.3);
+  color: #fef08a;
+}
+
+/* 内部Wikiリンク */
+.preview-markdown a.internal-link {
+  color: #7c3aed;
+  text-decoration: underline;
+  text-decoration-color: rgba(124, 58, 237, 0.4);
+  text-underline-offset: 3px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.preview-markdown a.internal-link:hover {
+  color: #6d28d9;
+  text-decoration-color: #6d28d9;
+}
+
+.dark .preview-markdown a.internal-link {
+  color: #a78bfa;
+  text-decoration-color: rgba(167, 139, 250, 0.4);
+}
+
+.dark .preview-markdown a.internal-link:hover {
+  color: #c4b5fd;
+  text-decoration-color: #c4b5fd;
+}
+
+/* コールアウト基底スタイル */
+.preview-markdown .callout {
+  --callout-color: #0284c7;
+  --callout-bg: rgba(2, 132, 199, 0.08);
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--callout-color);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background-color: var(--callout-bg);
+  box-sizing: border-box;
+}
+
+.preview-markdown .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--callout-color);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.preview-markdown .callout-title:last-child {
+  margin-bottom: 0;
+}
+
+.preview-markdown .callout-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.preview-markdown .callout-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke: var(--callout-color);
+}
+
+.preview-markdown .callout-title-text {
+  flex: 1;
+}
+
+.preview-markdown .callout-content {
+  font-size: 0.925rem;
+  line-height: 1.65;
+  color: inherit;
+}
+
+.preview-markdown .callout-content > *:first-child {
+  margin-top: 0 !important;
+}
+
+.preview-markdown .callout-content > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* コールアウト種別ごとのカラーバリエーション (Obsidian互換) */
+/* Note, Info */
+.preview-markdown .callout-note,
+.preview-markdown .callout-info {
+  --callout-color: #0284c7;
+  --callout-bg: rgba(2, 132, 199, 0.08);
+}
+.dark .preview-markdown .callout-note,
+.dark .preview-markdown .callout-info {
+  --callout-color: #38bdf8;
+  --callout-bg: rgba(56, 189, 248, 0.1);
+}
+
+/* Tip, Hint, Important */
+.preview-markdown .callout-tip,
+.preview-markdown .callout-hint,
+.preview-markdown .callout-important {
+  --callout-color: #0d9488;
+  --callout-bg: rgba(13, 148, 136, 0.08);
+}
+.dark .preview-markdown .callout-tip,
+.dark .preview-markdown .callout-hint,
+.dark .preview-markdown .callout-important {
+  --callout-color: #2dd4bf;
+  --callout-bg: rgba(45, 212, 191, 0.1);
+}
+
+/* Success, Check, Done */
+.preview-markdown .callout-success,
+.preview-markdown .callout-check,
+.preview-markdown .callout-done {
+  --callout-color: #16a34a;
+  --callout-bg: rgba(22, 163, 74, 0.08);
+}
+.dark .preview-markdown .callout-success,
+.dark .preview-markdown .callout-check,
+.dark .preview-markdown .callout-done {
+  --callout-color: #4ade80;
+  --callout-bg: rgba(74, 222, 128, 0.1);
+}
+
+/* Question, Help, FAQ */
+.preview-markdown .callout-question,
+.preview-markdown .callout-help,
+.preview-markdown .callout-faq {
+  --callout-color: #d97706;
+  --callout-bg: rgba(217, 119, 6, 0.08);
+}
+.dark .preview-markdown .callout-question,
+.dark .preview-markdown .callout-help,
+.dark .preview-markdown .callout-faq {
+  --callout-color: #fbbf24;
+  --callout-bg: rgba(251, 191, 36, 0.1);
+}
+
+/* Warning, Caution, Attention */
+.preview-markdown .callout-warning,
+.preview-markdown .callout-caution,
+.preview-markdown .callout-attention {
+  --callout-color: #ea580c;
+  --callout-bg: rgba(234, 88, 12, 0.08);
+}
+.dark .preview-markdown .callout-warning,
+.dark .preview-markdown .callout-caution,
+.dark .preview-markdown .callout-attention {
+  --callout-color: #fb923c;
+  --callout-bg: rgba(251, 146, 60, 0.1);
+}
+
+/* Failure, Fail, Missing */
+.preview-markdown .callout-failure,
+.preview-markdown .callout-fail,
+.preview-markdown .callout-missing {
+  --callout-color: #dc2626;
+  --callout-bg: rgba(220, 38, 38, 0.08);
+}
+.dark .preview-markdown .callout-failure,
+.dark .preview-markdown .callout-fail,
+.dark .preview-markdown .callout-missing {
+  --callout-color: #f87171;
+  --callout-bg: rgba(248, 113, 113, 0.1);
+}
+
+/* Danger, Error, Bug */
+.preview-markdown .callout-danger,
+.preview-markdown .callout-error,
+.preview-markdown .callout-bug {
+  --callout-color: #e11d48;
+  --callout-bg: rgba(225, 29, 72, 0.08);
+}
+.dark .preview-markdown .callout-danger,
+.dark .preview-markdown .callout-error,
+.dark .preview-markdown .callout-bug {
+  --callout-color: #fb7185;
+  --callout-bg: rgba(251, 113, 133, 0.1);
+}
+
+/* Example */
+.preview-markdown .callout-example {
+  --callout-color: #7c3aed;
+  --callout-bg: rgba(124, 58, 237, 0.08);
+}
+.dark .preview-markdown .callout-example {
+  --callout-color: #a78bfa;
+  --callout-bg: rgba(167, 139, 250, 0.1);
+}
+
+/* Quote, Cite */
+.preview-markdown .callout-quote,
+.preview-markdown .callout-cite {
+  --callout-color: #64748b;
+  --callout-bg: rgba(100, 116, 139, 0.08);
+}
+.dark .preview-markdown .callout-quote,
+.dark .preview-markdown .callout-cite {
+  --callout-color: #94a3b8;
+  --callout-bg: rgba(148, 163, 184, 0.1);
+}
+
+/* Todo */
+.preview-markdown .callout-todo {
+  --callout-color: #0284c7;
+  --callout-bg: rgba(2, 132, 199, 0.08);
+}
+.dark .preview-markdown .callout-todo {
+  --callout-color: #38bdf8;
+  --callout-bg: rgba(56, 189, 248, 0.1);
+}
+
+
+/* -----------------------------------------------------------------------------
  * プレビュー表示内容からの PDF 出力 / 印刷専用スタイル (@media print)
  * ----------------------------------------------------------------------------- */
 @media print {
@@ -309,6 +820,37 @@ body.light ::-webkit-scrollbar-thumb:hover {
     background: #f0f9ff !important;
     color: #334155 !important;
     padding: 6pt 12pt !important;
+  }
+
+  /* コールアウト印刷スタイル */
+  .preview-markdown .callout {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 8pt 0 !important;
+    padding: 6pt 10pt !important;
+    border-left: 3pt solid var(--callout-color, #0284c7) !important;
+    border-radius: 0 4pt 4pt 0 !important;
+    background-color: #f8fafc !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .preview-markdown .callout-title {
+    color: var(--callout-color, #0284c7) !important;
+    font-weight: 700 !important;
+    margin-bottom: 4pt !important;
+  }
+
+  .preview-markdown mark.obsidian-highlight {
+    background-color: #fef08a !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .preview-markdown a.internal-link {
+    color: #6d28d9 !important;
+    text-decoration: underline !important;
   }
 
   /* タスクリスト印刷スタイル (チェックボックス枠・マーク・打消し線の明瞭化) */

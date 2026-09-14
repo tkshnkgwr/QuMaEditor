@@ -99,7 +99,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy strict quality check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust unit tests (36 tests)
+# 4. Rust unit tests (39 tests)
 cargo test --manifest-path src-tauri/Cargo.toml
 
 # 5. TypeScript type verification
