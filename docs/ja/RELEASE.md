@@ -17,12 +17,12 @@
 
 | 項目                    | ファイル / 場所                                                                                   |
 | :---------------------- | :------------------------------------------------------------------------------------------------ |
-| フロントエンド標準バージョン | [`package.json`](file:///c:/Users/632792/Documents/自作/QuMaEditor/package.json)                   |
-| Rust クレートバージョン | [`src-tauri/Cargo.toml`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/Cargo.toml)  |
-| 日本語更新履歴           | [`docs/ja/CHANGELOG.md`](file:///c:/Users/632792/Documents/自作/QuMaEditor/docs/ja/CHANGELOG.md)   |
-| 英語更新履歴             | [`docs/en/CHANGELOG.md`](file:///c:/Users/632792/Documents/自作/QuMaEditor/docs/en/CHANGELOG.md)   |
-| 日本語 TODO リスト       | [`docs/ja/TODO.md`](file:///c:/Users/632792/Documents/自作/QuMaEditor/docs/ja/TODO.md)             |
-| 英語 TODO リスト         | [`docs/en/TODO.md`](file:///c:/Users/632792/Documents/自作/QuMaEditor/docs/en/TODO.md)             |
+| フロントエンド標準バージョン | [`package.json`](../../package.json)                                                              |
+| Rust クレートバージョン | [`src-tauri/Cargo.toml`](../../src-tauri/Cargo.toml)                                              |
+| 日本語更新履歴           | [`docs/ja/CHANGELOG.md`](CHANGELOG.md)                                                            |
+| 英語更新履歴             | [`docs/en/CHANGELOG.md`](../en/CHANGELOG.md)                                                       |
+| 日本語 TODO リスト       | [`docs/ja/TODO.md`](TODO.md)                                                                      |
+| 英語 TODO リスト         | [`docs/en/TODO.md`](../en/TODO.md)                                                                |
 
 ---
 
@@ -55,6 +55,6 @@ npm run lint
 cargo check --manifest-path src-tauri/Cargo.toml
 
 # 2. リリースタグの付与とプッシュ (自動リリース発動)
-git tag v1.2.2
-git push origin v1.2.2
+git tag v1.4.3
+git push origin v1.4.3
 ```

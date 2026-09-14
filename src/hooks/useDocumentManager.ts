@@ -53,9 +53,11 @@ export function useDocumentManager() {
                   updatedAt: res.doc.updatedAt || d.updatedAt,
                   updatedBy: res.doc.updatedBy,
                   encoding: res.doc.encoding,
+                  filePath: res.filePath,
                 }
               : d
           );
+          saveStoredDocs(updated);
           return updated;
         });
       }
@@ -103,9 +105,9 @@ export function useDocumentManager() {
       return prev;
     });
 
-    // 選択したドキュメントがスリム化されている場合、即座にディスクからフルロード
+    // 選択したドキュメントが実ファイルを持つ場合、即座にディスクから最新内容を完全同期ロード
     const targetDoc = docs.find((d) => d.id === id);
-    if (targetDoc && targetDoc.filePath && targetDoc.content.includes('[STORAGE_SLIMMED_LOAD_FROM_DISK]')) {
+    if (targetDoc && targetDoc.filePath && !targetDoc.isRemote) {
       loadFullDocFromDisk(targetDoc);
     }
   }, [activeDocId, docs, loadFullDocFromDisk]);
@@ -201,20 +203,38 @@ export function useDocumentManager() {
 
   // 開いたドキュメントのリスト追加＆アクティブ化処理（共通ロジック）
   const handleAddOpenedDoc = useCallback((openedDoc: MarkdownDoc) => {
+    let targetDocId = openedDoc.id;
+
     setDocs((prevDocs) => {
-      const existing = prevDocs.find((d) => d.filePath === openedDoc.filePath && d.filePath);
-      if (existing) {
-        return prevDocs;
+      const existingIndex = prevDocs.findIndex((d) => d.filePath === openedDoc.filePath && d.filePath);
+      let updated: MarkdownDoc[];
+
+      if (existingIndex !== -1) {
+        // 既存ドキュメントがある場合、既存のIDやお気に入り状態を保持しつつ、ディスクからの最新内容で上書き更新
+        const existing = prevDocs[existingIndex];
+        targetDocId = existing.id;
+        const mergedDoc: MarkdownDoc = {
+          ...existing,
+          ...openedDoc,
+          id: existing.id,
+          isFavorite: existing.isFavorite,
+          updatedAt: openedDoc.updatedAt || new Date().toISOString(),
+        };
+        updated = [...prevDocs];
+        updated[existingIndex] = mergedDoc;
+      } else {
+        targetDocId = openedDoc.id;
+        updated = [openedDoc, ...prevDocs];
       }
-      const updated = [openedDoc, ...prevDocs];
+
       saveStoredDocs(updated);
       return updated;
     });
 
-    setActiveDocId(openedDoc.id);
-    saveActiveDocId(openedDoc.id);
+    setActiveDocId(targetDocId);
+    saveActiveDocId(targetDocId);
     setOpenTabIds((prev) => {
-      const next = prev.includes(openedDoc.id) ? prev : [...prev, openedDoc.id];
+      const next = prev.includes(targetDocId) ? prev : [...prev, targetDocId];
       saveOpenTabIds(next);
       return next;
     });
@@ -264,6 +284,19 @@ export function useDocumentManager() {
     setSaveStatus?.('saved');
   }, [currentDoc.id]);
 
+  // 作成者名 (author) の更新
+  const handleUpdateAuthor = useCallback((newAuthor: string) => {
+    setDocs((prevDocs) => {
+      const updated = prevDocs.map((doc) =>
+        doc.id === currentDoc.id
+          ? { ...doc, author: newAuthor, updatedAt: new Date().toISOString() }
+          : doc
+      );
+      saveStoredDocs(updated);
+      return updated;
+    });
+  }, [currentDoc.id]);
+
   // 更新者名 (updatedBy) の更新
   const handleUpdateUpdatedBy = useCallback((newUpdatedBy: string, setSaveStatus?: (status: SaveStatus) => void) => {
     setDocs((prevDocs) => {
@@ -310,6 +343,7 @@ export function useDocumentManager() {
     handleDeleteDoc,
     handleToggleFavorite,
     handleUpdateTitle,
+    handleUpdateAuthor,
     handleUpdateUpdatedBy,
     handleUpdateTags,
   };

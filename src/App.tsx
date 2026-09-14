@@ -64,6 +64,7 @@ export default function App() {
     handleDeleteDoc,
     handleToggleFavorite,
     handleUpdateTitle,
+    handleUpdateAuthor,
     handleUpdateUpdatedBy,
     handleUpdateTags,
   } = useDocumentManager();
@@ -257,7 +258,7 @@ export default function App() {
   );
 
   // 外部ファイル変更監視フック (useFileWatcher)
-  const { recordLocalSave, reloadCurrentDoc } = useFileWatcher({
+  const { markLocalSaving, recordLocalSave, reloadCurrentDoc } = useFileWatcher({
     currentDoc,
     onReloadFile: handleReloadExternalFile,
     saveStatus,
@@ -297,7 +298,9 @@ export default function App() {
     setLastSavedTime,
     handleAddOpenedDoc,
     fileInputRef,
+    onBeforeSave: markLocalSaving,
     onSaveSuccess: recordLocalSave,
+    setToast,
   });
 
   // テキスト統計情報 (Rust ネイティブによる超高速・低メモリ計算 + 150ms ディバウンス)
@@ -328,10 +331,20 @@ export default function App() {
   const updateDocContent = (newContent: string) => {
     const nowISO = new Date().toISOString();
     const updaterName = settings.defaultAuthor?.trim() || currentDoc.updatedBy || currentDoc.author || 'Unknown';
+    const targetDocId = currentDoc.id;
+    const targetFilePath = currentDoc.filePath;
+    const isRemote = currentDoc.isRemote;
+    const docToSave: MarkdownDoc = {
+      ...currentDoc,
+      content: newContent,
+      author: currentDoc.author || 'Unknown',
+      updatedAt: nowISO,
+      updatedBy: updaterName,
+    };
 
     setDocs((prevDocs) =>
       prevDocs.map((doc) =>
-        doc.id === currentDoc.id
+        doc.id === targetDocId
           ? {
               ...doc,
               content: newContent,
@@ -352,19 +365,19 @@ export default function App() {
     const delayMs = Math.max(2000, Math.min(10000, settings.autoSaveIntervalMs || 3000));
 
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      if (currentDoc.isRemote) {
+      if (isRemote) {
         setSaveStatus('unsaved');
         logger.info(
-          `[自動保存スキップ] リモートファイル "${currentDoc.title}" (ID: ${currentDoc.id}) はリモート仕様に基づき自動保存されません。`
+          `[自動保存スキップ] リモートファイル "${docToSave.title}" (ID: ${docToSave.id}) はリモート仕様に基づき自動保存されません。`
         );
         return;
       }
 
       setSaveStatus('saving');
       let savedToFile = false;
-      if (currentDoc.filePath) {
+      if (targetFilePath) {
         const { saveNativeFile } = await import('./utils/fileSystem');
-        const res = await saveNativeFile(currentDoc, { forceSaveAs: false, defaultAuthor: settings.defaultAuthor });
+        const res = await saveNativeFile(docToSave, { forceSaveAs: false, defaultAuthor: settings.defaultAuthor });
         if (res.success && res.filePath) {
           savedToFile = true;
           recordLocalSave(res.filePath);
@@ -850,16 +863,7 @@ export default function App() {
         <TitleBar
           currentDoc={currentDoc}
           onUpdateTitle={handleUpdateTitle}
-          onUpdateAuthor={(newAuthor) => {
-            setDocs((prevDocs) =>
-              prevDocs.map((doc) =>
-                doc.id === currentDoc.id
-                  ? { ...doc, author: newAuthor, updatedAt: new Date().toISOString() }
-                  : doc
-              )
-            );
-            saveStoredDocs(docs);
-          }}
+          onUpdateAuthor={handleUpdateAuthor}
           onUpdateUpdatedBy={handleUpdateUpdatedBy}
           defaultAuthor={settings.defaultAuthor}
           saveStatus={saveStatus}
@@ -988,6 +992,7 @@ export default function App() {
                 onUpdateTags={handleUpdateTags}
                 onTextareaRef={(el) => { editorTextareaRef.current = el; }}
                 isDark={isDark}
+                viewMode={viewMode}
                 onLoadFullDoc={handleLoadFullDoc}
                 onLoadMoreChunk={handleLoadMoreChunk}
               />

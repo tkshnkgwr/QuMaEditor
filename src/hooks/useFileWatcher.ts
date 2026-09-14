@@ -16,6 +16,11 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
   // 再読み込み中フラグ
   const isReloadingRef = useRef<boolean>(false);
 
+  // 自アプリによるローカル保存開始または完了をマークし、誤検知を防ぐ
+  const markLocalSaving = useCallback(() => {
+    lastLocalSaveTimeRef.current = Date.now();
+  }, []);
+
   // 自アプリによるローカル保存完了を通知し、直近 mtime を更新する
   const recordLocalSave = useCallback((filePath: string, newMtimeMs?: number) => {
     lastLocalSaveTimeRef.current = Date.now();
@@ -52,9 +57,9 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
         return;
       }
 
-      // 自プロセスの保存直後（1.5秒以内）であれば誤検知防止
+      // 自プロセスの保存直後（3.0秒以内）であれば誤検知防止
       const timeSinceLocalSave = Date.now() - lastLocalSaveTimeRef.current;
-      if (timeSinceLocalSave < 1500) {
+      if (timeSinceLocalSave < 3000) {
         fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
         return;
       }
@@ -97,10 +102,21 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
     }
   }, [currentDoc?.filePath, currentDoc?.isRemote, onReloadFile]);
 
-  // ドキュメント切り替え時に mtime を確認し、外部更新があれば即時再読み込み
+  // ドキュメント切り替え時およびステータス変更時に mtime を確認し、外部更新があれば即時再読み込み
   useEffect(() => {
     const filePath = currentDoc?.filePath;
     if (!filePath || currentDoc.isRemote) return;
+
+    // 自プロセスの保存直後（3.0秒以内）であれば誤検知防止（最新mtimeを記録してスキップ）
+    const timeSinceLocalSave = Date.now() - lastLocalSaveTimeRef.current;
+    if (timeSinceLocalSave < 3000) {
+      getFileMetadataNative(filePath).then((meta) => {
+        if (meta && meta.exists && meta.mtimeMs > 0) {
+          fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
+        }
+      });
+      return;
+    }
 
     getFileMetadataNative(filePath).then(async (meta) => {
       if (meta && meta.exists && meta.mtimeMs > 0) {
@@ -108,7 +124,7 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
         if (recorded !== undefined && meta.mtimeMs > recorded + 50) {
           // 切り替え先ファイルがバックグラウンドで外部更新されていた場合
           fileMtimeMapRef.current.set(filePath, meta.mtimeMs);
-          if (saveStatus !== 'editing') {
+          if (saveStatus !== 'editing' && saveStatus !== 'saving') {
             await onReloadFile(filePath);
           }
         } else {
@@ -134,6 +150,7 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
   }, [checkFileUpdate]);
 
   return {
+    markLocalSaving,
     recordLocalSave,
     checkFileUpdate,
     reloadCurrentDoc,

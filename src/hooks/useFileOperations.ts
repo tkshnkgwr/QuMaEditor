@@ -6,6 +6,7 @@ import { parseYamlFrontMatter, buildFullMarkdownWithFrontMatter } from '../utils
 import { generatePdfNative, exportHtmlFullNative } from '../utils/tauriNative';
 import { saveStoredDocs } from '../utils/storage';
 import { logger } from '../utils/logger';
+import { ToastMessage } from '../components/Toast';
 
 interface FileOperationsProps {
   currentDoc: MarkdownDoc;
@@ -15,7 +16,9 @@ interface FileOperationsProps {
   setLastSavedTime: (time: string | null) => void;
   handleAddOpenedDoc: (doc: MarkdownDoc) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onBeforeSave?: () => void;
   onSaveSuccess?: (filePath: string) => void;
+  setToast?: (toast: ToastMessage) => void;
 }
 
 /**
@@ -30,7 +33,9 @@ export function useFileOperations({
   setLastSavedTime,
   handleAddOpenedDoc,
   fileInputRef,
+  onBeforeSave,
   onSaveSuccess,
+  setToast,
 }: FileOperationsProps) {
   // Markdown ファイルとしてのエクスポート (ダウンロード)
   const handleExportMarkdown = useCallback(() => {
@@ -49,6 +54,7 @@ export function useFileOperations({
   // 実ファイルへの保存（直上書き保存 または 名前を付けて保存）
   const handleSaveCurrentDoc = useCallback(
     async (options: { forceSaveAs?: boolean } = {}) => {
+      onBeforeSave?.();
       setSaveStatus('saving');
 
       // Tauri ネイティブ保存の試行
@@ -64,8 +70,10 @@ export function useFileOperations({
             doc.id === currentDoc.id
               ? {
                   ...doc,
+                  ...currentDoc,
                   filePath: updatedDocPath,
                   title: newTitle,
+                  content: currentDoc.content,
                   isRemote: false, // リモートからローカル保存された場合はリモートフラグ解除
                   updatedAt: new Date().toISOString(),
                 }
@@ -79,6 +87,13 @@ export function useFileOperations({
         const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setLastSavedTime(timeStr);
         onSaveSuccess?.(updatedDocPath);
+
+        setToast?.({
+          id: Date.now().toString(),
+          message: res.isSaveAs ? '名前を付けて保存しました。' : '保存しました。',
+          type: 'success',
+          duration: 3000,
+        });
 
         logger.info(
           res.isSaveAs
@@ -106,9 +121,15 @@ export function useFileOperations({
         // フォールバック（Web環境ブラウザダウンロード）
         handleExportMarkdown();
         setSaveStatus('saved');
+        setToast?.({
+          id: Date.now().toString(),
+          message: '保存しました。',
+          type: 'success',
+          duration: 3000,
+        });
       }
     },
-    [currentDoc, settings.defaultAuthor, setDocs, setSaveStatus, setLastSavedTime, handleExportMarkdown]
+    [currentDoc, settings.defaultAuthor, setDocs, setSaveStatus, setLastSavedTime, handleExportMarkdown, onBeforeSave, onSaveSuccess, setToast]
   );
 
   // PC/ファイルサーバーのローカルファイルを開く

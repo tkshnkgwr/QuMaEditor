@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Upload, Lock, Unlock, Tag, Plus, X, ChevronDown, ChevronRight, Edit3, Layers, Download, Zap } from 'lucide-react';
-import { EditorSettings, MarkdownDoc } from '../types';
+import { EditorSettings, MarkdownDoc, ViewMode } from '../types';
 import { handleAutoListContinuation, insertFormatting, handleTabIndent } from '../utils/markdownUtils';
 
 interface EditorProps {
@@ -17,6 +17,7 @@ interface EditorProps {
   onTextareaRef?: (ref: HTMLTextAreaElement | null) => void;
   isDark?: boolean;
   isReadOnly?: boolean;
+  viewMode?: ViewMode;
   onLoadFullDoc?: () => void;
   onLoadMoreChunk?: () => void;
 }
@@ -37,6 +38,7 @@ export const Editor: React.FC<EditorProps> = ({
   onTextareaRef,
   isDark = true,
   isReadOnly = false,
+  viewMode,
   onLoadFullDoc,
   onLoadMoreChunk,
 }) => {
@@ -93,14 +95,18 @@ export const Editor: React.FC<EditorProps> = ({
     return result;
   }, [lineCount]);
 
-  // カーソル・スクロール位置の保存
+  // カーソル・スクロール位置の保存 (正常表示時のみ更新)
   const saveCursorState = () => {
-    if (!textareaRef.current || !doc?.id) return;
-    docCursorHistoryMap.set(doc.id, {
-      start: textareaRef.current.selectionStart,
-      end: textareaRef.current.selectionEnd,
-      scrollTop: textareaRef.current.scrollTop,
-    });
+    const el = textareaRef.current;
+    if (!el || !doc?.id) return;
+    // 非表示 (display: none / offsetParent === null) 時の0リセットによる上書きを防ぐ
+    if (el.offsetParent !== null) {
+      docCursorHistoryMap.set(doc.id, {
+        start: el.selectionStart,
+        end: el.selectionEnd,
+        scrollTop: el.scrollTop,
+      });
+    }
   };
 
   // カーソル位置の行・列番号を高速更新 (split を使わないゼロアロケーション走査)
@@ -134,32 +140,37 @@ export const Editor: React.FC<EditorProps> = ({
     }
   };
 
-  // マウント時・ドキュメント切り替え・プレビュー復帰時のカーソル位置・フォーカス自動復元
+  // マウント時・ドキュメント切り替え・プレビュー復帰時 (viewMode変更時) のカーソル位置・フォーカス自動復元
   React.useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-
-    if (doc?.id) {
-      const history = docCursorHistoryMap.get(doc.id);
-      if (history) {
-        el.setSelectionRange(
-          Math.min(history.start, el.value.length),
-          Math.min(history.end, el.value.length)
-        );
-        el.scrollTop = history.scrollTop;
-      }
+    if (viewMode === 'preview') {
+      return;
     }
 
-    // プレビュー復帰時等の自動フォーカス
-    const timer = setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        updateCursorPos();
+    const restoreCursor = () => {
+      const el = textareaRef.current;
+      if (!el || !doc?.id) return;
+
+      const history = docCursorHistoryMap.get(doc.id);
+      if (history) {
+        const safeStart = Math.min(history.start, el.value.length);
+        const safeEnd = Math.min(history.end, el.value.length);
+        el.setSelectionRange(safeStart, safeEnd);
+        el.scrollTop = history.scrollTop;
       }
-    }, 10);
+      el.focus();
+      updateCursorPos();
+    };
+
+    // 1. 即座に復元
+    restoreCursor();
+
+    // 2. ブラウザのレイアウト再計算後（display: block 反映後）に確実に適用
+    const timer = setTimeout(() => {
+      restoreCursor();
+    }, 25);
 
     return () => clearTimeout(timer);
-  }, [doc?.id]);
+  }, [doc?.id, viewMode]);
 
   // キーバインドと特殊動作
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -456,6 +467,7 @@ export const Editor: React.FC<EditorProps> = ({
           onKeyDown={handleKeyDown}
           onKeyUp={updateCursorPos}
           onClick={updateCursorPos}
+          onBlur={saveCursorState}
           onScroll={handleScroll}
           readOnly={isReadOnly}
           placeholder="ここからMarkdown入力を開始してください..."

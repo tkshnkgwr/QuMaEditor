@@ -303,17 +303,78 @@ export function createMarkdownComponents({
         </td>
       );
     },
+    pre: ({ children }) => <>{children}</>,
     code: ({ inline, className, children, ...props }: any) => {
-      const match = /language-(\w+)/.exec(className || '');
-      const language = match ? match[1] : '';
+      const match = /language-([a-zA-Z0-9#+-]+)/.exec(className || '');
+      const rawLanguage = match ? match[1] : '';
       const codeString = String(children).replace(/\n$/, '');
       const codeId = React.useId();
 
-      if (!inline && (language === 'mermaid' || className?.includes('language-mermaid'))) {
+      const cleanLang = rawLanguage.toLowerCase().trim();
+
+      if (!inline && (cleanLang === 'mermaid' || className?.toLowerCase().includes('language-mermaid'))) {
         return <MermaidRenderer chart={codeString} isDark={isDark} />;
       }
 
-      if (!inline && (match || className?.includes('language-'))) {
+      // コードブロック判定: 言語指定があるか、クラス名にlanguage-があるか、複数行であるか
+      const isCodeBlock = Boolean(!inline && (rawLanguage || className?.includes('language-') || codeString.includes('\n')));
+
+      if (isCodeBlock) {
+        const langMap: Record<string, string> = {
+          js: 'javascript',
+          javascript: 'javascript',
+          jsx: 'jsx',
+          ts: 'typescript',
+          typescript: 'typescript',
+          tsx: 'tsx',
+          py: 'python',
+          python: 'python',
+          rs: 'rust',
+          rust: 'rust',
+          rb: 'ruby',
+          ruby: 'ruby',
+          sh: 'bash',
+          shell: 'bash',
+          bash: 'bash',
+          zsh: 'bash',
+          yml: 'yaml',
+          yaml: 'yaml',
+          md: 'markdown',
+          markdown: 'markdown',
+          cs: 'csharp',
+          csharp: 'csharp',
+          'c++': 'cpp',
+          cpp: 'cpp',
+          c: 'c',
+          html: 'html',
+          xml: 'xml',
+          css: 'css',
+          scss: 'scss',
+          sass: 'sass',
+          json: 'json',
+          sql: 'sql',
+          powershell: 'powershell',
+          ps1: 'powershell',
+          pwsh: 'powershell',
+          bat: 'batch',
+          cmd: 'batch',
+          batch: 'batch',
+          diff: 'diff',
+          dockerfile: 'docker',
+          docker: 'docker',
+          go: 'go',
+          golang: 'go',
+          java: 'java',
+          kotlin: 'kotlin',
+          php: 'php',
+          toml: 'toml',
+          ini: 'ini',
+          text: 'text',
+          txt: 'text',
+        };
+        const prismLang = langMap[cleanLang] || cleanLang || 'text';
+        const displayBadge = cleanLang || 'code';
+
         return (
           <div className={`relative my-4 rounded-lg border overflow-hidden text-xs shadow-xs ${
             isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'
@@ -321,7 +382,7 @@ export function createMarkdownComponents({
             <div className={`flex items-center justify-between px-3 py-1.5 border-b font-mono text-[11px] ${
               isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-200/80 border-slate-300 text-slate-800 font-medium'
             }`}>
-              <span className="font-semibold text-cyan-400 lowercase">{language || 'code'}</span>
+              <span className="font-semibold text-cyan-400 lowercase">{displayBadge}</span>
               <button
                 onClick={() => handleCopyCode(codeString, codeId)}
                 className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all select-none ${
@@ -348,7 +409,7 @@ export function createMarkdownComponents({
             </div>
             <SyntaxHighlighter
               style={isDark ? vscDarkPlus : prism}
-              language={language}
+              language={prismLang}
               PreTag="div"
               customStyle={{
                 margin: 0,

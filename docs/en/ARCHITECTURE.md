@@ -109,13 +109,13 @@ graph TD
     Commands --> TextProc
 ```
 
-| Module Name       | File Path                                                                                             | Responsibilities & Description                                                                                   |
-| :---------------- | :---------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| `lib`             | [`src-tauri/src/lib.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/lib.rs)       | Main entrypoint, plugin initialization, and Specta TypeScript binding generator handler                         |
-| `commands`        | [`src-tauri/src/commands.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/commands.rs) | IPC command handlers exposed to TypeScript and Specta macro mappings                                             |
-| `encoding`        | [`src-tauri/src/encoding.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/encoding.rs) | Multi-encoding auto-detection (UTF-8, Shift_JIS, EUC-JP) and conversion via `encoding_rs`                         |
-| `file_io`         | [`src-tauri/src/file_io.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/file_io.rs)   | Native file reading, chunked streaming, direct byte writing, and Windows Explorer folder opening                 |
-| `search`          | [`src-tauri/src/search.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/search.rs)     | Fast inverted index search engine using `LazyLock<Mutex<Vec<DocSearchInput>>>`                                   |
-| `diff`            | [`src-tauri/src/diff.rs`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/diff.rs)         | Line-by-line text diffing via `similar` crate and native Markdown HTML parsing via `pulldown-cmark`              |
-| `text_processing` | [`src-tauri/src/text_processing/`](file:///c:/Users/632792/Documents/自作/QuMaEditor/src-tauri/src/text_processing/) | Text stats calculation, YAML front matter parser, heading outline, table alignment formatting, syntect HTML |
+| Module Name       | File Path                             | Responsibilities & Description                                                                                   |
+| :---------------- | :------------------------------------ | :--------------------------------------------------------------------------------------------------------------- |
+| `lib`             | [`src-tauri/src/lib.rs`](../../src-tauri/src/lib.rs) | Main entrypoint, plugin initialization, and Specta TypeScript binding generator handler                         |
+| `commands`        | [`src-tauri/src/commands.rs`](../../src-tauri/src/commands.rs) | IPC command handlers exposed to TypeScript and Specta macro mappings                                             |
+| `encoding`        | [`src-tauri/src/encoding.rs`](../../src-tauri/src/encoding.rs) | Multi-encoding auto-detection (UTF-8, Shift_JIS, EUC-JP) and conversion via `encoding_rs`                         |
+| `file_io`         | [`src-tauri/src/file_io.rs`](../../src-tauri/src/file_io.rs) | Native file reading, chunked streaming, direct byte writing, and Windows Explorer folder opening                 |
+| `search`          | [`src-tauri/src/search.rs`](../../src-tauri/src/search.rs) | Fast inverted index search engine using `LazyLock<Mutex<Vec<DocSearchInput>>>`                                   |
+| `diff`            | [`src-tauri/src/diff.rs`](../../src-tauri/src/diff.rs) | Line-by-line text diffing via `similar` crate and native Markdown HTML parsing via `pulldown-cmark`              |
+| `text_processing` | [`src-tauri/src/text_processing/`](../../src-tauri/src/text_processing/) | Text stats calculation, YAML front matter parser, heading outline, table alignment formatting, syntect HTML |
 
