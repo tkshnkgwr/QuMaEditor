@@ -23,6 +23,6 @@ npm run lint
 cargo check --manifest-path src-tauri/Cargo.toml
 
 # 2. Tag and Push (Triggers GitHub Actions Release Workflow)
-git tag v1.4.3
-git push origin v1.4.3
+git tag v1.4.4
+git push origin v1.4.4
 ```

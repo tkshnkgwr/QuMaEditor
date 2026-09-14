@@ -15,14 +15,14 @@
 
 バージョン更新時は、以下の Single Source of Truth に基づき更新を行います。
 
-| 項目                    | ファイル / 場所                                                                                   |
-| :---------------------- | :------------------------------------------------------------------------------------------------ |
-| フロントエンド標準バージョン | [`package.json`](../../package.json)                                                              |
-| Rust クレートバージョン | [`src-tauri/Cargo.toml`](../../src-tauri/Cargo.toml)                                              |
-| 日本語更新履歴           | [`docs/ja/CHANGELOG.md`](CHANGELOG.md)                                                            |
-| 英語更新履歴             | [`docs/en/CHANGELOG.md`](../en/CHANGELOG.md)                                                       |
-| 日本語 TODO リスト       | [`docs/ja/TODO.md`](TODO.md)                                                                      |
-| 英語 TODO リスト         | [`docs/en/TODO.md`](../en/TODO.md)                                                                |
+| 項目                         | ファイル / 場所                                      |
+| :--------------------------- | :--------------------------------------------------- |
+| フロントエンド標準バージョン | [`package.json`](../../package.json)                 |
+| Rust クレートバージョン      | [`src-tauri/Cargo.toml`](../../src-tauri/Cargo.toml) |
+| 日本語更新履歴               | [`docs/ja/CHANGELOG.md`](CHANGELOG.md)               |
+| 英語更新履歴                 | [`docs/en/CHANGELOG.md`](../en/CHANGELOG.md)         |
+| 日本語 TODO リスト           | [`docs/ja/TODO.md`](TODO.md)                         |
+| 英語 TODO リスト             | [`docs/en/TODO.md`](../en/TODO.md)                   |
 
 ---
 
@@ -55,6 +55,6 @@ npm run lint
 cargo check --manifest-path src-tauri/Cargo.toml
 
 # 2. リリースタグの付与とプッシュ (自動リリース発動)
-git tag v1.4.3
-git push origin v1.4.3
+git tag v1.4.4
+git push origin v1.4.4
 ```
