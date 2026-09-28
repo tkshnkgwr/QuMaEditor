@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { commands } from '../bindings';
 import type {
   DetailedDiffResult,
@@ -289,7 +290,6 @@ export async function highlightCodeNative(_code: string, _language: string): Pro
  */
 export async function openFolderNative(filePath: string): Promise<boolean> {
   try {
-    const { invoke } = await import('@tauri-apps/api/core');
     const result = await invoke<boolean>('open_folder_native', { filePath });
     return result;
   } catch (err) {

@@ -18,6 +18,7 @@ import {
   ListTree,
   Hash,
   BookOpen,
+  Columns2,
 } from 'lucide-react';
 import { MarkdownDoc } from '../types';
 import {
@@ -41,6 +42,7 @@ interface SidebarProps {
   activeDocId: string;
   currentDoc?: MarkdownDoc;
   onSelectDoc: (id: string) => void;
+  onOpenInSecondaryPane?: (id: string) => void;
   onNewDoc: () => void;
   onDeleteDoc: (id: string) => void;
   onToggleFavorite: (id: string) => void;
@@ -83,6 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeDocId,
   currentDoc,
   onSelectDoc,
+  onOpenInSecondaryPane,
   onNewDoc,
   onDeleteDoc,
   onToggleFavorite,
@@ -99,6 +102,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [nativeHits, setNativeHits] = useState<SearchHit[] | null>(null);
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
   const [isResizing, setIsResizing] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  // 右クリックコンテキストメニュー外クリック検知
+  useEffect(() => {
+    const handleClickOutside = () => setContextMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // マウスドラッグによる幅変更処理
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -348,6 +359,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div
                 key={idx}
                 onClick={() => onSelectDoc(hit.doc_id)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ id: hit.doc_id, x: e.clientX, y: e.clientY });
+                }}
                 className={`p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
                   activeDocId === hit.doc_id
                     ? isDark ? 'bg-slate-800 border-cyan-500/80 text-cyan-300' : 'bg-cyan-50/80 border-cyan-400 text-cyan-900 font-medium'
@@ -384,6 +399,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div
                 key={doc.id}
                 onClick={() => onSelectDoc(doc.id)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ id: doc.id, x: e.clientX, y: e.clientY });
+                }}
                 className={`group relative p-2.5 rounded-lg border text-xs cursor-pointer transition-all ${
                   isActive
                     ? isDark
@@ -628,6 +647,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <span className="font-mono text-[10px]">{headings.length} 見出し</span>
       </div>
     </>
+  )}
+
+  {/* ドキュメント右クリックコンテキストメニュー */}
+  {contextMenu && (
+    <div
+      style={{
+        top: Math.min(window.innerHeight - 220, contextMenu.y),
+        left: Math.min(window.innerWidth - 220, contextMenu.x),
+      }}
+      className={`fixed rounded-md shadow-2xl border py-1 z-50 text-xs w-52 select-none ${
+        isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+      }`}
+    >
+      {onOpenInSecondaryPane && (
+        <button
+          onClick={() => {
+            onOpenInSecondaryPane(contextMenu.id);
+            setContextMenu(null);
+          }}
+          className={`w-full px-3 py-1.5 text-left flex items-center justify-between font-medium ${
+            isDark
+              ? 'hover:bg-cyan-950/60 text-cyan-400 hover:text-cyan-300'
+              : 'hover:bg-cyan-50 text-cyan-700 hover:text-cyan-800'
+          }`}
+        >
+          <span className="flex items-center gap-1.5">
+            <Columns2 className="w-3.5 h-3.5 text-cyan-500" />
+            <span>右ペインで開く (並べて比較)</span>
+          </span>
+        </button>
+      )}
+      <button
+        onClick={() => {
+          onSelectDoc(contextMenu.id);
+          setContextMenu(null);
+        }}
+        className={`w-full px-3 py-1.5 text-left flex items-center gap-1.5 ${
+          isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'
+        }`}
+      >
+        <FileText className="w-3.5 h-3.5 opacity-60" />
+        <span>開く</span>
+      </button>
+      <button
+        onClick={() => {
+          onToggleFavorite(contextMenu.id);
+          setContextMenu(null);
+        }}
+        className={`w-full px-3 py-1.5 text-left flex items-center gap-1.5 ${
+          isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'
+        }`}
+      >
+        <Star className="w-3.5 h-3.5 opacity-60 text-amber-400" />
+        <span>お気に入りを切り替え</span>
+      </button>
+      {(() => {
+        const targetDoc = docs.find((d) => d.id === contextMenu.id);
+        if (targetDoc?.filePath) {
+          return (
+            <button
+              onClick={async () => {
+                await openFolderNative(targetDoc.filePath!);
+                setContextMenu(null);
+              }}
+              className={`w-full px-3 py-1.5 text-left flex items-center gap-1.5 ${
+                isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5 text-emerald-400" />
+              <span>保存先フォルダを開く</span>
+            </button>
+          );
+        }
+        return null;
+      })()}
+      <div className={`my-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`} />
+      <button
+        onClick={() => {
+          onDeleteDoc(contextMenu.id);
+          setContextMenu(null);
+        }}
+        className={`w-full px-3 py-1.5 text-left flex items-center gap-1.5 text-rose-400 hover:bg-rose-500/20`}
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+        <span>削除</span>
+      </button>
+    </div>
   )}
 </aside>
   );

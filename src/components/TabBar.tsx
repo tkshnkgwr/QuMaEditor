@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { FileText, X, Plus, Star, GitCompare } from 'lucide-react';
+import { FileText, X, Plus, Star, GitCompare, Columns2 } from 'lucide-react';
 import { MarkdownDoc, SaveStatus } from '../types';
 
 // UPDATE 2026-08-04: saveStatus の型を SaveStatus に統一し編集中状態に対応
@@ -13,6 +13,9 @@ interface TabBarProps {
   onCloseOtherTabs: (id: string) => void;
   onNewDoc: () => void;
   onOpenDiffModal?: () => void;
+  isDualPane?: boolean;
+  onToggleDualPane?: () => void;
+  onOpenInSecondaryPane?: (id: string) => void;
   isDark?: boolean;
 }
 
@@ -26,6 +29,9 @@ export const TabBar: React.FC<TabBarProps> = ({
   onCloseOtherTabs,
   onNewDoc,
   onOpenDiffModal,
+  isDualPane = false,
+  onToggleDualPane,
+  onOpenInSecondaryPane,
   isDark = true,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -150,9 +156,28 @@ export const TabBar: React.FC<TabBarProps> = ({
         </button>
       </div>
 
-      {/* 右側アクション: 差分比較ボタン */}
-      {onOpenDiffModal && (
-        <div className="pr-2 flex items-center shrink-0">
+      {/* 右側アクション: 2画面並べるボタン ＆ 差分比較ボタン */}
+      <div className="pr-2 flex items-center gap-1.5 shrink-0">
+        {onToggleDualPane && (
+          <button
+            onClick={onToggleDualPane}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+              isDualPane
+                ? isDark
+                  ? 'bg-cyan-950 border border-cyan-500 text-cyan-300'
+                  : 'bg-cyan-100 border border-cyan-500 text-cyan-800 font-semibold'
+                : isDark
+                ? 'bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 hover:text-cyan-300'
+                : 'bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 hover:text-cyan-800 shadow-2xs'
+            }`}
+            title={isDualPane ? '並べて表示を解除 (1画面に戻す)' : '左右に並べて比較 (2画面)'}
+          >
+            <Columns2 className="w-3.5 h-3.5 text-cyan-500" />
+            <span className="hidden sm:inline">{isDualPane ? '2画面解除' : '2画面並べる'}</span>
+          </button>
+        )}
+
+        {onOpenDiffModal && (
           <button
             onClick={onOpenDiffModal}
             className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors ${
@@ -165,17 +190,31 @@ export const TabBar: React.FC<TabBarProps> = ({
             <GitCompare className="w-3.5 h-3.5 text-cyan-500" />
             <span className="hidden sm:inline">差分比較</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* 右クリックコンテキストメニュー */}
       {contextMenu && (
         <div
           style={{ top: contextMenu.y, left: contextMenu.x }}
-          className={`fixed rounded-md shadow-2xl border py-1 z-50 text-xs w-48 ${
+          className={`fixed rounded-md shadow-2xl border py-1 z-50 text-xs w-52 select-none ${
             isDark ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
           }`}
         >
+          {onOpenInSecondaryPane && (
+            <button
+              onClick={() => {
+                onOpenInSecondaryPane(contextMenu.id);
+                setContextMenu(null);
+              }}
+              className={`w-full px-3 py-1.5 text-left flex items-center justify-between border-b ${
+                isDark ? 'hover:bg-cyan-950/60 text-cyan-400 border-slate-800' : 'hover:bg-cyan-50 text-cyan-700 border-slate-200'
+              }`}
+            >
+              <span>右ペインで開く (並べて比較)</span>
+              <Columns2 className="w-3.5 h-3.5 text-cyan-500" />
+            </button>
+          )}
           {onOpenDiffModal && (
             <button
               onClick={() => {

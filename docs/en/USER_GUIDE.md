@@ -2,13 +2,13 @@
 
 **English** | [日本語版](docs/ja/USER_GUIDE.md)
 
-## 1. UI Components Overview (v1.4.4)
+## 1. UI Components Overview (v1.4.6)
 
 QuMaEditor features an intuitive Windows desktop-native layout:
 
 1. **Title Bar (Header)**:
    - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), line-ending badge (`LF`, `CRLF`), character and line counters.
-   - Right: Theme toggle (Light/Dark/System), version info (`v1.4.4`), settings button, native window controls.
+   - Right: Theme toggle (Light/Dark/System), version info (`v1.4.6`), settings button, native window controls.
    - Sub-bar: File / Template / Help dropdown menus, view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
 2. **Left Sidebar (Sidebar & Outline)**:
    - **📁 Documents Tab**: Switch, search, tag-filter, favorite, and manage active/stored documents.
@@ -18,10 +18,13 @@ QuMaEditor features an intuitive Windows desktop-native layout:
    - **✨ Markdown Auto-Formatting (`Ctrl+Shift+F`)**: Instantly aligns GFM tables vertically, adds blank lines around headings, and collapses consecutive blank lines.
    - **Selection Wrapping**: Wraps selected text when pressing formatting buttons.
    - **Heading Insertion**: Inserts `# ` markers at the beginning of the active cursor line.
+   - **Native Undo/Redo Integration**: Text wrapping via shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`) or toolbar buttons seamlessly integrates into the browser's native Undo history (`Ctrl + Z` to revert, `Ctrl + Y` to redo) while preserving text selection.
 4. **Workspace (Editor & Preview)**:
+   - **Side-by-Side Dual-Pane Editing & Preview**: Open up to 2 documents side-by-side for simultaneous comparison and editing. Launch via right-click "Open in Right Pane" in the sidebar or tabs, or use the "Side-by-Side" button on the tab bar. View mode (Editor/Preview) synchronizes across both panes.
    - **Editor Tab Indentation & Nested Lists**: Tab key stays focused, supporting nested bullet level increment (`- ` ➔ `  - `), multi-line block indent, and `Shift + Tab` unindent.
    - **Zero-Latency Typing**: Bypasses preview parsing in "Editor Only" mode for lag-free typing.
    - **`Ctrl + E` Focus Restoration**: Restores cursor position when toggling between editor and preview.
+   - **Enhanced PowerShell Syntax Highlighting**: Fully highlights parameters (`-Path`), comparison operators (`-eq`), numbers, and special variables for `powershell`, `pwsh`, `ps`, `posh`, and `ps1` code blocks.
    - **Mermaid Diagrams**: Dynamic SVG diagram rendering with zoom (50%~600%) and fullscreen modal.
 5. **Status Bar (Footer)**:
    - Persistence status badge (💾 Saved to Disk / 📦 Saved in App).
@@ -46,7 +49,29 @@ A distraction-free, full-screen writing sanctuary.
 
 ---
 
-## 3. Character Encodings & Line Breaks
+## 3. 🔀 Side-by-Side Dual-Pane Editing & Preview (Dual Pane)
+
+A multi-tasking workspace enabling you to view, compare, and edit two Markdown documents side-by-side.
+
+### Highlights
+- **Simultaneous Dual Document Editing**: Open different documents in the left and right panes and edit both seamlessly.
+- **Synchronized View Modes**: Both panes toggle together between Editor and Preview modes. Traditional 4-way split is disabled in dual-pane view to keep the workspace clean and focused.
+- **Intuitive Focus Tracking**: Clicking either pane switches the active document; toolbar formatting actions and status bar metrics track the focused document in real time.
+- **Tab-Linked Loading**: Clicking a document tab while in dual-pane mode loads that document into the currently active pane.
+
+### How to Use
+- **Open in Right Pane**:
+  - **Right-click** any document in the sidebar file list ➔ Select **"Open in Right Pane (Compare)"**.
+  - **Right-click** any tab in the top tab bar ➔ Select **"Open in Right Pane (Compare)"**.
+  - Or click the **"Side-by-Side"** button on the far right of the tab bar.
+- **Close Side-by-Side View**:
+  - Click the **"✕"** button on the top header of the right pane.
+  - Or click the **"Close Side-by-Side"** button on the tab bar.
+  - Or close the tab opened in the right pane to automatically return to single-pane view.
+
+---
+
+## 4. Character Encodings & Line Breaks
 
 ### Opening Files
 
@@ -62,7 +87,7 @@ A distraction-free, full-screen writing sanctuary.
 
 ---
 
-## 4. Crash-Proof Dual Persistence
+## 5. Crash-Proof Dual Persistence
 
 - Text is auto-saved to **LocalStorage** within 3 seconds of typing.
 - Use `Ctrl + S` or the status bar's "💾 Save to PC File" button to save directly to local `.md` files on disk.
@@ -70,7 +95,7 @@ A distraction-free, full-screen writing sanctuary.
 
 ---
 
-## 5. Keyboard Shortcuts
+## 6. Keyboard Shortcuts
 
 | Shortcut           | Action / Feature                               |
 | :----------------- | :--------------------------------------------- |
@@ -80,11 +105,14 @@ A distraction-free, full-screen writing sanctuary.
 | `Ctrl + Shift + S` | Save As (choose file location)                 |
 | `Ctrl + Shift + F` | Markdown auto-formatting (align tables, lines) |
 | `Ctrl + E`         | Toggle View Mode (Editor Only ↔ Preview Only)  |
+| `Ctrl + Z`         | Undo (reverts typing and text formatting)      |
+| `Ctrl + Y`         | Redo (re-applies reverted action)              |
 | `Tab`              | Indent line / nest bullet item                 |
 | `Shift + Tab`      | Unindent line / promote bullet item            |
 | `F5` / `Ctrl + R`  | Force reload file from disk                    |
 | `Ctrl + P`         | A4 Print / PDF Export dialog                   |
 | `Ctrl + B`         | Bold formatting / wrap selection               |
 | `Ctrl + I`         | Italic formatting / wrap selection             |
+| `Ctrl + U`         | Underline formatting / wrap selection          |
 | `Ctrl + Shift + Z` | Toggle Zen Focus Mode (Exit with `Esc`)        |
 | `F1`               | Open Keyboard Shortcuts Help                   |

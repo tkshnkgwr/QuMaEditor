@@ -6,7 +6,18 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
-### Upcoming Release (Development Completed)
+### v1.4.6 Release (2026-09-28)
+
+- [x] **Side-by-Side Dual-Pane Editing & Preview (`Workspace / DualPane`)**: Introduced a multi-tasking workspace enabling users to open up to 2 Markdown files side-by-side for simultaneous comparison, editing, and previewing. Supports right-click "Open in Right Pane" from the sidebar and tabs, or via the dedicated tab bar button. View mode (Editor/Preview) synchronizes across both panes with focus tracking and 4-way split suppression.
+- [x] **Native Undo/Redo Integration for Text Formatting (`applyTextReplacementWithUndo`) (`Editor / Undo`)**: Integrated bold (`Ctrl+B`), italic (`Ctrl+I`), underline (`Ctrl+U`), and all toolbar button actions into the native browser Undo/Redo stack (`Ctrl+Z` / `Ctrl+Y`). Added event suppression (`preventDefault`) to retain selection focus on toolbar clicks.
+- [x] **Underline Shortcut (`Ctrl + U`) (`Editor / Shortcut`)**: Added `Ctrl + U` shortcut to insert `<u>...</u>` tags and wrap selected text.
+- [x] **Enhanced PowerShell Syntax Highlighting & Aliases (`Preview / Syntax`)**: Extended Prism grammar for parameter flags (`-Path`), comparison operators (`-eq`), numbers, and special variables, plus aliases (`ps`, `posh`).
+
+### v1.4.5 Release (2026-09-14)
+
+- [x] **Obsidian-Compatible Markdown Preview (`Preview / Obsidian`)**: Single-enter line breaks, card rendering for standard callout syntax (`[!NOTE]`, `[!WARNING]`, `[!TIP]`, etc.), highlighter syntax (`==text==`), internal wikilinks (`[[note]]`), and restored list styles under Tailwind CSS v4.
+
+### v1.4.4 Release (2026-09-14)
 
 - [x] **Full Rust Native Markdown Rendering (`pulldown-cmark` + `syntect`) (`Performance / Rust`)**: Completely eliminated frontend rendering lag. Achieved zero typing latency and steady 60fps real-time native HTML generation, automatic Mermaid diagram rendering, and two-way task list toggling (`data-task-index`).
 - [x] **Rope Data Structure for Large Documents (`ropey`) (`Performance / Rust`)**: Integrated a B-tree Rope data structure module in the Rust backend. Enables lag-free editing, insertion, deletion, and line-slice extraction at $O(\log N)$ for 100MB+ documents with minimal memory footprint.
@@ -68,14 +79,19 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ### 📋 Overview Table
 
-| #  | Component          | Task Description                                                                               | Priority | Status      |
-| :- | :----------------- | :--------------------------------------------------------------------------------------------- | :------- | :---------- |
-| 1  | `ZenMode / Editor` | **Zen Mode Audio Mute** — Automatically mute sounds/alerts during Zen focus mode              | Medium   | 🔲 Proposed |
-| 2  | `ZenMode / Editor` | **Zen Mode Notification Suppression** — Suppress toasts/popups during Zen mode                | Medium   | 🔲 Proposed |
-| 3  | `ZenMode / Editor` | **Current Line Focus** — Dim non-active lines to emphasize the current cursor line            | Medium   | 🔲 Proposed |
-| 4  | `ZenMode / Editor` | **Pomodoro / Focus Timer** — Integrated 25min focus + 5min break timer                        | Low      | 🔲 Proposed |
-| 5  | `ZenMode / Editor` | **Ambient Background Sounds** — Rain, white noise, cafe sounds for concentration              | Low      | 🔲 Proposed |
-| 6  | `Plugin System`    | **Plugin & Extension Architecture Exploration**                                                | Low      | 🔲 Proposed |
-| 7  | `Cloud Storage`    | **Cloud Sync Prototype (Google Drive / OneDrive)**                                             | Low      | 🔲 Proposed |
-| 8  | `Multi Window`     | **Multi-Window / Tab Detachment Exploration**                                                  | Low      | 🔲 Proposed |
-
+| #   | Component              | Task Description                                                                                                                             | Priority | Status     |
+| :-- | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- | :------- | :--------- |
+| 1   | `Workspace / DualPane` | **Dual-Pane Draggable Splitter** — Interactive divider allowing users to resize the width ratio between the left and right panes             | Medium   | 🔲 Proposed |
+| 2   | `Workspace / DualPane` | **Dual-Pane Synchronized Scrolling (Toggle)** — Optional toggle to synchronize scroll positions between the two panes in preview/editor mode | Low      | 🔲 Proposed |
+| 3   | `Editor / History`     | **Custom In-Memory Undo/Redo Stack** — Overcome Chromium native UndoManager limits and retain per-tab history across view switching          | Medium   | 🔲 Proposed |
+| 4   | `Editor / SmartPaste`  | **Smart Paste (Auto URL Markdown Link)** — Automatically wraps selected text as `[Selected Text](URL)` when pasting a valid URL              | Medium   | 🔲 Proposed |
+| 5   | `Editor / Table`       | **Interactive Table Editing Assistance** — Smooth navigation between cells and row creation via Tab / Enter keys within Markdown tables      | Medium   | 🔲 Proposed |
+| 6   | `Preview / Syntax`     | **Syntax Highlighting Expansion & Themes** — Expand Prism grammar rules for major languages and allow preview theme fine-tuning              | Low      | 🔲 Proposed |
+| 7   | `ZenMode / Editor`     | **Zen Mode Audio Mute** — Automatically mute sounds/alerts during Zen focus mode                                                             | Medium   | 🔲 Proposed |
+| 8   | `ZenMode / Editor`     | **Zen Mode Notification Suppression** — Suppress toasts/popups during Zen mode                                                               | Medium   | 🔲 Proposed |
+| 9   | `ZenMode / Editor`     | **Current Line Focus** — Dim non-active lines to emphasize the current cursor line                                                           | Medium   | 🔲 Proposed |
+| 10  | `ZenMode / Editor`     | **Pomodoro / Focus Timer** — Integrated 25min focus + 5min break timer                                                                       | Low      | 🔲 Proposed |
+| 11  | `ZenMode / Editor`     | **Ambient Background Sounds** — Rain, white noise, cafe sounds for concentration                                                             | Low      | 🔲 Proposed |
+| 12  | `Plugin System`        | **Plugin & Extension Architecture Exploration**                                                                                              | Low      | 🔲 Proposed |
+| 13  | `Cloud Storage`        | **Cloud Sync Prototype (Google Drive / OneDrive)**                                                                                           | Low      | 🔲 Proposed |
+| 14  | `Multi Window`         | **Multi-Window / Tab Detachment Exploration**                                                                                                | Low      | 🔲 Proposed |

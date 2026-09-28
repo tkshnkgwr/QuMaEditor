@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { MarkdownDoc } from '../types';
 import { getFileMetadataNative } from '../utils/tauriNative';
 import { commands } from '../bindings';
@@ -173,25 +174,23 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
     });
 
     // Tauri イベント native-file-changed の購読
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      listen<{ file_path: string; mtime_ms: number }>('native-file-changed', async (event) => {
-        const changedPath = event.payload.file_path;
-        // 現在開いているファイルと一致し、再読み込み中でない場合
-        if (
-          changedPath.toLowerCase().replace(/\\/g, '/') === filePath.toLowerCase().replace(/\\/g, '/') &&
-          !isReloadingRef.current
-        ) {
-          isReloadingRef.current = true;
-          fileMtimeMapRef.current.set(filePath, event.payload.mtime_ms);
-          try {
-            await onReloadFile(filePath);
-          } finally {
-            isReloadingRef.current = false;
-          }
+    listen<{ file_path: string; mtime_ms: number }>('native-file-changed', async (event) => {
+      const changedPath = event.payload.file_path;
+      // 現在開いているファイルと一致し、再読み込み中でない場合
+      if (
+        changedPath.toLowerCase().replace(/\\/g, '/') === filePath.toLowerCase().replace(/\\/g, '/') &&
+        !isReloadingRef.current
+      ) {
+        isReloadingRef.current = true;
+        fileMtimeMapRef.current.set(filePath, event.payload.mtime_ms);
+        try {
+          await onReloadFile(filePath);
+        } finally {
+          isReloadingRef.current = false;
         }
-      }).then((unlisten) => {
-        unlistenFn = unlisten;
-      });
+      }
+    }).then((unlisten) => {
+      unlistenFn = unlisten;
     });
 
     return () => {

@@ -6,13 +6,14 @@ import {
   TextStats,
   SupportedEncoding,
   ThemeMode,
+  SaveStatus,
 } from './types';
 import {
   saveStoredDocs,
   loadSettings,
   saveSettings,
 } from './utils/storage';
-import { calculateTextStats, insertFormatting, toggleTaskInMarkdown } from './utils/markdownUtils';
+import { calculateTextStats, insertFormatting, toggleTaskInMarkdown, applyTextReplacementWithUndo } from './utils/markdownUtils';
 import { decodeFileContent } from './utils/encodingUtils';
 import { parseYamlFrontMatter } from './utils/yamlUtils';
 import {
@@ -23,7 +24,8 @@ import {
   lintMarkdownDocumentNative,
   ProofreadingIssue,
 } from './utils/tauriNative';
-import { openNativeFileFromPath, loadFullNativeDoc, loadMoreChunkNativeDoc } from './utils/fileSystem';
+import { openNativeFileFromPath, loadFullNativeDoc, loadMoreChunkNativeDoc, saveNativeFile } from './utils/fileSystem';
+import { readFile } from '@tauri-apps/plugin-fs';
 import { commands } from './bindings';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -33,6 +35,7 @@ import { TabBar } from './components/TabBar';
 import { Toolbar } from './components/Toolbar';
 import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
+import { DualPaneWorkspace } from './components/DualPaneWorkspace';
 import { StatusBar } from './components/StatusBar';
 import { Minimize2, Upload } from 'lucide-react';
 import { ModalGroup } from './components/ModalGroup';
@@ -42,6 +45,7 @@ import { logger } from './utils/logger';
 // リファクタリング用に分離したカスタムフック
 import { useModalState } from './hooks/useModalState';
 import { useDocumentManager } from './hooks/useDocumentManager';
+import { useDualPane } from './hooks/useDualPane';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useFileWatcher } from './hooks/useFileWatcher';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
@@ -155,6 +159,30 @@ export default function App() {
 
   // 表示レイアウト＆サイドバー幅
   const [viewMode, setViewMode] = useState<ViewMode>('editor');
+
+  // 2画面比較編集・プレビュー管理 (useDualPane)
+  const {
+    secondaryDocId,
+    secondaryDoc,
+    leftDoc,
+    activePane,
+    isDualPane,
+    handleOpenInSecondaryPane,
+    handleCloseSecondaryPane,
+    handleToggleDualPane,
+    handleFocusPane,
+    handleSelectTabWithDualPane,
+    handleCloseTabWithDualPane,
+  } = useDualPane(
+    docs,
+    activeDocId,
+    setActiveDocId,
+    openTabIds,
+    setOpenTabIds,
+    viewMode,
+    setViewMode
+  );
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     const saved = localStorage.getItem('quma_sidebar_width');
@@ -167,7 +195,7 @@ export default function App() {
   };
 
   // 自動保存ステータス
-  const [saveStatus, setSaveStatus] = useState<import('./types').SaveStatus>('saved');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
   // 全文一括読み込みハンドラー
@@ -358,16 +386,17 @@ export default function App() {
   const previousDoc = docs.find((d) => d.id === previousDocId);
 
   // テキスト内容の更新＆自動保存タイマー
-  const updateDocContent = (newContent: string) => {
+  const updateDocContent = (newContent: string, targetDocId?: string) => {
+    const docId = targetDocId || currentDoc.id;
+    const targetDoc = docs.find((d) => d.id === docId) || currentDoc;
     const nowISO = new Date().toISOString();
-    const updaterName = settings.defaultAuthor?.trim() || currentDoc.updatedBy || currentDoc.author || 'Unknown';
-    const targetDocId = currentDoc.id;
-    const targetFilePath = currentDoc.filePath;
-    const isRemote = currentDoc.isRemote;
+    const updaterName = settings.defaultAuthor?.trim() || targetDoc.updatedBy || targetDoc.author || 'Unknown';
+    const targetFilePath = targetDoc.filePath;
+    const isRemote = targetDoc.isRemote;
     const docToSave: MarkdownDoc = {
-      ...currentDoc,
+      ...targetDoc,
       content: newContent,
-      author: currentDoc.author || 'Unknown',
+      author: targetDoc.author || 'Unknown',
       updatedAt: nowISO,
       updatedBy: updaterName,
     };
@@ -407,7 +436,6 @@ export default function App() {
       let savedToFile = false;
       if (targetFilePath) {
         markLocalSaving();
-        const { saveNativeFile } = await import('./utils/fileSystem');
         const res = await saveNativeFile(docToSave, { forceSaveAs: false, defaultAuthor: settings.defaultAuthor });
         if (res.success && res.filePath) {
           savedToFile = true;
@@ -603,7 +631,6 @@ export default function App() {
               const dataUrl = `data:${mimeType};utf8,${encodeURIComponent(nativeRes.data.text)}`;
               handleFormat('image', dataUrl);
             } else {
-              const { readFile } = await import('@tauri-apps/plugin-fs');
               const fileBytes = await readFile(cleanPath);
               let binary = '';
               const bytes = new Uint8Array(fileBytes);
@@ -754,25 +781,37 @@ export default function App() {
     handleDroppedFiles([file]);
   };
 
-  // ツールバー各種フォーマット挿入
+  // ツールバー各種フォーマット挿入（ネイティブ Undo/Ctrl+Z 履歴対応）
   const handleFormat = (type: string, value?: string) => {
     const textarea = editorTextareaRef.current;
-    const { newText, newCursorStart, newCursorEnd } = insertFormatting(
+    if (!textarea) return;
+
+    textarea.focus();
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const res = insertFormatting(
       currentDoc.content,
-      textarea?.selectionStart || 0,
-      textarea?.selectionEnd || 0,
+      start,
+      end,
       type,
       value
     );
 
-    updateDocContent(newText);
-
-    setTimeout(() => {
-      if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(newCursorStart, newCursorEnd);
+    const success = applyTextReplacementWithUndo(
+      textarea,
+      res.rangeStart,
+      res.rangeEnd,
+      res.resultString,
+      res.newCursorStart,
+      res.newCursorEnd,
+      (fallbackText) => {
+        updateDocContent(fallbackText);
       }
-    }, 0);
+    );
+
+    if (success) {
+      updateDocContent(textarea.value);
+    }
   };
 
   // 日付挿入
@@ -925,6 +964,7 @@ export default function App() {
           theme={settings.theme || 'dark'}
           onChangeTheme={handleChangeTheme}
           isDark={isDark}
+          isDualPane={isDualPane}
         />
       )}
 
@@ -939,6 +979,7 @@ export default function App() {
             activeDocId={activeDocId}
             currentDoc={currentDoc}
             onSelectDoc={handleSelectDoc}
+            onOpenInSecondaryPane={handleOpenInSecondaryPane}
             onNewDoc={handleNewDoc}
             onDeleteDoc={handleDeleteDoc}
             onToggleFavorite={handleToggleFavorite}
@@ -959,11 +1000,14 @@ export default function App() {
               openTabIds={openTabIds}
               activeDocId={activeDocId}
               saveStatus={saveStatus}
-              onSelectTab={handleSelectTab}
-              onCloseTab={handleCloseTab}
+              onSelectTab={(id) => handleSelectTabWithDualPane(id, handleSelectTab)}
+              onCloseTab={(id) => handleCloseTabWithDualPane(id, handleCloseTab)}
               onCloseOtherTabs={handleCloseOtherTabs}
               onNewDoc={handleNewDoc}
               onOpenDiffModal={() => setIsDiffModalOpen(true)}
+              isDualPane={isDualPane}
+              onToggleDualPane={handleToggleDualPane}
+              onOpenInSecondaryPane={handleOpenInSecondaryPane}
               isDark={isDark}
             />
           )}
@@ -999,57 +1043,100 @@ export default function App() {
           )}
 
           {/* エディタ＆プレビュー ワークスペースコンテナ */}
-          <div className={`flex-1 flex min-h-0 overflow-hidden relative print:block print:w-full print:h-auto print:overflow-visible print:static print:p-0 print:m-0 ${
-            isZenMode && viewMode === 'editor' ? 'max-w-5xl mx-auto w-full px-2 sm:px-6 py-2' : ''
-          }`}>
-            {/* エディタパネル */}
-            <div className={`flex-1 h-full flex flex-col min-w-0 print:hidden ${
-              viewMode === 'preview' ? 'hidden' : ''
-            } ${
-              viewMode === 'split' ? (isDark ? 'border-r border-slate-800/80' : 'border-r border-slate-200') : ''
+          {isDualPane && secondaryDoc ? (
+            <DualPaneWorkspace
+              leftDoc={leftDoc}
+              secondaryDoc={secondaryDoc}
+              viewMode={viewMode}
+              activePane={activePane}
+              onFocusPane={handleFocusPane}
+              onCloseSecondaryPane={handleCloseSecondaryPane}
+              onUpdateContent={updateDocContent}
+              settings={settings}
+              isDark={isDark}
+              onCursorChange={(line, col) => {
+                setCursorLine(line);
+                setCursorCol(col);
+              }}
+              onScrollSync={handleScrollSync}
+              onImageDrop={handleDroppedFile}
+              onDropFiles={handleDroppedFiles}
+              onUpdateTags={handleUpdateTags}
+              onLeftTextareaRef={(el) => {
+                if (activePane === 'left') editorTextareaRef.current = el;
+              }}
+              onRightTextareaRef={(el) => {
+                if (activePane === 'right') editorTextareaRef.current = el;
+              }}
+              onLoadFullDoc={async (doc) => {
+                if (!doc.filePath) return;
+                const fullDoc = await loadFullNativeDoc(doc);
+                if (fullDoc) {
+                  setDocs((prevDocs) => prevDocs.map((d) => (d.id === doc.id ? fullDoc : d)));
+                }
+              }}
+              onLoadMoreChunk={async (doc) => {
+                if (!doc.filePath) return;
+                const updatedDoc = await loadMoreChunkNativeDoc(doc);
+                if (updatedDoc) {
+                  setDocs((prevDocs) => prevDocs.map((d) => (d.id === doc.id ? updatedDoc : d)));
+                }
+              }}
+              onToggleTaskItem={handleToggleTaskItem}
+            />
+          ) : (
+            <div className={`flex-1 flex min-h-0 overflow-hidden relative print:block print:w-full print:h-auto print:overflow-visible print:static print:p-0 print:m-0 ${
+              isZenMode && viewMode === 'editor' ? 'max-w-5xl mx-auto w-full px-2 sm:px-6 py-2' : ''
             }`}>
-              <Editor
-                content={currentDoc.content}
-                onChange={updateDocContent}
-                settings={settings}
-                onCursorChange={(line, col) => {
-                  setCursorLine(line);
-                  setCursorCol(col);
-                }}
-                onScrollSync={handleScrollSync}
-                onImageDrop={handleDroppedFile}
-                onDropFiles={handleDroppedFiles}
-                doc={currentDoc}
-                onUpdateTags={handleUpdateTags}
-                onTextareaRef={(el) => { editorTextareaRef.current = el; }}
-                isDark={isDark}
-                viewMode={viewMode}
-                onLoadFullDoc={handleLoadFullDoc}
-                onLoadMoreChunk={handleLoadMoreChunk}
-              />
-            </div>
+              {/* エディタパネル */}
+              <div className={`flex-1 h-full flex flex-col min-w-0 print:hidden ${
+                viewMode === 'preview' ? 'hidden' : ''
+              } ${
+                viewMode === 'split' ? (isDark ? 'border-r border-slate-800/80' : 'border-r border-slate-200') : ''
+              }`}>
+                <Editor
+                  content={currentDoc.content}
+                  onChange={updateDocContent}
+                  settings={settings}
+                  onCursorChange={(line, col) => {
+                    setCursorLine(line);
+                    setCursorCol(col);
+                  }}
+                  onScrollSync={handleScrollSync}
+                  onImageDrop={handleDroppedFile}
+                  onDropFiles={handleDroppedFiles}
+                  doc={currentDoc}
+                  onUpdateTags={handleUpdateTags}
+                  onTextareaRef={(el) => { editorTextareaRef.current = el; }}
+                  isDark={isDark}
+                  viewMode={viewMode}
+                  onLoadFullDoc={handleLoadFullDoc}
+                  onLoadMoreChunk={handleLoadMoreChunk}
+                />
+              </div>
 
-            {/* プレビューパネル (常時マウント＋CSS表示切替で即時レイアウト反映＆全ページ同期) */}
-            <div className={`flex-1 h-full flex flex-col min-w-0 print:block print:w-full print:static print:p-0 print:m-0 ${
-              viewMode === 'editor' ? 'hidden print:block' : ''
-            }`}>
-              <Preview
-                key={currentDoc.id}
-                content={currentDoc.content}
-                docTitle={currentDoc.title}
-                onToggleTaskItem={handleToggleTaskItem}
-                onScrollRef={(el) => {
-                  previewScrollRef.current = el;
-                }}
-                isDark={isDark}
-                fontSize={settings.fontSize}
-                lineHeight={settings.lineHeight}
-                fontFamily={settings.fontFamily}
-                headingTheme={settings.headingTheme}
-                previewEngine={settings.previewEngine}
-              />
+              {/* プレビューパネル (常時マウント＋CSS表示切替で即時レイアウト反映＆全ページ同期) */}
+              <div className={`flex-1 h-full flex flex-col min-w-0 print:block print:w-full print:static print:p-0 print:m-0 ${
+                viewMode === 'editor' ? 'hidden print:block' : ''
+              }`}>
+                <Preview
+                  key={currentDoc.id}
+                  content={currentDoc.content}
+                  docTitle={currentDoc.title}
+                  onToggleTaskItem={handleToggleTaskItem}
+                  onScrollRef={(el) => {
+                    previewScrollRef.current = el;
+                  }}
+                  isDark={isDark}
+                  fontSize={settings.fontSize}
+                  lineHeight={settings.lineHeight}
+                  fontFamily={settings.fontFamily}
+                  headingTheme={settings.headingTheme}
+                  previewEngine={settings.previewEngine}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

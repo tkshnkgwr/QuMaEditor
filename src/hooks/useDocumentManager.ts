@@ -8,6 +8,7 @@ import {
   loadOpenTabIds,
   saveOpenTabIds,
 } from '../utils/storage';
+import { openNativeFileFromPath } from '../utils/fileSystem';
 import { logger } from '../utils/logger';
 
 /**
@@ -38,7 +39,6 @@ export function useDocumentManager() {
   const loadFullDocFromDisk = useCallback(async (docToLoad: MarkdownDoc) => {
     if (!docToLoad.filePath || docToLoad.isRemote) return;
     try {
-      const { openNativeFileFromPath } = await import('../utils/fileSystem');
       const res = await openNativeFileFromPath(docToLoad.filePath);
       if (res && res.doc) {
         setDocs((prevDocs) => {

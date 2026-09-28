@@ -73,9 +73,17 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const dividerClass = isDark ? 'border-slate-800' : 'border-slate-200';
 
   return (
-    <div className={`border-b px-3 py-1.5 flex items-center flex-wrap gap-1 select-none overflow-x-auto shrink-0 z-10 transition-colors print:hidden ${
-      isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
-    }`}>
+    <div
+      onMouseDown={(e) => {
+        // ボタンクリック時に textarea からフォーカスが外れて選択範囲が消えるのを防止
+        if ((e.target as HTMLElement).tagName !== 'INPUT') {
+          e.preventDefault();
+        }
+      }}
+      className={`border-b px-3 py-1.5 flex items-center flex-wrap gap-1 select-none overflow-x-auto shrink-0 z-10 transition-colors print:hidden ${
+        isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
+      }`}
+    >
       {/* 非表示の画像ファイル入力 */}
       <input
         type="file"

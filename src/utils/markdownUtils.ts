@@ -1,5 +1,14 @@
 import { TextStats } from '../types';
 
+export interface FormattingResult {
+  newText: string;
+  newCursorStart: number;
+  newCursorEnd: number;
+  resultString: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
 export function insertFormatting(
   text: string,
   selectionStart: number,
@@ -25,7 +34,7 @@ export function insertFormatting(
     | 'text'
     | string,
   value?: string
-): { newText: string; newCursorStart: number; newCursorEnd: number } {
+): FormattingResult {
   const selectedText = text.slice(selectionStart, selectionEnd);
   let prefix = '';
   let suffix = '';
@@ -155,7 +164,62 @@ export function insertFormatting(
     newText,
     newCursorStart: cursorOffsetStart,
     newCursorEnd: cursorOffsetEnd,
+    resultString,
+    rangeStart: selectionStart,
+    rangeEnd: selectionEnd,
   };
+}
+
+/**
+ * テキストエリアの指定範囲を置換し、ブラウザのネイティブ Undo 履歴（Ctrl+Z / Ctrl+Y）に記録する。
+ * document.execCommand('insertText') を利用することで、ネイティブ Undo スタックを破壊せずに
+ * 操作を1つの編集履歴として登録する。
+ */
+export function applyTextReplacementWithUndo(
+  textarea: HTMLTextAreaElement | null,
+  rangeStart: number,
+  rangeEnd: number,
+  replacementText: string,
+  newCursorStart?: number,
+  newCursorEnd?: number,
+  fallbackOnChange?: (newFullText: string) => void
+): boolean {
+  if (!textarea) return false;
+
+  textarea.focus();
+  textarea.setSelectionRange(rangeStart, rangeEnd);
+
+  let success = false;
+  try {
+    success = document.execCommand('insertText', false, replacementText);
+  } catch {
+    success = false;
+  }
+
+  if (success) {
+    // execCommand 発火後、念のため input イベントを dispatch して React の onChange / state 同期を確実にする
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+    if (newCursorStart !== undefined && newCursorEnd !== undefined) {
+      textarea.setSelectionRange(newCursorStart, newCursorEnd);
+    }
+  } else {
+    // execCommand が失敗・非対応の場合のフォールバック
+    const val = textarea.value;
+    const newFullText = val.slice(0, rangeStart) + replacementText + val.slice(rangeEnd);
+    if (fallbackOnChange) {
+      fallbackOnChange(newFullText);
+    } else {
+      textarea.value = newFullText;
+    }
+    if (newCursorStart !== undefined && newCursorEnd !== undefined) {
+      setTimeout(() => {
+        textarea.setSelectionRange(newCursorStart, newCursorEnd);
+      }, 0);
+    }
+  }
+
+  return success;
 }
 
 export function generateCustomTable(rows: number, cols: number, headers: string[]): string {

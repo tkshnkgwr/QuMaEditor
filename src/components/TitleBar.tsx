@@ -98,6 +98,7 @@ interface TitleBarProps {
   theme: ThemeMode;
   onChangeTheme: (theme: ThemeMode) => void;
   isDark: boolean;
+  isDualPane?: boolean;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
@@ -134,6 +135,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   theme,
   onChangeTheme,
   isDark,
+  isDualPane = false,
 }) => {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -635,9 +637,13 @@ export const TitleBar: React.FC<TitleBarProps> = ({
             isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-200 border-slate-300'
           }`}>
             <button
-              onClick={() => onChangeViewMode('split')}
+              onClick={() => !isDualPane && onChangeViewMode('split')}
+              disabled={isDualPane}
+              title={isDualPane ? '2画面表示中は分割表示できません' : 'エディタとプレビューを左右分割表示'}
               className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
-                viewMode === 'split'
+                isDualPane
+                  ? 'opacity-30 cursor-not-allowed text-slate-500'
+                  : viewMode === 'split'
                   ? 'bg-cyan-600 text-white shadow'
                   : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -652,7 +658,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                   : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              編集のみ
+              {isDualPane ? '2画面 編集' : '編集のみ'}
             </button>
             <button
               onClick={() => onChangeViewMode('preview')}
@@ -662,7 +668,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                   : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              プレビューのみ
+              {isDualPane ? '2画面 プレビュー' : 'プレビューのみ'}
             </button>
           </div>
 

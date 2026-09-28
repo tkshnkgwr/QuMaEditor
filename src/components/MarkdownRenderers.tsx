@@ -2,9 +2,44 @@ import React from 'react';
 import { Components } from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { refractor } from 'refractor/all';
 import { Copy, Check, ExternalLink, Clock } from 'lucide-react';
 import { MermaidRenderer } from './MermaidRenderer';
 import { HeadingTheme } from '../types';
+
+// PowerShell (powershell / pwsh / ps1 / ps / posh) のシンタックスハイライト定義を強化
+// - パラメータ名 (-Path, -Force, -Recurse 等) の属性カラーリング
+// - 比較演算子 (-eq, -gt, -like 等) のキーワードカラーリング
+// - 特殊変数 ($_, $env:PATH, $? 等) の変数カラーリング
+// - 数値リテラル (100, 3.14 等) の数値カラーリング
+try {
+  const oldPs: any = refractor.languages?.powershell;
+  if (oldPs) {
+    (refractor.languages as any).powershell = {
+      comment: oldPs.comment,
+      string: oldPs.string,
+      namespace: oldPs.namespace,
+      boolean: oldPs.boolean,
+      variable: /\$(?:[\w:]+|\?|\$|_|\^|\{[^}]+\})/,
+      function: oldPs.function,
+      keyword: oldPs.keyword,
+      operator: {
+        pattern: /(^|\s)(?:-(?:b?(?:and|x?or)|as|(?:Not)?(?:Contains|In|Like|Match)|eq|ge|gt|is(?:Not)?|Join|le|lt|ne|not|Replace|sh[lr])\b|[!=]=?|[-+*\/%]=|\+\+|--|[+*\/%]|-(?!\w))/i,
+        lookbehind: true,
+        alias: 'keyword',
+      },
+      parameter: {
+        pattern: /(^|\s)-[a-zA-Z][\w-]*(?::\S+)?/,
+        lookbehind: true,
+        alias: 'attr-name',
+      },
+      number: /\b\d+(?:\.\d+)?\b/,
+      punctuation: oldPs.punctuation,
+    };
+  }
+} catch {
+  // フォールバック
+}
 
 export function getHeadingColors(theme: HeadingTheme = 'muted', isDark: boolean = true) {
   switch (theme) {
@@ -356,6 +391,8 @@ export function createMarkdownComponents({
           powershell: 'powershell',
           ps1: 'powershell',
           pwsh: 'powershell',
+          ps: 'powershell',
+          posh: 'powershell',
           bat: 'batch',
           cmd: 'batch',
           batch: 'batch',

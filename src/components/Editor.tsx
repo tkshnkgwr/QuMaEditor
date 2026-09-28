@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { Upload, Lock, Unlock, Tag, Plus, X, ChevronDown, ChevronRight, Edit3, Layers, Download, Zap } from 'lucide-react';
 import { EditorSettings, MarkdownDoc, ViewMode } from '../types';
-import { handleAutoListContinuation, insertFormatting, handleTabIndent } from '../utils/markdownUtils';
+import { handleAutoListContinuation, insertFormatting, handleTabIndent, applyTextReplacementWithUndo } from '../utils/markdownUtils';
 
 interface EditorProps {
   content: string;
@@ -223,25 +223,54 @@ export const Editor: React.FC<EditorProps> = ({
     const start = textareaRef.current.selectionStart;
     const end = textareaRef.current.selectionEnd;
 
-    // Ctrl + B (太字)
+    // Ctrl + B (太字 - ネイティブ Undo/Ctrl+Z 履歴対応)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
       e.preventDefault();
       const res = insertFormatting(content, start, end, 'bold');
-      onChange(res.newText);
-      setTimeout(() => {
-        textareaRef.current?.setSelectionRange(res.newCursorStart, res.newCursorEnd);
-      }, 0);
+      applyTextReplacementWithUndo(
+        textareaRef.current,
+        res.rangeStart,
+        res.rangeEnd,
+        res.resultString,
+        res.newCursorStart,
+        res.newCursorEnd,
+        onChange
+      );
+      updateCursorPos();
       return;
     }
 
-    // Ctrl + I (斜体)
+    // Ctrl + I (斜体 - ネイティブ Undo/Ctrl+Z 履歴対応)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
       e.preventDefault();
       const res = insertFormatting(content, start, end, 'italic');
-      onChange(res.newText);
-      setTimeout(() => {
-        textareaRef.current?.setSelectionRange(res.newCursorStart, res.newCursorEnd);
-      }, 0);
+      applyTextReplacementWithUndo(
+        textareaRef.current,
+        res.rangeStart,
+        res.rangeEnd,
+        res.resultString,
+        res.newCursorStart,
+        res.newCursorEnd,
+        onChange
+      );
+      updateCursorPos();
+      return;
+    }
+
+    // Ctrl + U (下線 - ネイティブ Undo/Ctrl+Z 履歴対応)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'u') {
+      e.preventDefault();
+      const res = insertFormatting(content, start, end, 'underline');
+      applyTextReplacementWithUndo(
+        textareaRef.current,
+        res.rangeStart,
+        res.rangeEnd,
+        res.resultString,
+        res.newCursorStart,
+        res.newCursorEnd,
+        onChange
+      );
+      updateCursorPos();
       return;
     }
 

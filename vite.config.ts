@@ -20,17 +20,42 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 1000,
+    // デスクトップアプリ（Tauri）環境向けにチャンクサイズ警告の上限を調整
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Markdown 解析・HTML 変換エンジン関連
+            if (
+              id.includes('react-markdown') ||
+              id.includes('remark-') ||
+              id.includes('rehype-') ||
+              id.includes('micromark') ||
+              id.includes('unist') ||
+              id.includes('mdast') ||
+              id.includes('vfile')
+            ) {
+              return 'vendor-markdown';
+            }
+            // シンタックスハイライター関連
+            if (
+              id.includes('react-syntax-highlighter') ||
+              id.includes('prismjs') ||
+              id.includes('refractor') ||
+              id.includes('lowlight')
+            ) {
+              return 'vendor-syntax';
+            }
+            // Lucide アイコン
             if (id.includes('lucide-react')) {
               return 'vendor-icons';
             }
-            if (id.includes('react-syntax-highlighter') || id.includes('prismjs') || id.includes('refractor') || id.includes('lowlight')) {
-              return 'vendor-syntax';
+            // Tauri API プラグイン群
+            if (id.includes('@tauri-apps')) {
+              return 'vendor-tauri';
             }
+            // React コアランタイム
             if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'vendor-react';
             }

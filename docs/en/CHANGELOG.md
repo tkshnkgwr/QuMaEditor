@@ -2,6 +2,24 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.4.6] - 2026-09-28
+
+### 🔀 Side-by-Side Dual-Pane Editing & Preview, Native Formatting Undo/Redo & PowerShell Highlighting (v1.4.6)
+
+- **Side-by-Side Dual-Pane Workspace for Comparative Editing & Preview (`Workspace / DualPane`)**:
+  - Implemented a dual-pane workspace (`DualPaneWorkspace`) to compare and edit up to two Markdown files simultaneously.
+  - **Launch & Layout**: Right-click any file in the sidebar or any tab on the tab bar and select "Open in Right Pane", or click the "2-Pane" toggle button on the right side of the tab bar.
+  - **Synchronized View Modes & Split Suppression**: View modes (Editor ↔ Preview) stay synchronized across both panes. Switching to preview renders previews in both panes. Prevents confusing 4-way split layouts by disabling conventional split mode while 2-pane is active.
+  - **Intelligent Focus Tracking**: Clicking either pane shifts document focus, allowing toolbar formatting, status bar stats, and save commands to naturally target the focused document.
+  - **Safe Exit & Tab Cleanup**: Exit back to single-pane view at any time via the "✕" button in the right pane header, the tab bar toggle, or by closing the right pane's tab.
+- **Native Undo/Redo Integration for Text Formatting (`Editor / Undo`)**:
+  - Replaced direct textarea value assignments with `applyTextReplacementWithUndo` (`document.execCommand('insertText')`), properly registering formatting operations (Ctrl+B, Ctrl+I, Ctrl+U, and toolbar buttons) into the browser native Undo stack.
+  - Supports instant undo via `Ctrl + Z` and redo via `Ctrl + Y`.
+  - Added `onMouseDown` protection to toolbar buttons to prevent focus and selection loss from the textarea.
+- **Enhanced PowerShell Syntax Highlighting & Aliases (`Preview / Syntax`)**:
+  - Extended Prism grammar definitions for PowerShell to highlight parameters (`-Path`, `-Force` as attributes), comparison operators (`-eq`, `-gt`, `-like` as keywords), numeric literals (`1024`, `0`), and special variables (`$_`, `$env:PATH`).
+  - Added official alias support for code blocks with ````ps```` and ````posh```` alongside ````powershell````, ````pwsh````, and ````ps1````.
+
 ## [1.4.5] - 2026-09-14
 
 ### 💎 Markdown Preview Obsidian Full Compatibility (v1.4.5)
