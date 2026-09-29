@@ -6,12 +6,13 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
-### v1.4.6 Release (2026-09-28)
+### v1.5.0 Release (2026-09-29)
 
 - [x] **Side-by-Side Dual-Pane Editing & Preview (`Workspace / DualPane`)**: Introduced a multi-tasking workspace enabling users to open up to 2 Markdown files side-by-side for simultaneous comparison, editing, and previewing. Supports right-click "Open in Right Pane" from the sidebar and tabs, or via the dedicated tab bar button. View mode (Editor/Preview) synchronizes across both panes with focus tracking and 4-way split suppression.
 - [x] **Native Undo/Redo Integration for Text Formatting (`applyTextReplacementWithUndo`) (`Editor / Undo`)**: Integrated bold (`Ctrl+B`), italic (`Ctrl+I`), underline (`Ctrl+U`), and all toolbar button actions into the native browser Undo/Redo stack (`Ctrl+Z` / `Ctrl+Y`). Added event suppression (`preventDefault`) to retain selection focus on toolbar clicks.
 - [x] **Underline Shortcut (`Ctrl + U`) (`Editor / Shortcut`)**: Added `Ctrl + U` shortcut to insert `<u>...</u>` tags and wrap selected text.
 - [x] **Enhanced PowerShell Syntax Highlighting & Aliases (`Preview / Syntax`)**: Extended Prism grammar for parameter flags (`-Path`), comparison operators (`-eq`), numbers, and special variables, plus aliases (`ps`, `posh`).
+- [x] **Vite Build Warning Elimination & Chunk Optimization (`Build / Vite`)**: Unified dynamic/static imports across frontend utilities to eradicate Rollup warnings. Separated vendor chunks (`vendor-markdown`, `vendor-syntax`, `vendor-react`, `vendor-icons`, `vendor-tauri`) for clean and fast production bundles.
 
 ### v1.4.5 Release (2026-09-14)
 

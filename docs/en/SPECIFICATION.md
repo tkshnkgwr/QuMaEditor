@@ -45,7 +45,7 @@ QuMaEditor is a performance-first desktop Markdown editor built with **Tauri v2*
 
 | Item       | Details                                  |
 | :--------- | :--------------------------------------- |
-| Version    | v1.4.6                                   |
+| Version    | v1.5.0                                   |
 | OS         | Windows 10 / 11 (Tauri v2 Native Window) |
 | Runtime    | Rust Native Engine + WebView2            |
 | Frontend   | React 19 + TypeScript 5.8                |

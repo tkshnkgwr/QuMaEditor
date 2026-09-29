@@ -2,9 +2,9 @@
 
 All notable changes and release history for QuMaEditor.
 
-## [1.4.6] - 2026-09-28
+## [1.5.0] - 2026-09-29
 
-### 🔀 Side-by-Side Dual-Pane Editing & Preview, Native Formatting Undo/Redo & PowerShell Highlighting (v1.4.6)
+### 🔀 Side-by-Side Dual-Pane Editing & Preview, Native Formatting Undo/Redo & PowerShell Highlighting (v1.5.0)
 
 - **Side-by-Side Dual-Pane Workspace for Comparative Editing & Preview (`Workspace / DualPane`)**:
   - Implemented a dual-pane workspace (`DualPaneWorkspace`) to compare and edit up to two Markdown files simultaneously.
@@ -19,6 +19,9 @@ All notable changes and release history for QuMaEditor.
 - **Enhanced PowerShell Syntax Highlighting & Aliases (`Preview / Syntax`)**:
   - Extended Prism grammar definitions for PowerShell to highlight parameters (`-Path`, `-Force` as attributes), comparison operators (`-eq`, `-gt`, `-like` as keywords), numeric literals (`1024`, `0`), and special variables (`$_`, `$env:PATH`).
   - Added official alias support for code blocks with ````ps```` and ````posh```` alongside ````powershell````, ````pwsh````, and ````ps1````.
+- **Vite Build Warning Elimination & Chunk Optimization (`Build / Vite`)**:
+  - Unified dynamic/static imports across frontend utilities to eradicate Rollup warnings.
+  - Separated vendor chunks (`vendor-markdown`, `vendor-syntax`, `vendor-react`, `vendor-icons`, `vendor-tauri`) for clean and fast production bundles.
 
 ## [1.4.5] - 2026-09-14
 
