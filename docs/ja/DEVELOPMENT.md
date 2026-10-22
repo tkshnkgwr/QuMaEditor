@@ -11,21 +11,26 @@
 │   └── en/                         # 英語版ドキュメント
 ├── src/                            # フロントエンドソースコード (React 19 / TypeScript)
 │   ├── components/                 # UIコンポーネント群
+│   │   ├── settings/               # 設定タブコンポーネント群
+│   │   │   ├── AiTab.tsx           # Gemini API 要約設定タブ
+│   │   │   ├── GeneralTab.tsx      # 外観・フォント・自動保存設定タブ
+│   │   │   └── StorageTab.tsx      # ストレージ管理・ZIP出力タブ
 │   │   ├── AboutModal.tsx          # バージョン情報モーダル
 │   │   ├── BatchConvertModal.tsx   # 一括文字コード変換ダイアログ
 │   │   ├── DiffModal.tsx           # Text Diff 比較ダイアログ
+│   │   ├── DualPaneWorkspace.tsx   # 2画面並列比較・編集・プレビューワークスペース
 │   │   ├── Editor.tsx              # テキストエディタコンポーネント
 │   │   ├── HelpGuideModal.tsx      # ヘルプガイドダイアログ
 │   │   ├── LogModal.tsx            # ログ表示モーダル
 │   │   ├── MarkdownRenderers.tsx   # ReactMarkdown カスタム要素レンダラー
-│   │   ├── MermaidRenderer.tsx     # Mermaid SVG レンダラー
+│   │   ├── MermaidRenderer.tsx     # Mermaid SVG レンダラー（ズーム・全画面・SVG保存）
 │   │   ├── ModalGroup.tsx          # 10個の各種モーダル集約コンポーネント
 │   │   ├── Preview.tsx             # Markdown リアルタイムプレビュー & Mermaid 描画
-│   │   ├── SettingsModal.tsx       # エディタ設定変更モーダル
+│   │   ├── SettingsModal.tsx       # エディタ設定変更モーダル親枠
 │   │   ├── ShortcutsModal.tsx      # キーボードショートカット一覧ダイアログ
 │   │   ├── Sidebar.tsx             # ドキュメント管理＆見出しアウトラインサイドバー
 │   │   ├── StatsModal.tsx          # 詳細テキスト統計ダッシュボード
-│   │   ├── StatusBar.tsx           # ステータスバー（文字コード/改行/保存状態表示）
+│   │   ├── StatusBar.tsx           # ステータスバー（文字コード/校正Lint/保存状態表示）
 │   │   ├── TableModal.tsx          # 表組生成ダイアログ
 │   │   ├── TabBar.tsx              # タブバーコンポーネント
 │   │   ├── TemplateModal.tsx       # テンプレート選択ダイアログ
@@ -34,16 +39,21 @@
 │   │   └── Toolbar.tsx             # 入力補助ツールバー
 │   ├── hooks/                      # カスタムフック群
 │   │   ├── useDocumentManager.ts   # ドキュメント一覧・タブ管理フック
+│   │   ├── useDualPane.ts          # 2画面デュアルペインスプリッター・フォーカス管理フック
+│   │   ├── useEditorToolbarActions.ts # ツールバー書式挿入・表・見出しジャンプフック
 │   │   ├── useFileOperations.ts    # ファイルオープン・保存・エクスポートフック
 │   │   ├── useFileWatcher.ts       # 外部ファイル更新検知フック
 │   │   ├── useGlobalShortcuts.ts   # グローバルキーボードショートカット制御フック
-│   │   └── useModalState.ts        # 全モーダル表示状態管理フック
+│   │   ├── useModalState.ts        # 全モーダル表示状態管理フック
+│   │   └── useWindowDragDrop.ts    # ウィンドウドラッグ＆ドロップハンドリングフック
 │   ├── utils/                      # ユーティリティモジュール
+│   │   ├── aiSummary.ts            # Gemini API & ローカル要約ハイブリッドエンジン
 │   │   ├── encodingUtils.ts        # 文字コード判別・エンコード・改行コード変換
 │   │   ├── fileSystem.ts           # ファイルシステム・チャンク読込
 │   │   ├── logger.ts               # ロガーユーティリティ
 │   │   ├── markdownUtils.ts        # フォーマット挿入・テキスト操作
 │   │   ├── storage.ts              # LocalStorage 入出力・GC
+│   │   ├── tableUtils.ts           # Markdown 表自動移動・行追加ロジック
 │   │   ├── tauriNative.ts          # Tauri ネイティブ IPC ラッパー
 │   │   └── yamlUtils.ts            # YAML Front Matter 構文解析・生成
 │   ├── App.tsx                     # メインアプリケーションコンポーネント
@@ -99,8 +109,8 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy 厳格品質検証
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust ユニットテスト検証 (全39件)
-cargo test --manifest-path src-tauri/Cargo.toml
+# 4. Rust ユニットテスト検証 (全43件 PASS / Windows ComCtl32 v6 マニフェスト自動解決)
+npm run test:rust
 
 # 5. TypeScript 型検証
 npm run lint

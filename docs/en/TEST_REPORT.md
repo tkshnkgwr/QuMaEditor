@@ -4,8 +4,8 @@
 
 ## 1. Test Overview
 
-- **Date**: 2026-09-14
-- **Target Version**: v1.4.5 (Release)
+- **Date**: 2026-10-22
+- **Target Version**: v1.5.1 (Release)
 - **Environment**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
 ---
@@ -17,12 +17,12 @@
 | 1  | **Rust Code Formatting**      | `cargo fmt --manifest-path src-tauri/Cargo.toml --check`                         | ✅ PASS (0 diff)   |
 | 2  | **Rust Compilation & Types**  | `cargo check --manifest-path src-tauri/Cargo.toml`                               | ✅ PASS (0 errors) |
 | 3  | **Rust Clippy Strict Linter** | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings` | ✅ PASS (0 warns)  |
-| 4  | **Rust Unit Tests**           | `cargo test --manifest-path src-tauri/Cargo.toml`                                | ✅ PASS (39/39 ok) |
+| 4  | **Rust Unit Tests**           | `npm run test:rust`                                                              | ✅ PASS (43/43 ok) |
 | 5  | **TypeScript Type Check**     | `npm run lint`                                                                   | ✅ PASS (0 errors) |
 
 ---
 
-## 3. Rust Unit Test Details (All 39 Tests Passed)
+## 3. Rust Unit Test Details (All 43 Tests Passed)
 
 | ID    | Test Function Name                                                     | Module                        | Verification Summary                                                   | Result   |
 | :---- | :--------------------------------------------------------------------- | :---------------------------- | :--------------------------------------------------------------------- | :------- |
@@ -65,4 +65,8 @@
 | UT-37 | `test_obsidian_soft_break_to_hard_break`                               | `text_processing/html`        | Obsidian single Enter line break (<br /> generation) test              | **Pass** |
 | UT-38 | `test_obsidian_highlight_and_wikilink`                                 | `text_processing/html`        | Highlight ==text== and wikilink [[note]] conversion test               | **Pass** |
 | UT-39 | `test_obsidian_callout_rendering`                                      | `text_processing/html`        | Obsidian callouts ([!NOTE] etc.) card HTML conversion test             | **Pass** |
+| UT-40 | `test_normalize_path`                                                  | `file_watcher`                | Absolute path normalization verification                               | **Pass** |
+| UT-41 | `test_unwatch_all_empty`                                               | `file_watcher`                | Safe unwatch-all execution when empty                                  | **Pass** |
+| UT-42 | `test_unwatch_nonexistent_file`                                        | `file_watcher`                | Safe error suppression for unwatching nonexistent paths                | **Pass** |
+| UT-43 | `test_code_block_language_aliases`                                     | `text_processing/html`        | Code block language aliases mapping test (ps, posh, ts, etc.)          | **Pass** |
 

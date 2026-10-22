@@ -11,21 +11,26 @@
 │   └── en/                         # English documentation
 ├── src/                            # Frontend source code (React 19 / TypeScript)
 │   ├── components/                 # UI components
+│   │   ├── settings/               # Settings tab components
+│   │   │   ├── AiTab.tsx           # Gemini API summarization settings tab
+│   │   │   ├── GeneralTab.tsx      # Appearance, font & auto-save tab
+│   │   │   └── StorageTab.tsx      # Storage management & ZIP export tab
 │   │   ├── AboutModal.tsx          # About modal
 │   │   ├── BatchConvertModal.tsx   # Batch encoding conversion dialog
 │   │   ├── DiffModal.tsx           # Text diff visualizer
+│   │   ├── DualPaneWorkspace.tsx   # Side-by-side dual-pane editing & preview workspace
 │   │   ├── Editor.tsx              # Text editor component
 │   │   ├── HelpGuideModal.tsx      # Quick help guide dialog
 │   │   ├── LogModal.tsx            # Application log modal
 │   │   ├── MarkdownRenderers.tsx   # ReactMarkdown custom renderers
-│   │   ├── MermaidRenderer.tsx     # Mermaid SVG renderer
+│   │   ├── MermaidRenderer.tsx     # Mermaid SVG renderer (zoom, fullscreen, SVG save)
 │   │   ├── ModalGroup.tsx          # Consolidated modal container
 │   │   ├── Preview.tsx             # Markdown real-time preview & Mermaid renderer
-│   │   ├── SettingsModal.tsx       # Editor settings dialog
+│   │   ├── SettingsModal.tsx       # Editor settings dialog shell
 │   │   ├── ShortcutsModal.tsx      # Keyboard shortcuts guide
 │   │   ├── Sidebar.tsx             # Document management & outline sidebar
 │   │   ├── StatsModal.tsx          # Statistics dashboard modal
-│   │   ├── StatusBar.tsx           # Status bar (encoding/EOL/storage status)
+│   │   ├── StatusBar.tsx           # Status bar (encoding/proofreading/save status)
 │   │   ├── TableModal.tsx          # Table generator dialog
 │   │   ├── TabBar.tsx              # Document tabs bar
 │   │   ├── TemplateModal.tsx       # Document template selector
@@ -34,16 +39,21 @@
 │   │   └── Toolbar.tsx             # Formatting toolbar
 │   ├── hooks/                      # Custom React hooks
 │   │   ├── useDocumentManager.ts   # Document state & tabs manager hook
+│   │   ├── useDualPane.ts          # Side-by-side dual-pane splitter & focus hook
+│   │   ├── useEditorToolbarActions.ts # Toolbar format actions, tables & heading jump hook
 │   │   ├── useFileOperations.ts    # File open, save, export hook
 │   │   ├── useFileWatcher.ts       # External file watcher hook
 │   │   ├── useGlobalShortcuts.ts   # Global keyboard shortcuts hook
-│   │   └── useModalState.ts        # Modal state manager hook
+│   │   ├── useModalState.ts        # Modal state manager hook
+│   │   └── useWindowDragDrop.ts    # OS drag-and-drop handler hook
 │   ├── utils/                      # Utilities
+│   │   ├── aiSummary.ts            # Gemini API & local summary hybrid engine
 │   │   ├── encodingUtils.ts        # Encoding detection & conversion
 │   │   ├── fileSystem.ts           # File system & chunk loader
 │   │   ├── logger.ts               # Logger utility
 │   │   ├── markdownUtils.ts        # Formatting insertion & stats
 │   │   ├── storage.ts              # LocalStorage I/O & GC
+│   │   ├── tableUtils.ts           # Table navigation & auto-row logic
 │   │   ├── tauriNative.ts          # Tauri IPC wrappers
 │   │   └── yamlUtils.ts            # YAML front matter parser
 │   ├── App.tsx                     # Main application component
@@ -99,8 +109,8 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy strict quality check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust unit tests (39 tests)
-cargo test --manifest-path src-tauri/Cargo.toml
+# 4. Rust unit tests (43 tests PASS / with Windows ComCtl32 v6 manifest)
+npm run test:rust
 
 # 5. TypeScript type verification
 npm run lint

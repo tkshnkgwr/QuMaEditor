@@ -4,8 +4,8 @@
 
 ## 1. テスト実施概要
 
-- **実施日**: 2026-09-14
-- **対象バージョン**: v1.4.5 (Release)
+- **実施日**: 2026-10-22
+- **対象バージョン**: v1.5.1 (Release)
 - **実施環境**: Windows 11 / Node.js v22.18 / Rust 1.89 / Tauri v2
 
 ---
@@ -17,12 +17,12 @@
 | 1  | **Rust コード整形検証**     | `cargo fmt --manifest-path src-tauri/Cargo.toml --check`                         | ✅ PASS (0 diff)   |
 | 2  | **Rust コンパイル・型検証** | `cargo check --manifest-path src-tauri/Cargo.toml`                               | ✅ PASS (0 errors) |
 | 3  | **Rust Clippy 品質検証**    | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings` | ✅ PASS (0 warns)  |
-| 4  | **Rust ユニットテスト検証** | `cargo test --manifest-path src-tauri/Cargo.toml`                                | ✅ PASS (39/39 ok) |
+| 4  | **Rust ユニットテスト検証** | `npm run test:rust`                                                              | ✅ PASS (43/43 ok) |
 | 5  | **TypeScript 型検証**       | `npm run lint`                                                                   | ✅ PASS (0 errors) |
 
 ---
 
-## 3. Rust ユニットテスト詳細結果 (全39件 PASS)
+## 3. Rust ユニットテスト詳細結果 (全43件 PASS)
 
 | ID    | テスト関数名                                                           | モジュール                  | 検証内容                                                                   | 結果     |
 | :---- | :--------------------------------------------------------------------- | :-------------------------- | :------------------------------------------------------------------------- | :------- |
@@ -65,5 +65,9 @@
 | UT-37 | `test_obsidian_soft_break_to_hard_break`                               | `text_processing/html`      | Obsidian 互換 Enter 1回改行（`<br />` 生成）検証                           | **Pass** |
 | UT-38 | `test_obsidian_highlight_and_wikilink`                                 | `text_processing/html`      | 蛍光ペン `==text==` 及び Wiki リンク `[[note]]` 変換検証                   | **Pass** |
 | UT-39 | `test_obsidian_callout_rendering`                                      | `text_processing/html`      | Obsidian コールアウト記法 (`[!NOTE]`等) のカード HTML 変換検証             | **Pass** |
+| UT-40 | `test_normalize_path`                                                  | `file_watcher`              | 監視対象ファイルパスの絶対正規化処理検証                                   | **Pass** |
+| UT-41 | `test_unwatch_all_empty`                                               | `file_watcher`              | 監視対象ゼロ時の全解除呼び出し安全性検証                                   | **Pass** |
+| UT-42 | `test_unwatch_nonexistent_file`                                        | `file_watcher`              | 未登録ファイルパス解除要求の安全な無視・エラー抑制                         | **Pass** |
+| UT-43 | `test_code_block_language_aliases`                                     | `text_processing/html`      | コードブロック言語エイリアス（ps, posh, ts等）の正常マッピング検証         | **Pass** |
 
 
