@@ -13,6 +13,17 @@ QuMaEditor (Quick & Minimal Markdown Editor) is an ultra-lightweight, high-perfo
 
 ---
 
+## 📚 Documentation
+
+- **[User Guide (USER_GUIDE)](docs/en/USER_GUIDE.md)**: UI controls, AI summaries, dual-pane workspace, settings, and shortcuts
+- **[Technical Specifications (SPECIFICATION)](docs/en/SPECIFICATION.md)**: Core features, lifecycle, and system requirements
+- **[Architecture (ARCHITECTURE)](docs/en/ARCHITECTURE.md)**: Rust/React multi-process model, data flows, and module layouts
+- **[Development Plan & TODO (TODO)](docs/en/TODO.md)**: Completed features and future roadmap
+- **[Changelog (CHANGELOG)](docs/en/CHANGELOG.md)**: Version release notes
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - Copyright (c) 2026 tkshnkgwr. See the [LICENSE](LICENSE) file for details.
+

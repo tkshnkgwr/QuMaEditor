@@ -143,4 +143,82 @@ graph TD
 | `mmap_reader`       | [`src-tauri/src/mmap_reader.rs`](../../src-tauri/src/mmap_reader.rs)      | OS virtual memory page cache integration via `memmap2` for zero-copy instant opening of massive log files       |
 | `workspace_scanner` | [`src-tauri/src/workspace_scanner.rs`](../../src-tauri/src/workspace_scanner.rs) | Multithreaded parallel directory tree traversal respecting `.gitignore` via `ignore` crate                       |
 
+---
+
+## 6. Frontend Component Architecture (Renderer Process)
+
+To ensure high maintainability and prevent single-file code bloat, all frontend source files are strictly kept under 1,000 lines through clean modular decomposition.
+
+```mermaid
+graph TD
+    App["App.tsx<br/>(Master Layout & State Mediation)"]
+
+    subgraph CustomHooks["Custom Hooks"]
+        useDoc["useDocumentManager.ts<br/>(Document Lifecycle & Summary Sync)"]
+        useDnD["useWindowDragDrop.ts<br/>(Tauri / HTML5 D&D Engine)"]
+        useToolbar["useEditorToolbarActions.ts<br/>(Formatting / Tables / TOC Navigation)"]
+        useDual["useDualPane.ts<br/>(Dual Pane Splitter & Focus)"]
+        useShortcuts["useGlobalShortcuts.ts<br/>(Global Keybindings)"]
+    end
+
+    subgraph UIComponents["Key UI Components"]
+        DualPane["DualPaneWorkspace.tsx<br/>(Split Workspace Layout)"]
+        Editor["Editor.tsx<br/>(CodeMirror & Front Matter Panel)"]
+        Preview["Preview.tsx<br/>(Rust HTML, Obsidian Callouts, Segmentation)"]
+        MermaidComp["MermaidRenderer.tsx<br/>(Zoom, Fullscreen Modal, SVG Save)"]
+        StatusBar["StatusBar.tsx<br/>(Metrics, Proofreading Tooltip, Sync)"]
+        SettingsModal["SettingsModal.tsx<br/>(Modal Shell: 286 Lines)"]
+    end
+
+    subgraph SettingsTabs["Modular Settings Tabs"]
+        GeneralTab["settings/GeneralTab.tsx<br/>(Appearance, Fonts, Auto-Save)"]
+        AiTab["settings/AiTab.tsx<br/>(Gemini API, Models, Testing)"]
+        StorageTab["settings/StorageTab.tsx<br/>(Storage Quotas, ZIP Export)"]
+    end
+
+    subgraph UtilityModules["Utilities & API Layer"]
+        AiSummary["aiSummary.ts<br/>(Gemini API, safeFetch, Fallback)"]
+        YamlUtils["yamlUtils.ts<br/>(YAML Parsing & Front Matter Sync)"]
+        TableUtils["tableUtils.ts<br/>(Interactive Markdown Table Editing)"]
+        TauriNative["tauriNative.ts<br/>(Rust IPC Command Bridge)"]
+    end
+
+    App --> useDoc
+    App --> useDnD
+    App --> useToolbar
+    App --> useDual
+    App --> useShortcuts
+    App --> DualPane
+    App --> StatusBar
+    App --> SettingsModal
+
+    DualPane --> Editor
+    DualPane --> Preview
+    Preview --> MermaidComp
+
+    SettingsModal --> GeneralTab
+    SettingsModal --> AiTab
+    SettingsModal --> StorageTab
+
+    Editor --> YamlUtils
+    Editor --> AiSummary
+    useToolbar --> TableUtils
+    useDoc --> TauriNative
+```
+
+| Path                                 | Responsibilities & Architecture Description                                                           |
+| :----------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `src/App.tsx`                        | Root controller coordinating layout, custom hooks, and modal triggers (958 lines, <1,000 lines)      |
+| `src/hooks/useDocumentManager.ts`    | Centralized lifecycle management for document creation, loading, disk saves, tags, and AI summaries  |
+| `src/hooks/useWindowDragDrop.ts`     | Native Tauri and HTML5 drag-and-drop handler for external files (.md, .txt) and image data embedding  |
+| `src/hooks/useEditorToolbarActions`  | Centralized actions for toolbar formatting (bold, italic, underline), table generation, and headings |
+| `src/components/MermaidRenderer.tsx` | Mermaid dynamic SVG rendering, interactive zoom, fullscreen modal, SVG file save, and syntax alerts   |
+| `src/components/SettingsModal.tsx`   | Container modal shell managing tab transitions (286 lines, ~69% reduction)                            |
+| `src/components/settings/GeneralTab` | General editor preferences, typography, line height, auto-save interval, and syntax themes            |
+| `src/components/settings/AiTab.tsx`  | Google Gemini API configuration, model selection, custom endpoint, prompt tuning, and live test      |
+| `src/components/settings/StorageTab` | Storage quota analytics, document counting, batch ZIP archiving, and cache reset                     |
+| `src/utils/aiSummary.ts`             | Google Gemini API (`@google/genai`) client with Tauri HTTP plugin bridge and offline local fallback  |
+| `src/utils/tableUtils.ts`            | Interactive keyboard navigation (Tab / Shift+Tab / Enter) and auto-formatting for Markdown tables     |
+
+
 

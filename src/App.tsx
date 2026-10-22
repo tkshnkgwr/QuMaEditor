@@ -13,7 +13,7 @@ import {
   loadSettings,
   saveSettings,
 } from './utils/storage';
-import { calculateTextStats, insertFormatting, toggleTaskInMarkdown, applyTextReplacementWithUndo } from './utils/markdownUtils';
+import { calculateTextStats, toggleTaskInMarkdown } from './utils/markdownUtils';
 import { decodeFileContent } from './utils/encodingUtils';
 import { parseYamlFrontMatter } from './utils/yamlUtils';
 import {
@@ -25,7 +25,6 @@ import {
   ProofreadingIssue,
 } from './utils/tauriNative';
 import { openNativeFileFromPath, loadFullNativeDoc, loadMoreChunkNativeDoc, saveNativeFile } from './utils/fileSystem';
-import { readFile } from '@tauri-apps/plugin-fs';
 import { commands } from './bindings';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
@@ -49,6 +48,8 @@ import { useDualPane } from './hooks/useDualPane';
 import { useFileOperations } from './hooks/useFileOperations';
 import { useFileWatcher } from './hooks/useFileWatcher';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
+import { useWindowDragDrop } from './hooks/useWindowDragDrop';
+import { useEditorToolbarActions } from './hooks/useEditorToolbarActions';
 
 export default function App() {
   // ドキュメント一覧・タブ状態の管理 (useDocumentManager)
@@ -73,6 +74,7 @@ export default function App() {
     handleUpdateAuthor,
     handleUpdateUpdatedBy,
     handleUpdateTags,
+    handleUpdateSummary,
   } = useDocumentManager();
 
   // モーダルおよび Zen モード開閉状態の管理 (useModalState)
@@ -498,6 +500,8 @@ export default function App() {
         createdAt: metadata.created || new Date().toISOString(),
         updatedAt: metadata.updated || new Date().toISOString(),
         tags: metadata.tags || [],
+        summary: metadata.summary,
+        summaryType: metadata.summary_type,
         isFavorite: false,
       };
 
@@ -608,107 +612,6 @@ export default function App() {
     };
   }, [handleAddOpenedDoc]);
 
-  // アプリ全体でのドラッグオーバーレイ状態管理
-  const [isAppDraggingOver, setIsAppDraggingOver] = useState(false);
-
-  // パス指定でのファイルドロップ処理 (Tauri ネイティブ Window Drag&Drop 用)
-  const handleDroppedPaths = useCallback(
-    async (paths: string[]) => {
-      if (!paths || paths.length === 0) return;
-
-      for (const path of paths) {
-        const cleanPath = path.trim().replace(/^"|"$/g, '');
-        if (!cleanPath) continue;
-
-        const ext = cleanPath.split('.').pop()?.toLowerCase() || '';
-        const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif'].includes(ext);
-
-        if (isImage) {
-          try {
-            const nativeRes = await commands.readFileNative(cleanPath);
-            if (nativeRes.status === 'ok') {
-              const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-              const dataUrl = `data:${mimeType};utf8,${encodeURIComponent(nativeRes.data.text)}`;
-              handleFormat('image', dataUrl);
-            } else {
-              const fileBytes = await readFile(cleanPath);
-              let binary = '';
-              const bytes = new Uint8Array(fileBytes);
-              for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
-              }
-              const base64 = btoa(binary);
-              const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-              const dataUrl = `data:${mimeType};base64,${base64}`;
-              handleFormat('image', dataUrl);
-            }
-          } catch (e) {
-            console.error('Failed to read image path:', cleanPath, e);
-          }
-        } else {
-          // テキストファイルドロップ
-          const openResult = await openNativeFileFromPath(cleanPath);
-          if (openResult && openResult.doc) {
-            handleAddOpenedDoc(openResult.doc);
-          }
-        }
-      }
-    },
-    [handleAddOpenedDoc]
-  );
-
-  // Tauri ネイティブ Window Drag & Drop イベントリスナー
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    const setupDragDropListener = async () => {
-      try {
-        const win = getCurrentWebviewWindow();
-        unlisten = await win.onDragDropEvent(async (event) => {
-          const payload = event.payload;
-          if (payload.type === 'drop') {
-            setIsAppDraggingOver(false);
-            if (payload.paths && payload.paths.length > 0) {
-              await handleDroppedPaths(payload.paths);
-            }
-          } else if (payload.type === 'enter' || payload.type === 'over') {
-            setIsAppDraggingOver(true);
-          } else if (payload.type === 'leave') {
-            setIsAppDraggingOver(false);
-          }
-        });
-      } catch (e) {
-        console.log('Tauri dragDropEvent listen error:', e);
-      }
-    };
-
-    setupDragDropListener();
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [handleDroppedPaths]);
-
-  // ブラウザ（HTML5）レベルでのデフォルト動作防止
-  useEffect(() => {
-    const handleWindowDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    };
-
-    const handleWindowDrop = (e: DragEvent) => {
-      e.preventDefault();
-      setIsAppDraggingOver(false);
-    };
-
-    window.addEventListener('dragover', handleWindowDragOver);
-    window.addEventListener('drop', handleWindowDrop);
-    return () => {
-      window.removeEventListener('dragover', handleWindowDragOver);
-      window.removeEventListener('drop', handleWindowDrop);
-    };
-  }, []);
-
   // スクロール連動
   const handleScrollSync = useCallback((percentage: number) => {
     if (previewScrollRef.current) {
@@ -718,187 +621,37 @@ export default function App() {
     }
   }, []);
 
-  // 画像/ファイルのドロップ処理（複数ファイル・画像/テキスト自動判別対応）
-  const handleDroppedFiles = async (files: File[]) => {
-    if (!files || files.length === 0) return;
+  // ツールバー各種フォーマット挿入＆見出しジャンプアクション (useEditorToolbarActions)
+  const {
+    handleFormat,
+    handleInsertDate,
+    handleInsertTable,
+    handleInsertMermaidTemplate,
+    handleJumpToHeading,
+  } = useEditorToolbarActions({
+    content: currentDoc.content,
+    updateDocContent,
+    editorTextareaRef,
+    previewScrollRef,
+    settings,
+    setCursorLine,
+    setCursorCol,
+    setIsTableModalOpen,
+  });
 
-    for (const file of files) {
-      const isImage =
-        file.type.startsWith('image/') ||
-        /\.(png|jpe?g|gif|webp|svg|bmp|ico|avif)$/i.test(file.name);
-
-      if (isImage) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUrl = e.target?.result as string;
-          if (dataUrl) {
-            handleFormat('image', dataUrl);
-          }
-        };
-        reader.readAsDataURL(file);
-      } else {
-        // テキスト/ローカルドキュメントの場合: まずネイティブパスで試行
-        const nativePath = (file as any).path || (file as any).webkitRelativePath;
-        if (nativePath && typeof nativePath === 'string' && nativePath.length > 0) {
-          const openResult = await openNativeFileFromPath(nativePath);
-          if (openResult && openResult.doc) {
-            handleAddOpenedDoc(openResult.doc);
-            continue;
-          }
-        }
-
-        // ネイティブパスが取れない場合のフォールバック（直接ファイル読み取り）
-        try {
-          const text = await file.text();
-          const { body, metadata } = parseYamlFrontMatter(text);
-          const fileNameWithExt = file.name || '無題のドキュメント';
-          const defaultTitle = fileNameWithExt.replace(/\.[^/.]+$/, '') || fileNameWithExt;
-
-          const doc: MarkdownDoc = {
-            id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-            title: metadata.title || defaultTitle,
-            author: metadata.author || settings.defaultAuthor || 'Unknown',
-            updatedBy: metadata.updatedBy || metadata.author || settings.defaultAuthor || 'Unknown',
-            content: body,
-            encoding: (metadata.encoding as SupportedEncoding) || 'UTF-8',
-            createdAt: metadata.created || new Date().toISOString(),
-            updatedAt: metadata.updated || new Date().toISOString(),
-            tags: metadata.tags || [],
-            filePath: undefined,
-            isFavorite: false,
-            isRemote: false,
-          };
-
-          handleAddOpenedDoc(doc);
-        } catch (err) {
-          logger.error(`[ドロップファイル読み込み失敗] ${file.name}: ${err}`);
-        }
-      }
-    }
-  };
-
-  const handleDroppedFile = (file: File) => {
-    handleDroppedFiles([file]);
-  };
-
-  // ツールバー各種フォーマット挿入（ネイティブ Undo/Ctrl+Z 履歴対応）
-  const handleFormat = (type: string, value?: string) => {
-    const textarea = editorTextareaRef.current;
-    if (!textarea) return;
-
-    textarea.focus();
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const res = insertFormatting(
-      currentDoc.content,
-      start,
-      end,
-      type,
-      value
-    );
-
-    const success = applyTextReplacementWithUndo(
-      textarea,
-      res.rangeStart,
-      res.rangeEnd,
-      res.resultString,
-      res.newCursorStart,
-      res.newCursorEnd,
-      (fallbackText) => {
-        updateDocContent(fallbackText);
-      }
-    );
-
-    if (success) {
-      updateDocContent(textarea.value);
-    }
-  };
-
-  // 日付挿入
-  const handleInsertDate = () => {
-    const dateStr = new Date().toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      weekday: 'short',
-    });
-    handleFormat('text', dateStr);
-  };
-
-  // テーブル挿入
-  const handleInsertTable = (markdownTable: string) => {
-    handleFormat('text', `\n${markdownTable}\n`);
-    setIsTableModalOpen(false);
-  };
-
-  const handleAppDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'copy';
-    }
-    setIsAppDraggingOver(true);
-  };
-
-  const handleAppDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setIsAppDraggingOver(false);
-    }
-  };
-
-  const handleAppDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsAppDraggingOver(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleDroppedFiles(Array.from(files));
-    }
-  };
-
-  // 見出しアウトラインクリック時の該当行＆プレビュージャンプ処理
-  const handleJumpToHeading = useCallback((lineNumber: number, headingText: string) => {
-    // 1. エディタ側の該当行へカーソル移動＆フォーカス＆スクロール
-    const textarea = editorTextareaRef.current;
-    if (textarea) {
-      const lines = currentDoc.content.split('\n');
-      let charIndex = 0;
-      for (let i = 0; i < Math.min(lineNumber - 1, lines.length); i++) {
-        charIndex += lines[i].length + 1; // +1 for '\n'
-      }
-      const targetLineText = lines[lineNumber - 1] || '';
-
-      textarea.focus();
-      textarea.setSelectionRange(charIndex, charIndex + targetLineText.length);
-
-      // 行の高さ概算でスムーズに画面中央近くへスクロール
-      const lineHeightPx = (settings.fontSize || 15) * (settings.lineHeight || 1.6);
-      textarea.scrollTop = Math.max(0, (lineNumber - 5) * lineHeightPx);
-
-      setCursorLine(lineNumber);
-      setCursorCol(1);
-    }
-
-    // 2. プレビュー側の該当見出し要素へスムーズスクロール
-    if (previewScrollRef.current) {
-      const headings = Array.from(
-        previewScrollRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6')
-      );
-      const cleanTarget = headingText.trim().toLowerCase();
-      // テキスト内容が一致する見出し要素を検索
-      const targetEl = headings.find((el) => {
-        const text = el.textContent?.trim().toLowerCase() || '';
-        return text === cleanTarget || text.includes(cleanTarget) || cleanTarget.includes(text);
-      });
-
-      if (targetEl) {
-        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }
-  }, [currentDoc.content, settings.fontSize, settings.lineHeight]);
+  // ウィンドウおよび HTML5 ドラッグ＆ドロップ処理 (useWindowDragDrop)
+  const {
+    isAppDraggingOver,
+    handleAppDragOver,
+    handleAppDragLeave,
+    handleAppDrop,
+    handleDroppedFiles,
+    handleDroppedFile,
+  } = useWindowDragDrop({
+    handleAddOpenedDoc,
+    handleFormat,
+    defaultAuthor: settings.defaultAuthor,
+  });
 
   return (
     <div
@@ -1020,6 +773,7 @@ export default function App() {
               onInsertDate={handleInsertDate}
               onImageUpload={handleDroppedFile}
               onAutoFormat={handleAutoFormat}
+              onInsertMermaidTemplate={handleInsertMermaidTemplate}
               isDark={isDark}
             />
           )}
@@ -1062,6 +816,7 @@ export default function App() {
               onImageDrop={handleDroppedFile}
               onDropFiles={handleDroppedFiles}
               onUpdateTags={handleUpdateTags}
+              onUpdateSummary={handleUpdateSummary}
               onLeftTextareaRef={(el) => {
                 if (activePane === 'left') editorTextareaRef.current = el;
               }}
@@ -1107,6 +862,7 @@ export default function App() {
                   onDropFiles={handleDroppedFiles}
                   doc={currentDoc}
                   onUpdateTags={handleUpdateTags}
+                  onUpdateSummary={handleUpdateSummary}
                   onTextareaRef={(el) => { editorTextareaRef.current = el; }}
                   isDark={isDark}
                   viewMode={viewMode}
@@ -1132,6 +888,7 @@ export default function App() {
                   lineHeight={settings.lineHeight}
                   fontFamily={settings.fontFamily}
                   headingTheme={settings.headingTheme}
+                  codeBlockTheme={settings.codeBlockTheme}
                   previewEngine={settings.previewEngine}
                 />
               </div>

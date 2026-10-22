@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, BookOpen, Edit3, ZoomIn, FolderOpen, Tag, Database, HardDrive, Lock, RefreshCw, FileText, Sparkles } from 'lucide-react';
+import { X, BookOpen, Edit3, ZoomIn, FolderOpen, Tag, Database, HardDrive, Lock, RefreshCw, FileText, Sparkles, CheckCircle2, Bot } from 'lucide-react';
 
 interface HelpGuideModalProps {
   isOpen: boolean;
@@ -80,6 +80,12 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose,
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-purple-400 font-bold">✓</span> 超高速インデックス全文検索
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-rose-400 font-bold">✓</span> 日本語校正＆記法Lint
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sky-400 font-bold">✓</span> AI自動要約＆Front Matter
               </div>
             </div>
           </div>
@@ -177,6 +183,37 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({ isOpen, onClose,
                     <span>または 画面右上の浮遊ボタン「Zenモード解除」</span>
                   </div>
                 </div>
+              </div>
+
+              <div
+                className={`p-3 rounded-lg border ${
+                  isDark ? 'bg-slate-800/50 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className={`font-medium flex items-center gap-1.5 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-900 font-semibold'}`}>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  6. 日本語校正 ＆ 記法Lint（リアルタイム検出）
+                </div>
+                <p className={`text-[11px] pl-5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  画面左下のステータスバーに検出結果（連続助詞「〜の〜の」、表記ゆれ「サーバー/サーバ」、未閉じ括弧やコードブロック等）を表示します。マウスを重ねると「<strong className={isDark ? 'text-rose-300' : 'text-rose-700'}>日本語校正＆記法Lint検出結果</strong>」と表示され、クリックで指摘一覧フライアウトを展開。該当行へのジャンプや修正推奨案を即座に確認できます（Rust 非同期バックグラウンド解析により打鍵遅延ゼロ）。
+                </p>
+              </div>
+
+              <div
+                className={`p-3 rounded-lg border ${
+                  isDark ? 'bg-slate-800/50 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className={`font-medium flex items-center gap-1.5 mb-1 ${isDark ? 'text-slate-200' : 'text-slate-900 font-semibold'}`}>
+                  <Bot className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  7. 🤖 AI自動要約 ＆ Front Matter管理（ハイブリッド要約）
+                </div>
+                <p className={`text-[11px] pl-5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Google Gemini API を活用し、ドキュメントの文脈を把握した高精度な要約を生成できます。エディタの Front Matter パネルにある「<strong className={isDark ? 'text-sky-300' : 'text-sky-700'}>🤖 AI要約生成</strong>」ボタンを押すだけで <span className="font-mono text-cyan-300">summary:</span> 行へ自動記録され、プレビューにも要約カードが表示されます。生成後の手動編集・再生成・削除も自在です。
+                </p>
+                <p className={`text-[10px] pl-5 mt-1.5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  ※ ⚙️ 設定画面の「AI設定」タブで API キー、モデル（<span className="font-mono text-amber-300">gemini-2.5-flash</span> 等）、Base URL、プロンプトの調整や接続テストが行えます。API キー未設定時やオフライン時は、見出しと本文から抽出するローカル要約フォールバックが自動で起動します。
+                </p>
               </div>
             </div>
           </div>

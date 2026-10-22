@@ -145,7 +145,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
                 ? 'bg-amber-950/40 text-amber-300 border-amber-800/60 hover:bg-amber-900/60'
                 : 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
           }`}
-          title="Rust バックグラウンド校正 & Lint の検出結果を表示"
+          title="日本語校正＆記法Lint検出結果"
         >
           {issues.length === 0 ? (
             <>

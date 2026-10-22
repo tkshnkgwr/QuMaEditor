@@ -333,6 +333,25 @@ export function useDocumentManager() {
     });
   }, [currentDoc.id]);
 
+  // 要約の更新
+  const handleUpdateSummary = useCallback((newSummary: string, summaryType?: string, targetDocId?: string) => {
+    const idToUpdate = targetDocId || currentDoc.id;
+    setDocs((prevDocs) => {
+      const updated = prevDocs.map((doc) =>
+        doc.id === idToUpdate
+          ? {
+              ...doc,
+              summary: newSummary,
+              summaryType: summaryType !== undefined ? summaryType : doc.summaryType,
+              updatedAt: new Date().toISOString(),
+            }
+          : doc
+      );
+      saveStoredDocs(updated);
+      return updated;
+    });
+  }, [currentDoc.id]);
+
   return {
     docs,
     setDocs,
@@ -354,5 +373,6 @@ export function useDocumentManager() {
     handleUpdateAuthor,
     handleUpdateUpdatedBy,
     handleUpdateTags,
+    handleUpdateSummary,
   };
 }

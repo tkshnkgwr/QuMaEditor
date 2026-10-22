@@ -167,20 +167,27 @@ pub fn export_html_full_native(
     markdown_text: String,
     is_dark: bool,
 ) -> Result<String, String> {
-    let mut options = Options::empty();
-    options.insert(Options::ENABLE_TABLES);
-    options.insert(Options::ENABLE_FOOTNOTES);
-    options.insert(Options::ENABLE_STRIKETHROUGH);
-    options.insert(Options::ENABLE_TASKLISTS);
-
-    let parser = Parser::new_ext(&markdown_text, options);
-    let mut body_html = String::new();
-    html::push_html(&mut body_html, parser);
+    // 高速シンタックスハイライト・Mermaid・コールアウト対応の本文 HTML を生成
+    let body_html = match render_markdown_html_native(markdown_text.clone(), is_dark) {
+        Ok(html) => html,
+        Err(_) => {
+            let mut options = Options::empty();
+            options.insert(Options::ENABLE_TABLES);
+            options.insert(Options::ENABLE_FOOTNOTES);
+            options.insert(Options::ENABLE_STRIKETHROUGH);
+            options.insert(Options::ENABLE_TASKLISTS);
+            let parser = Parser::new_ext(&markdown_text, options);
+            let mut fallback_body = String::new();
+            html::push_html(&mut fallback_body, parser);
+            fallback_body
+        }
+    };
 
     let bg_color = if is_dark { "#0f172a" } else { "#ffffff" };
     let text_color = if is_dark { "#e2e8f0" } else { "#0f172a" };
     let border_color = if is_dark { "#334155" } else { "#e2e8f0" };
     let code_bg = if is_dark { "#1e293b" } else { "#f8fafc" };
+    let mermaid_theme = if is_dark { "dark" } else { "default" };
 
     let full_html = format!(
         r#"<!DOCTYPE html>
@@ -240,13 +247,63 @@ pub fn export_html_full_native(
       list-style-type: none;
       padding-left: 0;
     }}
+    .mermaid-container {{
+      margin: 1.5rem 0;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid {};
+      background-color: {};
+      text-align: center;
+      overflow-x: auto;
+    }}
+    .mermaid-container svg {{
+      max-width: 100%;
+      height: auto;
+    }}
+    @media print {{
+      body {{
+        background-color: transparent !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }}
+      .mermaid-container {{
+        border: none !important;
+        background-color: transparent !important;
+        page-break-inside: avoid;
+        padding: 0 !important;
+        margin: 1rem 0 !important;
+      }}
+      .mermaid-container svg {{
+        max-width: 100% !important;
+        height: auto !important;
+      }}
+    }}
   </style>
 </head>
 <body>
   {}
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({{
+      startOnLoad: true,
+      theme: '{}',
+      securityLevel: 'loose'
+    }});
+  </script>
 </body>
 </html>"#,
-        title, bg_color, text_color, border_color, code_bg, border_color, code_bg, body_html
+        title,
+        bg_color,
+        text_color,
+        border_color,
+        code_bg,
+        border_color,
+        code_bg,
+        border_color,
+        code_bg,
+        body_html,
+        mermaid_theme
     );
 
     Ok(full_html)
@@ -446,11 +503,37 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
                     continue;
                 }
 
-                // syntect ハイライト (大文字・小文字の表記ゆれフォールバック対応)
+                // syntect ハイライト (言語エイリアス・表記ゆれ対応)
                 let lang_lower = lang_trimmed.to_lowercase();
+                let mapped_token = match lang_lower.as_str() {
+                    "ps" | "pwsh" | "posh" | "ps1" => "powershell",
+                    "ts" => "typescript",
+                    "tsx" => "typescript",
+                    "js" | "mjs" | "cjs" => "javascript",
+                    "jsx" => "javascript",
+                    "py" | "py3" | "pyw" => "python",
+                    "rs" => "rust",
+                    "golang" => "go",
+                    "c++" | "hpp" | "cc" | "cxx" | "h" => "cpp",
+                    "c#" | "cs" => "csharp",
+                    "kt" | "kts" => "kotlin",
+                    "sh" | "bash" | "zsh" | "shell" => "bash",
+                    "bat" | "cmd" => "batch",
+                    "yml" => "yaml",
+                    "md" | "mdx" => "markdown",
+                    "docker" => "dockerfile",
+                    "pl" | "pm" => "perl",
+                    "rb" => "ruby",
+                    _ => lang_lower.as_str(),
+                };
+
                 let syntax = ps
-                    .find_syntax_by_token(lang_trimmed)
+                    .find_syntax_by_token(mapped_token)
+                    .or_else(|| ps.find_syntax_by_token(lang_trimmed))
                     .or_else(|| ps.find_syntax_by_token(&lang_lower))
+                    .or_else(|| ps.find_syntax_by_extension(mapped_token))
+                    .or_else(|| ps.find_syntax_by_extension(&lang_lower))
+                    .or_else(|| ps.find_syntax_by_name(mapped_token))
                     .or_else(|| ps.find_syntax_by_name(lang_trimmed))
                     .or_else(|| ps.find_syntax_by_name(&lang_lower))
                     .unwrap_or_else(|| ps.find_syntax_plain_text());
@@ -513,12 +596,15 @@ mod tests {
 
     #[test]
     fn test_export_html_full_native() {
-        let md = "# タイトル\n**太字本文**";
+        let md = "# タイトル\n**太字本文**\n\n```mermaid\nflowchart TD\nA-->B\n```";
         let html =
             export_html_full_native("ドキュメント".to_string(), md.to_string(), true).unwrap();
         assert!(html.contains("<!DOCTYPE html>"));
         assert!(html.contains("<h1>タイトル</h1>"));
         assert!(html.contains("<strong>太字本文</strong>"));
+        assert!(html.contains("mermaid-container"));
+        assert!(html.contains("cdn.jsdelivr.net/npm/mermaid"));
+        assert!(html.contains("mermaid.initialize"));
     }
 
     #[test]
@@ -569,5 +655,14 @@ mod tests {
         assert!(html.contains("<mark class=\"obsidian-highlight\">重要ハイライト</mark>"));
         assert!(html.contains("<a class=\"internal-link\" data-href=\"マイノート\""));
         assert!(html.contains("別名リンク</a>"));
+    }
+
+    #[test]
+    fn test_code_block_language_aliases() {
+        let md = "```ps\nGet-ChildItem -Path .\n```\n\n```ts\nconst x: number = 42;\n```";
+        let html = render_markdown_html_native(md.to_string(), true).unwrap();
+        assert!(html.contains("code-block-wrapper"));
+        assert!(html.contains("ps"));
+        assert!(html.contains("ts"));
     }
 }

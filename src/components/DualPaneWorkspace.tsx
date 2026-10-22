@@ -19,6 +19,7 @@ interface DualPaneWorkspaceProps {
   onImageDrop?: (file: File) => void;
   onDropFiles?: (files: File[]) => void;
   onUpdateTags?: (tags: string[]) => void;
+  onUpdateSummary?: (summary: string, summaryType?: string, targetDocId?: string) => void;
   onLeftTextareaRef?: (el: HTMLTextAreaElement | null) => void;
   onRightTextareaRef?: (el: HTMLTextAreaElement | null) => void;
   onLoadFullDoc?: (doc: MarkdownDoc) => void;
@@ -41,6 +42,7 @@ export const DualPaneWorkspace: React.FC<DualPaneWorkspaceProps> = ({
   onImageDrop,
   onDropFiles,
   onUpdateTags,
+  onUpdateSummary,
   onLeftTextareaRef,
   onRightTextareaRef,
   onLoadFullDoc,
@@ -49,12 +51,72 @@ export const DualPaneWorkspace: React.FC<DualPaneWorkspaceProps> = ({
 }) => {
   const isPreviewMode = viewMode === 'preview';
 
+  const [splitRatio, setSplitRatio] = React.useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('quma_dual_pane_split_ratio');
+      if (saved) {
+        const val = parseFloat(saved);
+        if (!isNaN(val) && val >= 20 && val <= 80) return val;
+      }
+    } catch {}
+    return 50;
+  });
+  const [isResizing, setIsResizing] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const handleSplitterMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  const handleSplitterDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setSplitRatio(50);
+    try {
+      localStorage.setItem('quma_dual_pane_split_ratio', '50');
+    } catch {}
+  };
+
+  React.useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const offsetX = e.clientX - rect.left;
+      const rawPercent = (offsetX / rect.width) * 100;
+      const clamped = Math.min(80, Math.max(20, rawPercent));
+      setSplitRatio(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      try {
+        localStorage.setItem('quma_dual_pane_split_ratio', splitRatio.toString());
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, splitRatio]);
+
   return (
-    <div className="flex-1 flex min-h-0 w-full overflow-hidden select-none">
+    <div ref={containerRef} className="flex-1 flex min-h-0 w-full overflow-hidden select-none">
       {/* 左ペイン */}
       <div
         onClick={() => onFocusPane('left')}
-        className={`flex-1 h-full flex flex-col min-w-0 transition-colors border-r ${
+        style={{ width: `${splitRatio}%` }}
+        className={`h-full flex flex-col min-w-0 transition-colors ${
           isDark
             ? activePane === 'left'
               ? 'border-cyan-500/80'
@@ -104,6 +166,7 @@ export const DualPaneWorkspace: React.FC<DualPaneWorkspaceProps> = ({
               lineHeight={settings.lineHeight}
               fontFamily={settings.fontFamily}
               headingTheme={settings.headingTheme}
+              codeBlockTheme={settings.codeBlockTheme}
               previewEngine={settings.previewEngine}
             />
           ) : (
@@ -117,6 +180,7 @@ export const DualPaneWorkspace: React.FC<DualPaneWorkspaceProps> = ({
               onDropFiles={onDropFiles}
               doc={leftDoc}
               onUpdateTags={onUpdateTags}
+              onUpdateSummary={(summary, summaryType) => onUpdateSummary?.(summary, summaryType, leftDoc.id)}
               onTextareaRef={onLeftTextareaRef}
               isDark={isDark}
               viewMode="editor"
@@ -127,10 +191,31 @@ export const DualPaneWorkspace: React.FC<DualPaneWorkspaceProps> = ({
         </div>
       </div>
 
+      {/* スプリッター (幅リサイズバー) */}
+      <div
+        onMouseDown={handleSplitterMouseDown}
+        onDoubleClick={handleSplitterDoubleClick}
+        title="ドラッグして左右ペイン幅を変更 / ダブルクリックで50:50にリセット"
+        className={`relative w-1.5 hover:w-2 shrink-0 cursor-col-resize z-20 flex items-center justify-center transition-all group select-none ${
+          isResizing
+            ? 'bg-cyan-500 shadow-md'
+            : isDark
+            ? 'bg-slate-800 hover:bg-cyan-500/80 border-x border-slate-700/50'
+            : 'bg-slate-200 hover:bg-cyan-500 border-x border-slate-300'
+        }`}
+      >
+        <div
+          className={`w-0.5 h-6 rounded-full transition-colors ${
+            isResizing ? 'bg-white' : isDark ? 'bg-slate-600 group-hover:bg-white' : 'bg-slate-400 group-hover:bg-white'
+          }`}
+        />
+      </div>
+
       {/* 右ペイン */}
       <div
         onClick={() => onFocusPane('right')}
-        className={`flex-1 h-full flex flex-col min-w-0 transition-colors ${
+        style={{ width: `${100 - splitRatio}%` }}
+        className={`h-full flex flex-col min-w-0 transition-colors ${
           isDark
             ? activePane === 'right'
               ? 'bg-slate-950/40'
@@ -194,6 +279,7 @@ export const DualPaneWorkspace: React.FC<DualPaneWorkspaceProps> = ({
               lineHeight={settings.lineHeight}
               fontFamily={settings.fontFamily}
               headingTheme={settings.headingTheme}
+              codeBlockTheme={settings.codeBlockTheme}
               previewEngine={settings.previewEngine}
             />
           ) : (
@@ -207,6 +293,7 @@ export const DualPaneWorkspace: React.FC<DualPaneWorkspaceProps> = ({
               onDropFiles={onDropFiles}
               doc={secondaryDoc}
               onUpdateTags={onUpdateTags}
+              onUpdateSummary={(summary, summaryType) => onUpdateSummary?.(summary, summaryType, secondaryDoc.id)}
               onTextareaRef={onRightTextareaRef}
               isDark={isDark}
               viewMode="editor"

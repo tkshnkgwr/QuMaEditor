@@ -345,6 +345,8 @@ export async function parseYamlFrontMatterNative(fullText: string): Promise<{
     updatedBy?: string;
     encoding?: any;
     tags?: string[];
+    summary?: string;
+    summary_type?: string;
   };
 } | null> {
   try {
@@ -360,6 +362,8 @@ export async function parseYamlFrontMatterNative(fullText: string): Promise<{
           updatedBy: res.data.updated_by || undefined,
           encoding: res.data.encoding as any,
           tags: res.data.tags,
+          summary: res.data.summary || undefined,
+          summary_type: res.data.summary_type || undefined,
         },
       };
     }

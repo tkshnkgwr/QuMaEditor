@@ -15,6 +15,7 @@ QuMaEditor features an intuitive Windows desktop-native layout:
    - **📑 Outline / TOC Tab**: Instantly extracts H1~H6 headings into a hierarchical tree. Clicking any heading jumps both the editor cursor (scrolling into center view) and the preview smoothly.
 3. **Formatting Toolbar**:
    - Headings (H1~H3), Bold, Italic, Underline, Strikethrough, List, Task, Table, Code, Quote, Link, Image upload, Horizontal Rule, Timestamp.
+   - **Mermaid Template Dropdown**: Click the Network icon in the toolbar to insert one-click starter snippets for 8 major diagram types: flowchart (`flowchart TD`), sequence (`sequenceDiagram`), state (`stateDiagram-v2`), class (`classDiagram`), ER (`erDiagram`), mindmap (`mindmap`), gantt (`gantt`), and git graph (`gitGraph`).
    - **✨ Markdown Auto-Formatting (`Ctrl+Shift+F`)**: Instantly aligns GFM tables vertically, adds blank lines around headings, and collapses consecutive blank lines.
    - **Selection Wrapping**: Wraps selected text when pressing formatting buttons.
    - **Heading Insertion**: Inserts `# ` markers at the beginning of the active cursor line.
@@ -25,10 +26,11 @@ QuMaEditor features an intuitive Windows desktop-native layout:
    - **Zero-Latency Typing**: Bypasses preview parsing in "Editor Only" mode for lag-free typing.
    - **`Ctrl + E` Focus Restoration**: Restores cursor position when toggling between editor and preview.
    - **Enhanced PowerShell Syntax Highlighting**: Fully highlights parameters (`-Path`), comparison operators (`-eq`), numbers, and special variables for `powershell`, `pwsh`, `ps`, `posh`, and `ps1` code blocks.
-   - **Mermaid Diagrams**: Dynamic SVG diagram rendering with zoom (50%~600%) and fullscreen modal.
+   - **Mermaid Diagrams & SVG Export**: Dynamic SVG diagram rendering with zoom controls (50%~600%, 100%↔200% toggle), fullscreen zoom modal, inline syntax error alerts, one-click **SVG image download/save**, and code copy. Diagrams also render automatically in standalone HTML exports.
 5. **Status Bar (Footer)**:
    - Persistence status badge (💾 Saved to Disk / 📦 Saved in App).
    - **"💾 Save to PC File" Button**: Dedicated one-click button for documents stored solely in browser LocalStorage.
+   - **Japanese Proofreading & Syntax Lint**: Displays issue counters in the bottom left with tooltip "日本語校正＆記法Lint検出結果" (Japanese Proofreading & Syntax Lint Detection Results). Clicking opens the flyout list.
    - Cursor line/col, character/word count, reading time, encoding selector.
    - **Statistics Dashboard**: Click the character/word counter to open the detailed `StatsModal`.
 
@@ -95,7 +97,75 @@ A multi-tasking workspace enabling you to view, compare, and edit two Markdown d
 
 ---
 
-## 6. Keyboard Shortcuts
+## 6. Editor Customization Settings
+
+Click the ⚙️ icon in the top right to access full application settings across 3 tabs:
+
+### 🎨 General & Appearance (`GeneralTab`)
+- **Base Font Size**: 12px ~ 24px (slider)
+- **Line Height**: 1.2 (compact) ~ 2.2 (extra wide)
+- **Editor Font**: System Default, Monospace, Sans-serif
+- **Tab Size**: 2 spaces / 4 spaces
+- **Auto-Save Interval**: 1s ~ 10s (or disabled)
+- **Heading Color Palette**: Subtle, Vibrant, High Contrast, Monochrome
+- **Smart Paste (Auto URL Link)**: Automatically converts pasted URLs into `[Selected Text](URL)` format (toggle)
+- **Syntax Theme**: Select among VS Code Dark+, Dracula, Nord, Monokai, One Dark, and Prism
+
+### 🤖 AI Settings (`AiTab`)
+- **Gemini API Key**: Set your Google AI Studio API key with visibility mask toggling
+- **Model Selector**: Freely choose among latest recommended models (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, etc.) or input custom models
+- **Custom Base URL**: Proxy or custom enterprise gateway support
+- **Summary Prompt**: Fully customize instructions, tone, and formatting constraints for AI summaries
+- **Connection Test**: Perform real-time connectivity and authorization validation against Google Gemini API
+
+### 💾 Storage Management (`StorageTab`)
+- **Storage Metrics**: Inspect LocalStorage quota consumption, note count, and image assets
+- **ZIP Export**: Batch export all documents and embedded image assets into a single ZIP file on disk
+- **Reset Storage**: Safely wipe internal cache and local storage when required
+
+---
+
+## 7. 🔍 Japanese Proofreading & Syntax Linting (Real-Time)
+
+To elevate writing quality and prevent Markdown structural mistakes, QuMaEditor features a high-performance background linting engine powered by Rust.
+
+### Highlights
+- **Zero-Latency Async Processing**: Runs asynchronously on a separate thread via Rust (`proofreading.rs`), guaranteeing 0ms typing interference.
+- **Intuitive Status Bar Indicator**: Displays total issue count in the bottom-left corner with hover tooltip "**日本語校正＆記法Lint検出結果**" (Japanese Proofreading & Syntax Lint Detection Results).
+- **Interactive Flyout & One-Click Navigation**:
+  - Clicking the status bar badge opens the issues flyout.
+  - Clicking any diagnostic item instantly jumps the editor cursor to the exact line/character offset and displays proposed corrections.
+
+### Inspection Rules Overview
+
+| Category    | Check Rule         | Description & Examples                                                           |
+| :---------- | :----------------- | :------------------------------------------------------------------------------- |
+| **Grammar** | Duplicate Particle | Identifies redundant consecutive usages of the particle "の" (3+ times in a sentence) |
+| **Spelling**| Variant Spellings  | Detects inconsistent Japanese katakana prolonged sound marks (e.g. サーバー vs サーバ) |
+| **Syntax**  | Unclosed Brackets  | Finds unclosed opening brackets and quotation marks (「」, 『』, （）, etc.)       |
+| **Syntax**  | Unclosed Blocks    | Flags code fences starting with ```` ``` ```` that remain unclosed to file end   |
+
+---
+
+## 8. 🤖 AI Document Summary & Front Matter Management
+
+QuMaEditor integrates Google Gemini API with seamless YAML Front Matter metadata management compatible with Obsidian and static site generators.
+
+### Highlights
+- **Hybrid Summary Engine**:
+  - Automatically invokes selected Google Gemini models for deep, context-aware document summarization.
+  - Automatically falls back to local text extraction when no API key is provided or offline.
+- **Full Front Matter Integration**:
+  - Summaries are persisted in Markdown YAML Front Matter (`summary:` and `summary_type:`).
+  - Fully parsed and manipulated by both the Rust backend YAML engine and the frontend UI.
+- **Intuitive UI Controls**:
+  - **Editor**: Front Matter panel displays "🤖 AI Summary" button, interactive summary card with model badge, and inline edit/regenerate/delete controls.
+  - **Preview**: Elegantly presented within the metadata header card above the document preview.
+
+---
+
+## 9. Keyboard Shortcuts
+
 
 | Shortcut           | Action / Feature                               |
 | :----------------- | :--------------------------------------------- |
@@ -116,3 +186,4 @@ A multi-tasking workspace enabling you to view, compare, and edit two Markdown d
 | `Ctrl + U`         | Underline formatting / wrap selection          |
 | `Ctrl + Shift + Z` | Toggle Zen Focus Mode (Exit with `Esc`)        |
 | `F1`               | Open Keyboard Shortcuts Help                   |
+

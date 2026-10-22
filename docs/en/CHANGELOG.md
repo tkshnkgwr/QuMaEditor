@@ -4,8 +4,34 @@ All notable changes and release history for QuMaEditor.
 
 ## [1.5.0] - 2026-09-29
 
-### 🔀 Side-by-Side Dual-Pane Editing & Preview, Native Formatting Undo/Redo & PowerShell Highlighting (v1.5.0)
+### 🤖 AI Document Summary, Dual-Pane Workspace & Complete Mermaid Integration (v1.5.0)
 
+- **Complete Mermaid Preview Integration & Extended Utilities (SVG Download, Standalone HTML Export, Template Insertion) (`Preview / Mermaid`)**:
+  - **Full Rust Preview Integration**: Automatically segments and extracts Mermaid blocks from Rust native Markdown HTML (`previewEngine === 'rust'`), seamlessly mounting the rich `MermaidRenderer` component. Retains native parsing speed while fully enabling interactive zoom (50%~600%, 100%↔200% toggle), fullscreen zoom modal, syntax error notifications, and SHA-256 caching.
+  - **Typing Debounce Optimization**: Integrated 150ms debounce for preview rendering, eliminating flicker and CPU overhead during rapid typing.
+  - **SVG Image Download & Save**: Added one-click `.svg` vector image export buttons directly in the diagram toolbar and fullscreen modal.
+  - **Standalone HTML Export Support**: Embedded Mermaid CDN script and auto-initialization in `export_html_full_native`, allowing exported standalone HTML files to automatically render diagrams in any browser, accompanied by print CSS optimizations.
+  - **Editor Toolbar Mermaid Template Dropdown**: Added a dedicated Mermaid dropdown menu in the editor toolbar offering one-click snippet insertion for 8 major diagram types (flowchart, sequenceDiagram, stateDiagram-v2, classDiagram, erDiagram, mindmap, gantt, gitGraph).
+- **AI-Powered Document Summary & Hybrid Fallback Engine (`AI / Summary`)**:
+  - Integrated Google Gemini API (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, etc.) with flexible user model selection and offline local text extraction fallback (`aiSummary.ts`).
+  - **Settings Expansion**: Added dedicated "AI Settings" tab in Settings modal for API key configuration (with visibility mask), model selection, custom base URL, prompt tuning, and live connectivity testing.
+  - **Front Matter Persistence**: Automatically stores and updates summaries in YAML Front Matter (`summary:`, `summary_type:`), backed by the Rust native YAML parser (`yaml.rs`).
+  - **Interactive Cards**: Renders summary cards with model badges in both the editor Front Matter panel and the preview header, supporting inline editing, regeneration, and deletion.
+- **Refined Status Bar Proofreading Tooltip (`Status / Proofreading`)**:
+  - Updated the bottom-left proofreading tooltip to clear and friendly phrasing: "日本語校正＆記法Lint検出結果" (Japanese Proofreading & Syntax Lint Detection Results).
+- **Comprehensive Modular Architecture Refactoring (>1,000 Lines Enforcement) (`Architecture / Refactoring`)**:
+  - Enforced project's 1,000-line guideline by decomposing monolithic files into focused, maintainable modules.
+  - `App.tsx` (1,104 ➔ 958 lines): extracted `useWindowDragDrop.ts` (232 lines) and `useEditorToolbarActions.ts` (126 lines).
+  - `SettingsModal.tsx` (923 ➔ 286 lines, ~69% reduction): decomposed into `GeneralTab.tsx` (292 lines), `AiTab.tsx` (336 lines), and `StorageTab.tsx` (134 lines).
+  - Achieved zero single-file handwritten sources over 1,000 lines across the entire codebase.
+- **Dual-Pane Draggable Splitter (`Workspace / DualPane`)**:
+  - Implemented a responsive draggable divider between the left and right panes allowing users to resize pane ratios (20% to 80%). Includes state persistence, double-click reset to 50:50, and text selection suppression during dragging.
+- **Smart Paste (Auto URL Markdown Link) (`Editor / SmartPaste`)**:
+  - Pasting a valid HTTP/HTTPS URL with text selected automatically wraps the selection into `[Selected Text](URL)` format using the native Undo stack. Configurable via Settings modal.
+- **Interactive Table Editing Assistance (`Editor / Table`)**:
+  - Enhanced Markdown table editing with Tab / Shift+Tab for navigation between cells, automatic new row creation at the final cell, and Enter key row insertion with blank-row exit detection.
+- **Syntax Highlighting Language Expansion & Color Themes (`Preview / Syntax`)**:
+  - Broadened programming language aliases (TS/TSX, Python, Rust, Go, C/C++, C#, Java, PowerShell, Bash, SQL, Dockerfile, etc.) across both Rust syntect and React Prism engines, adding customizable syntax color themes (VS Code Dark+, Dracula, Nord, Monokai, One Dark, Prism) in Settings modal.
 - **Side-by-Side Dual-Pane Workspace for Comparative Editing & Preview (`Workspace / DualPane`)**:
   - Implemented a dual-pane workspace (`DualPaneWorkspace`) to compare and edit up to two Markdown files simultaneously.
   - **Launch & Layout**: Right-click any file in the sidebar or any tab on the tab bar and select "Open in Right Pane", or click the "2-Pane" toggle button on the right side of the tab bar.

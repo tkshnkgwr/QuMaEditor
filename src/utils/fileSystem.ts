@@ -117,6 +117,8 @@ export async function openNativeFileFromPath(
       createdAt: metadata.created || new Date().toISOString(),
       updatedAt: metadata.updated || new Date().toISOString(),
       tags: metadata.tags || [],
+      summary: metadata.summary,
+      summaryType: metadata.summary_type,
       filePath: cleanPath,
       isFavorite: false,
       isRemote: false,

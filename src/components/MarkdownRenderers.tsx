@@ -1,11 +1,35 @@
 import React from 'react';
 import { Components } from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, prism, dracula, nord, okaidia, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { refractor } from 'refractor/all';
 import { Copy, Check, ExternalLink, Clock } from 'lucide-react';
 import { MermaidRenderer } from './MermaidRenderer';
-import { HeadingTheme } from '../types';
+import { HeadingTheme, CodeBlockTheme } from '../types';
+
+/**
+ * 選択された配色テーマとダークモード設定に応じた Prism スタイルを取得する
+ */
+export function getCodeBlockStyle(theme: CodeBlockTheme = 'vscDarkPlus', isDark: boolean = true) {
+  if (!isDark) {
+    return prism;
+  }
+  switch (theme) {
+    case 'dracula':
+      return dracula;
+    case 'nord':
+      return nord;
+    case 'okaidia':
+      return okaidia;
+    case 'oneDark':
+      return oneDark;
+    case 'prism':
+      return prism;
+    case 'vscDarkPlus':
+    default:
+      return vscDarkPlus;
+  }
+}
 
 // PowerShell (powershell / pwsh / ps1 / ps / posh) のシンタックスハイライト定義を強化
 // - パラメータ名 (-Path, -Force, -Recurse 等) の属性カラーリング
@@ -168,6 +192,7 @@ interface CreateMarkdownComponentsOptions {
   onToggleTaskItem?: (taskIndex: number) => void;
   copiedCodeId: string | null;
   handleCopyCode: (codeText: string, id: string) => void;
+  codeBlockTheme?: CodeBlockTheme;
 }
 
 /**
@@ -179,6 +204,7 @@ export function createMarkdownComponents({
   onToggleTaskItem,
   copiedCodeId,
   handleCopyCode,
+  codeBlockTheme = 'vscDarkPlus',
 }: CreateMarkdownComponentsOptions): Components {
   return {
     h1: ({ children }) => (
@@ -356,70 +382,138 @@ export function createMarkdownComponents({
 
       if (isCodeBlock) {
         const langMap: Record<string, string> = {
+          // JavaScript / TypeScript / Web
           js: 'javascript',
           javascript: 'javascript',
+          mjs: 'javascript',
+          cjs: 'javascript',
           jsx: 'jsx',
           ts: 'typescript',
           typescript: 'typescript',
+          mts: 'typescript',
+          cts: 'typescript',
           tsx: 'tsx',
+          html: 'html',
+          htm: 'html',
+          xml: 'xml',
+          svg: 'xml',
+          css: 'css',
+          scss: 'scss',
+          sass: 'sass',
+          less: 'less',
+          json: 'json',
+          jsonc: 'json',
+          json5: 'json',
+          vue: 'html',
+          svelte: 'html',
+          graphql: 'graphql',
+          gql: 'graphql',
+
+          // Python / Ruby / PHP / Perl / Lua
           py: 'python',
           python: 'python',
-          rs: 'rust',
-          rust: 'rust',
+          py3: 'python',
+          pyw: 'python',
           rb: 'ruby',
           ruby: 'ruby',
+          php: 'php',
+          pl: 'perl',
+          perl: 'perl',
+          pm: 'perl',
+          lua: 'lua',
+          r: 'r',
+
+          // Systems / Compiled Languages
+          rs: 'rust',
+          rust: 'rust',
+          go: 'go',
+          golang: 'go',
+          c: 'c',
+          h: 'c',
+          cpp: 'cpp',
+          'c++': 'cpp',
+          cc: 'cpp',
+          cxx: 'cpp',
+          hpp: 'cpp',
+          cs: 'csharp',
+          csharp: 'csharp',
+          'c#': 'csharp',
+          java: 'java',
+          kt: 'kotlin',
+          kotlin: 'kotlin',
+          kts: 'kotlin',
+          swift: 'swift',
+          dart: 'dart',
+          scala: 'scala',
+
+          // Shell / Scripts / Config
           sh: 'bash',
           shell: 'bash',
           bash: 'bash',
           zsh: 'bash',
-          yml: 'yaml',
-          yaml: 'yaml',
-          md: 'markdown',
-          markdown: 'markdown',
-          cs: 'csharp',
-          csharp: 'csharp',
-          'c++': 'cpp',
-          cpp: 'cpp',
-          c: 'c',
-          html: 'html',
-          xml: 'xml',
-          css: 'css',
-          scss: 'scss',
-          sass: 'sass',
-          json: 'json',
-          sql: 'sql',
           powershell: 'powershell',
-          ps1: 'powershell',
           pwsh: 'powershell',
           ps: 'powershell',
           posh: 'powershell',
+          ps1: 'powershell',
           bat: 'batch',
           cmd: 'batch',
           batch: 'batch',
-          diff: 'diff',
-          dockerfile: 'docker',
-          docker: 'docker',
-          go: 'go',
-          golang: 'go',
-          java: 'java',
-          kotlin: 'kotlin',
-          php: 'php',
+          yml: 'yaml',
+          yaml: 'yaml',
           toml: 'toml',
           ini: 'ini',
+          properties: 'ini',
+          conf: 'ini',
+          cfg: 'ini',
+          env: 'bash',
+          dockerfile: 'docker',
+          docker: 'docker',
+
+          // Data / Query / Docs / Other
+          sql: 'sql',
+          mysql: 'sql',
+          pgsql: 'sql',
+          postgres: 'sql',
+          sqlite: 'sql',
+          md: 'markdown',
+          markdown: 'markdown',
+          mdx: 'markdown',
+          diff: 'diff',
+          patch: 'diff',
+          latex: 'latex',
+          tex: 'latex',
           text: 'text',
           txt: 'text',
+          plain: 'text',
         };
         const prismLang = langMap[cleanLang] || cleanLang || 'text';
         const displayBadge = cleanLang || 'code';
+
+        // テーマ別ヘッダー・枠線の微調整
+        const themeHeaderBorder = (() => {
+          if (!isDark) return 'bg-slate-200/80 border-slate-300 text-slate-800';
+          switch (codeBlockTheme) {
+            case 'dracula':
+              return 'bg-[#21222c] border-[#44475a] text-purple-300';
+            case 'nord':
+              return 'bg-[#242933] border-[#3b4252] text-cyan-300';
+            case 'okaidia':
+              return 'bg-[#272822] border-[#3e3d32] text-amber-300';
+            case 'oneDark':
+              return 'bg-[#21252b] border-[#282c34] text-sky-300';
+            case 'vscDarkPlus':
+            default:
+              return 'bg-slate-900 border-slate-800 text-slate-400';
+          }
+        })();
 
         return (
           <div className={`relative my-4 rounded-lg border overflow-hidden text-xs shadow-xs ${
             isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-300'
           }`}>
-            <div className={`flex items-center justify-between px-3 py-1.5 border-b font-mono text-[11px] ${
-              isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-200/80 border-slate-300 text-slate-800 font-medium'
-            }`}>
-              <span className="font-semibold text-cyan-400 lowercase">{displayBadge}</span>
+            <div className={`flex items-center justify-between px-3 py-1.5 border-b font-mono text-[11px] ${themeHeaderBorder}`}>
+              <span className="font-semibold lowercase tracking-wide">{displayBadge}</span>
               <button
                 onClick={() => handleCopyCode(codeString, codeId)}
                 className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all select-none ${
@@ -445,7 +539,7 @@ export function createMarkdownComponents({
               </button>
             </div>
             <SyntaxHighlighter
-              style={isDark ? vscDarkPlus : prism}
+              style={getCodeBlockStyle(codeBlockTheme, isDark)}
               language={prismLang}
               PreTag="div"
               customStyle={{

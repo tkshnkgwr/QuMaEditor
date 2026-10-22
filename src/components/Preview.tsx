@@ -10,12 +10,69 @@ import {
   Tag,
   Globe,
   Zap,
+  Sparkles,
 } from 'lucide-react';
 import { parseYamlFrontMatter } from '../utils/yamlUtils';
 import { renderMarkdownHtmlNative } from '../utils/tauriNative';
-import { HeadingTheme } from '../types';
+import { HeadingTheme, CodeBlockTheme } from '../types';
 import { getHeadingColors, createMarkdownComponents } from './MarkdownRenderers';
-import mermaid from 'mermaid';
+import { MermaidRenderer } from './MermaidRenderer';
+
+function unescapeHtmlAttr(str: string): string {
+  return str
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+interface NativeSegment {
+  type: 'html' | 'mermaid';
+  content?: string;
+  chart?: string;
+  key: string;
+}
+
+function parseNativeHtmlSegments(html: string): NativeSegment[] {
+  const segments: NativeSegment[] = [];
+  const regex = /<div class="mermaid-container[^"]*"[^>]*data-mermaid="([^"]*)"[^>]*>[\s\S]*?<\/div>/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(html)) !== null) {
+    const matchStart = match.index;
+    const matchEnd = regex.lastIndex;
+
+    if (matchStart > lastIndex) {
+      segments.push({
+        type: 'html',
+        content: html.substring(lastIndex, matchStart),
+        key: `html-${lastIndex}`,
+      });
+    }
+
+    const escapedCode = match[1];
+    const chart = unescapeHtmlAttr(escapedCode);
+    segments.push({
+      type: 'mermaid',
+      chart,
+      key: `mermaid-${matchStart}`,
+    });
+
+    lastIndex = matchEnd;
+  }
+
+  if (lastIndex < html.length) {
+    segments.push({
+      type: 'html',
+      content: html.substring(lastIndex),
+      key: `html-${lastIndex}`,
+    });
+  }
+
+  return segments;
+}
 
 interface PreviewProps {
   content: string;
@@ -27,6 +84,7 @@ interface PreviewProps {
   lineHeight?: number;
   fontFamily?: string;
   headingTheme?: HeadingTheme;
+  codeBlockTheme?: CodeBlockTheme;
   previewEngine?: 'rust' | 'react';
 }
 
@@ -40,6 +98,7 @@ export const Preview: React.FC<PreviewProps> = ({
   lineHeight,
   fontFamily,
   headingTheme = 'muted',
+  codeBlockTheme = 'vscDarkPlus',
   previewEngine = 'rust',
 }) => {
   const headingColors = getHeadingColors(headingTheme, isDark);
@@ -63,8 +122,9 @@ export const Preview: React.FC<PreviewProps> = ({
         onToggleTaskItem,
         copiedCodeId,
         handleCopyCode,
+        codeBlockTheme,
       }),
-    [headingColors, isDark, onToggleTaskItem, copiedCodeId]
+    [headingColors, isDark, onToggleTaskItem, copiedCodeId, codeBlockTheme]
   );
 
   useEffect(() => {
@@ -95,52 +155,44 @@ export const Preview: React.FC<PreviewProps> = ({
 
   const hasFrontmatter = Object.keys(metadata).length > 0;
 
-  // プレビューレンダリング (Rust ネイティブ最優先)
+  // プレビューレンダリング (Rust ネイティブ最優先 ＆ デバウンスによる入力負荷抑制)
   useEffect(() => {
     let isMounted = true;
     const shouldUseRust = previewEngine !== 'react';
 
-    if (shouldUseRust) {
-      renderMarkdownHtmlNative(body, isDark).then((html) => {
-        if (isMounted && html) {
-          setNativeHtml(html);
-          setIsNativeUsed(true);
-        }
-      }).catch(() => {
-        if (isMounted) {
-          setNativeHtml(null);
-          setIsNativeUsed(false);
-        }
-      });
-    } else {
+    if (!shouldUseRust) {
       setNativeHtml(null);
       setIsNativeUsed(false);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      renderMarkdownHtmlNative(body, isDark)
+        .then((html) => {
+          if (isMounted && html) {
+            setNativeHtml(html);
+            setIsNativeUsed(true);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setNativeHtml(null);
+            setIsNativeUsed(false);
+          }
+        });
+    }, 150);
+
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [body, isDark, previewEngine]);
 
-  // Rust ネイティブ HTML 内の Mermaid ブロックの動的レンダリング
-  useEffect(() => {
-    if (nativeHtml && previewContainerRef.current) {
-      try {
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: isDark ? 'dark' : 'default',
-          securityLevel: 'loose',
-        });
-        const mermaidNodes = previewContainerRef.current.querySelectorAll('.mermaid');
-        if (mermaidNodes.length > 0) {
-          mermaid.run({ nodes: Array.from(mermaidNodes) as HTMLElement[] }).catch((err) => {
-            console.warn('[Mermaid Run Error in Native Preview]:', err);
-          });
-        }
-      } catch (e) {
-        console.warn('[Mermaid Init Error]:', e);
-      }
-    }
-  }, [nativeHtml, isDark]);
+  // Rust ネイティブ HTML を通常 HTML と Mermaid ブロックに構造分割
+  const nativeSegments = useMemo(() => {
+    if (!nativeHtml) return [];
+    return parseNativeHtmlSegments(nativeHtml);
+  }, [nativeHtml]);
 
   const effectiveFontFamily = useMemo(() => {
     if (fontFamily === 'monospace') {
@@ -297,6 +349,25 @@ export const Preview: React.FC<PreviewProps> = ({
                     </div>
                   </div>
                 )}
+
+                {metadata.summary && (
+                  <div className={`col-span-full mt-1 p-2.5 rounded-lg border text-xs leading-relaxed ${
+                    isDark ? 'bg-slate-900/60 border-slate-800 text-slate-200' : 'bg-white/90 border-amber-200 text-slate-800'
+                  }`}>
+                    <div className="flex items-center gap-1 font-semibold text-purple-400 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>要約 (Summary)</span>
+                      {metadata.summary_type && (
+                        <span className={`ml-auto text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                          isDark ? 'bg-purple-950/60 text-purple-300 border border-purple-800/40' : 'bg-purple-50 text-purple-700 border border-purple-200'
+                        }`}>
+                          {metadata.summary_type}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-sans text-[11.5px] leading-relaxed">{metadata.summary}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -305,7 +376,6 @@ export const Preview: React.FC<PreviewProps> = ({
             <div
               ref={previewContainerRef}
               className={`prose max-w-none text-sm leading-relaxed preview-native-html ${isDark ? 'prose-invert text-slate-200' : 'text-slate-900'}`}
-              dangerouslySetInnerHTML={{ __html: nativeHtml }}
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 if (target && target.tagName === 'INPUT' && (target as HTMLInputElement).type === 'checkbox') {
@@ -325,7 +395,25 @@ export const Preview: React.FC<PreviewProps> = ({
                   }
                 }
               }}
-            />
+            >
+              {nativeSegments.map((segment) => {
+                if (segment.type === 'mermaid' && segment.chart) {
+                  return (
+                    <MermaidRenderer
+                      key={segment.key}
+                      chart={segment.chart}
+                      isDark={isDark}
+                    />
+                  );
+                }
+                return (
+                  <div
+                    key={segment.key}
+                    dangerouslySetInnerHTML={{ __html: segment.content || '' }}
+                  />
+                );
+              })}
+            </div>
           ) : (
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

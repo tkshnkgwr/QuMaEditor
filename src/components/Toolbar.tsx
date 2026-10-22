@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Bold,
   Italic,
@@ -19,8 +19,134 @@ import {
   Minus,
   Calendar,
   Sparkles,
-  Upload
+  Upload,
+  Network,
+  ChevronDown,
 } from 'lucide-react';
+
+const MERMAID_TEMPLATES = [
+  {
+    id: 'flowchart',
+    label: 'フローチャート (Flowchart)',
+    description: '処理の流れや条件分岐を可視化',
+    code: `flowchart TD
+    Start([開始]) --> Process[処理を実行]
+    Process --> Decision{条件判定}
+    Decision -- はい --> Success([完了])
+    Decision -- いいえ --> Retry[再試行]
+    Retry --> Process`,
+  },
+  {
+    id: 'sequence',
+    label: 'シーケンス図 (Sequence)',
+    description: 'メッセージ送受信や非同期通信を可視化',
+    code: `sequenceDiagram
+    autonumber
+    actor Boss as ユーザー
+    participant UI as フロントエンド
+    participant Backend as バックエンド
+
+    Boss->>UI: 操作を実行
+    activate UI
+    UI->>Backend: データ取得リクエスト
+    activate Backend
+    Backend-->>UI: 処理結果レスポンス
+    deactivate Backend
+    UI-->>Boss: 画面更新
+    deactivate UI`,
+  },
+  {
+    id: 'state',
+    label: '状態遷移図 (State)',
+    description: 'システムや画面の状態遷移を可視化',
+    code: `stateDiagram-v2
+    [*] --> 待機中
+    待機中 --> 処理中: 実行指示
+    処理中 --> 完了: 成功
+    処理中 --> エラー: 失敗
+    エラー --> 待機中: リセット
+    完了 --> [*]`,
+  },
+  {
+    id: 'class',
+    label: 'クラス図 (Class)',
+    description: 'オブジェクト指向やクラス関係を可視化',
+    code: `classDiagram
+    class Document {
+        +String title
+        +String content
+        +save() void
+        +exportHtml() String
+    }
+    class Editor {
+        +render() void
+        +formatText() void
+    }
+    Document <|-- MarkdownDoc
+    Editor o-- Document`,
+  },
+  {
+    id: 'er',
+    label: 'ER図 (Entity-Relationship)',
+    description: 'データベース構造やエンティティ関連を可視化',
+    code: `erDiagram
+    USER ||--o{ DOCUMENT : "作成する"
+    USER {
+        string user_id PK
+        string user_name
+    }
+    DOCUMENT ||--o{ TAG : "タグ付け"
+    DOCUMENT {
+        string doc_id PK
+        string title
+        string body
+    }`,
+  },
+  {
+    id: 'mindmap',
+    label: 'マインドマップ (Mindmap)',
+    description: 'アイデアの発散・ブレインストーミング',
+    code: `mindmap
+  root((プロジェクト))
+    要件定義
+      画面仕様
+      非機能要件
+    設計
+      バックエンド
+      フロントエンド
+    検証
+      単体テスト
+      事前検証`,
+  },
+  {
+    id: 'gantt',
+    label: 'ガントチャート (Gantt)',
+    description: 'プロジェクト進捗・工程管理',
+    code: `gantt
+    title プロジェクト進捗スケジュール
+    dateFormat  YYYY-MM-DD
+    section 設計
+    要件定義         :done,    des1, 2026-10-01, 2026-10-05
+    画面仕様設計     :active,  des2, 2026-10-06, 5d
+    section 開発
+    フロント実装     :         dev1, after des2, 7d
+    バックエンド連携 :         dev2, after dev1, 5d`,
+  },
+  {
+    id: 'gitGraph',
+    label: 'Git グラフ (Git Graph)',
+    description: 'ブランチ運用やマージの流れを可視化',
+    code: `gitGraph
+    commit
+    branch develop
+    checkout develop
+    commit
+    commit
+    checkout main
+    merge develop
+    commit`,
+  },
+];
 
 interface ToolbarProps {
   onFormat: (
@@ -47,6 +173,7 @@ interface ToolbarProps {
   onInsertDate: () => void;
   onImageUpload: (file: File) => void;
   onAutoFormat?: () => void;
+  onInsertMermaidTemplate?: (templateCode: string) => void;
   isDark?: boolean;
 }
 
@@ -56,9 +183,30 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onInsertDate,
   onImageUpload,
   onAutoFormat,
+  onInsertMermaidTemplate,
   isDark = true,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mermaidMenuRef = useRef<HTMLDivElement>(null);
+  const [isMermaidMenuOpen, setIsMermaidMenuOpen] = useState(false);
+
+  // メニュー外部クリック時の自動クローズ
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mermaidMenuRef.current &&
+        !mermaidMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsMermaidMenuOpen(false);
+      }
+    };
+    if (isMermaidMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMermaidMenuOpen]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -175,7 +323,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         </button>
       </div>
 
-      {/* テーブル・コード・引用 */}
+      {/* テーブル・Mermaid・コード・引用 */}
       <div className={`flex items-center gap-0.5 px-1 border-r ${dividerClass}`}>
         <button
           onClick={onOpenTableModal}
@@ -184,6 +332,59 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         >
           <TableIcon className="w-4 h-4 text-purple-500" />
         </button>
+
+        {/* Mermaid ダイアグラム挿入メニュー */}
+        <div className="relative" ref={mermaidMenuRef}>
+          <button
+            onClick={() => setIsMermaidMenuOpen((prev) => !prev)}
+            className={`p-1.5 rounded transition-colors flex items-center gap-0.5 ${btnHoverClass} ${
+              isMermaidMenuOpen ? (isDark ? 'bg-slate-800 text-cyan-400' : 'bg-slate-200 text-cyan-700') : ''
+            }`}
+            title="Mermaid ダイアグラム（フローチャート・シーケンス図等）を挿入"
+          >
+            <Network className="w-4 h-4 text-cyan-400" />
+            <ChevronDown className="w-3 h-3 opacity-60" />
+          </button>
+
+          {isMermaidMenuOpen && (
+            <div
+              className={`absolute top-full left-0 mt-1 w-64 rounded-xl border shadow-xl py-1.5 z-50 animate-fade-in ${
+                isDark
+                  ? 'bg-slate-900 border-slate-800 text-slate-200'
+                  : 'bg-white border-slate-200 text-slate-800'
+              }`}
+            >
+              <div className={`px-3 py-1.5 border-b text-[11px] font-semibold flex items-center gap-1.5 ${
+                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-100 text-slate-500'
+              }`}>
+                <Network className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Mermaid 記法の雛形を挿入</span>
+              </div>
+              <div className="max-h-64 overflow-y-auto py-1">
+                {MERMAID_TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    onClick={() => {
+                      onInsertMermaidTemplate?.(tmpl.code);
+                      setIsMermaidMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex flex-col ${
+                      isDark
+                        ? 'hover:bg-slate-800 text-slate-200'
+                        : 'hover:bg-cyan-50 text-slate-700 hover:text-cyan-900'
+                    }`}
+                  >
+                    <span className="font-medium text-[11.5px]">{tmpl.label}</span>
+                    <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {tmpl.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <button
           onClick={() => onFormat('code')}
           className={`p-1.5 rounded transition-colors ${btnHoverClass}`}

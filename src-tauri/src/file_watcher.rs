@@ -223,3 +223,40 @@ pub fn unwatch_all_native() -> Result<bool, String> {
         .map_err(|e| format!("ウォッチャーマネージャーのロック失敗: {}", e))?;
     mgr.unwatch_all()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_path() {
+        assert_eq!(
+            FileWatcherManager::normalize_path(r#"C:\Users\test\file.md"#),
+            "c:/users/test/file.md"
+        );
+        assert_eq!(
+            FileWatcherManager::normalize_path("\"/tmp/test.txt\""),
+            "/tmp/test.txt"
+        );
+        assert_eq!(
+            FileWatcherManager::normalize_path("  D:/Path/To/Doc.MD  "),
+            "d:/path/to/doc.md"
+        );
+    }
+
+    #[test]
+    fn test_unwatch_nonexistent_file() {
+        let mut mgr = FileWatcherManager::new();
+        // 監視対象に存在しないパスの解除は Ok(false) を返すこと
+        let res = mgr.unwatch_file("C:/nonexistent/file.md");
+        assert_eq!(res, Ok(false));
+    }
+
+    #[test]
+    fn test_unwatch_all_empty() {
+        let mut mgr = FileWatcherManager::new();
+        let res = mgr.unwatch_all();
+        assert_eq!(res, Ok(true));
+        assert!(mgr.watched_paths.is_empty());
+    }
+}

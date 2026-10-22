@@ -10,6 +10,11 @@ interface UseFileWatcherProps {
   saveStatus?: string;
 }
 
+/**
+ * 外部プロセスによるアクティブファイル変更を常時監視・自動同期するカスタムフック
+ * - Rust 側の Notify クレートと Tauri イベント ('file-changed') をリッスン
+ * - 自アプリ内部での保存によるイベント誤検知をタイムスタンプ判定で防ぎつつ、外部変更時はトースト＆自動再読み込み
+ */
 export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFileWatcherProps) {
   // 各ファイルの直近 mtime (ミリ秒) を保持するマップ
   const fileMtimeMapRef = useRef<Map<string, number>>(new Map());

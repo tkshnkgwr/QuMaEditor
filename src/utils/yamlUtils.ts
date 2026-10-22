@@ -28,7 +28,7 @@ export function buildYamlFrontMatter(doc: Partial<MarkdownDoc>, defaultAuthor: s
     ? `[${tags.map(t => JSON.stringify(t)).join(', ')}]`
     : '[]';
 
-  return [
+  const lines = [
     '---',
     `title: ${JSON.stringify(title)}`,
     `author: ${JSON.stringify(author)}`,
@@ -37,8 +37,17 @@ export function buildYamlFrontMatter(doc: Partial<MarkdownDoc>, defaultAuthor: s
     `updatedBy: ${JSON.stringify(updatedBy)}`,
     `encoding: ${JSON.stringify(encoding)}`,
     `tags: ${formattedTags}`,
-    '---',
-  ].join('\n');
+  ];
+
+  if (doc.summary && doc.summary.trim() !== '') {
+    lines.push(`summary: ${JSON.stringify(doc.summary)}`);
+  }
+  if (doc.summaryType && doc.summaryType.trim() !== '') {
+    lines.push(`summary_type: ${JSON.stringify(doc.summaryType)}`);
+  }
+
+  lines.push('---');
+  return lines.join('\n');
 }
 
 /**
@@ -60,6 +69,8 @@ export interface ParsedYamlMetadata {
   updatedBy?: string;
   encoding?: SupportedEncoding;
   tags?: string[];
+  summary?: string;
+  summary_type?: string;
 }
 
 /**
@@ -104,6 +115,8 @@ export function parseYamlFrontMatter(fullText: string): {
     if (key === 'updated') metadata.updated = val;
     if (key === 'updatedBy') metadata.updatedBy = val;
     if (key === 'encoding') metadata.encoding = val as SupportedEncoding;
+    if (key === 'summary') metadata.summary = val;
+    if (key === 'summary_type') metadata.summary_type = val;
     if (key === 'tags') {
       // [tag1, tag2] の解釈
       if (val.startsWith('[') && val.endsWith(']')) {

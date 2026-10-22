@@ -10,6 +10,7 @@ import {
   Maximize2,
   X,
   Zap,
+  Download,
 } from 'lucide-react';
 import { validateMermaidSyntaxNative } from '../utils/tauriNative';
 
@@ -27,6 +28,7 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
   const [diagramType, setDiagramType] = useState<string>('');
   const [isCached, setIsCached] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [downloaded, setDownloaded] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(1.0); // デフォルト 100% (自動フィット・1ページ内収容)
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isPrinting, setIsPrinting] = useState<boolean>(false);
@@ -134,6 +136,26 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
     navigator.clipboard.writeText(chart);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadSvg = () => {
+    if (!svgHtml) return;
+    try {
+      const blob = new Blob([svgHtml], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const filename = `${diagramType || 'mermaid'}-diagram-${Date.now()}.svg`;
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setDownloaded(true);
+      setTimeout(() => setDownloaded(false), 2000);
+    } catch (err) {
+      console.error('SVGダウンロード失敗:', err);
+    }
   };
 
   const handleZoomIn = () => setZoom((prev) => Math.min(Number((prev + 0.25).toFixed(2)), 6.0));
@@ -246,6 +268,31 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
                   </>
                 )}
               </button>
+
+              {/* SVG ダウンロード保存ボタン */}
+              {svgHtml && (
+                <button
+                  onClick={handleDownloadSvg}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                    isDark
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 shadow-2xs'
+                  }`}
+                  title="ダイアグラムを SVG 画像ファイルとして保存"
+                >
+                  {downloaded ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-emerald-500 font-bold">保存完了</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>SVG保存</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -318,7 +365,7 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
                   <button
                     onClick={handleZoomReset}
                     className="px-2 font-mono text-xs font-bold text-cyan-300 cursor-pointer"
-                    title="クリックで 300% ↔ 100% 切替"
+                    title="クリックで 200% ↔ 100% 切替"
                   >
                     {Math.round(zoom * 100)}%
                   </button>
@@ -330,6 +377,48 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
                     <ZoomIn className="w-4 h-4" />
                   </button>
                 </div>
+
+                <button
+                  onClick={handleCopyCode}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                  }`}
+                  title="Mermaid 構文コードをコピー"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-emerald-500 font-bold">コピー完了</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>コード</span>
+                    </>
+                  )}
+                </button>
+
+                {svgHtml && (
+                  <button
+                    onClick={handleDownloadSvg}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                      isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                    }`}
+                    title="SVG 画像として保存"
+                  >
+                    {downloaded ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-emerald-500 font-bold">保存完了</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>SVG保存</span>
+                      </>
+                    )}
+                  </button>
+                )}
 
                 <button
                   onClick={() => setIsFullscreen(false)}

@@ -9,6 +9,17 @@ QuMaEditor (Quick & Minimal Markdown Editor) は、**Tauri v2**, **Rust**, **Rea
 
 ---
 
+## 📚 ドキュメント一覧
+
+- **[操作マニュアル (USER_GUIDE)](docs/ja/USER_GUIDE.md)**: 基本操作、AI要約、デュアルペイン、設定、ショートカット一覧
+- **[機能・技術仕様書 (SPECIFICATION)](docs/ja/SPECIFICATION.md)**: コア機能一覧、ライフサイクル、システム要件
+- **[アーキテクチャ設計書 (ARCHITECTURE)](docs/ja/ARCHITECTURE.md)**: Rust/React マルチプロセス構成、データフロー、モジュール構造
+- **[開発計画・TODO リスト (TODO)](docs/ja/TODO.md)**: 完了済み機能および開発ロードマップ
+- **[更新履歴 (CHANGELOG)](docs/ja/CHANGELOG.md)**: バージョン別変更履歴
+
+---
+
 ## 📄 ライセンス
 
 本プロジェクトは MIT License のもとで公開されています - Copyright (c) 2026 tkshnkgwr。詳細は [LICENSE](LICENSE) をご覧ください。
+

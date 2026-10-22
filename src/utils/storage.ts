@@ -21,9 +21,16 @@ export const DEFAULT_SETTINGS: EditorSettings = {
   autoSaveIntervalMs: 3000,
   theme: 'dark',
   headingTheme: 'muted',
+  codeBlockTheme: 'vscDarkPlus',
+  smartPaste: true,
   defaultAuthor: '',
   typewriterScroll: false,
   previewEngine: 'rust',
+  geminiApiKey: '',
+  geminiModel: 'gemini-3.7-flash',
+  geminiBaseUrl: 'https://generativelanguage.googleapis.com',
+  summaryRule: '80〜120文字程度でドキュメントの主要な要点・テーマ・結論を簡潔に要約してください。挨拶やプレフィックス（「要約：」等）は含めず、要約本文のみを出力してください。',
+  activeSummaryMode: 'api',
 };
 
 /** サンプルドキュメントの初期データ */
@@ -199,12 +206,18 @@ export function loadSettings(): EditorSettings {
       const parsed = JSON.parse(raw);
       const loadedInterval = typeof parsed.autoSaveIntervalMs === 'number' ? parsed.autoSaveIntervalMs : 3000;
       const clampedInterval = Math.max(1000, Math.min(10000, loadedInterval));
-      return { ...DEFAULT_SETTINGS, ...parsed, autoSaveIntervalMs: clampedInterval };
+      const merged = { ...DEFAULT_SETTINGS, ...parsed, autoSaveIntervalMs: clampedInterval };
+      if (!merged.geminiModel || merged.geminiModel === 'gemini-3.8-flash') {
+        merged.geminiModel = 'gemini-3.7-flash';
+      }
+      return merged;
     }
+
   } catch (e) {
     console.error('Failed to load settings:', e);
   }
   return DEFAULT_SETTINGS;
+
 }
 
 /**

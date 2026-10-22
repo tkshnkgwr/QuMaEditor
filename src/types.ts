@@ -24,6 +24,8 @@ export interface MarkdownDoc {
   updatedBy?: string;    // 更新者
   isFavorite?: boolean;
   tags?: string[];
+  summary?: string;     // 要約
+  summaryType?: string; // 要約生成方式・モデル名
   filePath?: string;   // 実ファイルの絶対パス（ローカルファイル上書き保存用）
   isRemote?: boolean;   // リモートファイルフラグ（trueの場合は自動保存対象外）
   remoteUrl?: string;  // リモート参照元URL
@@ -47,6 +49,11 @@ export type ViewMode = 'split' | 'editor' | 'preview';
 export type ThemeMode = 'dark' | 'light' | 'system';
 
 export type HeadingTheme = 'muted' | 'vivid' | 'high_contrast' | 'monochrome';
+
+/**
+ * コードブロックのシンタックスハイライト配色テーマ
+ */
+export type CodeBlockTheme = 'vscDarkPlus' | 'dracula' | 'nord' | 'okaidia' | 'oneDark' | 'prism';
 
 export type SaveStatus = 'saved' | 'saved_file' | 'saved_local' | 'saving' | 'editing' | 'unsaved';
 
@@ -82,12 +89,38 @@ export interface EditorSettings {
   theme: ThemeMode;
   /** 見出しカラーテーマ ('muted' | 'vivid' | 'high_contrast' | 'monochrome') */
   headingTheme?: HeadingTheme;
+  /** コードブロック配色テーマ ('vscDarkPlus' | 'dracula' | 'nord' | 'okaidia' | 'oneDark' | 'prism') */
+  codeBlockTheme?: CodeBlockTheme;
+  /** スマートペースト（テキスト選択中のURL自動リンク化）有効フラグ */
+  smartPaste?: boolean;
   /** 既定の作成者名 (YAML Front Matter 自動付与用) */
   defaultAuthor?: string;
   /** タイプライタースクロール（カーソル行を画面中央に維持）有効フラグ */
   typewriterScroll?: boolean;
   /** Markdown プレビュー描画エンジン ('rust' | 'react') */
   previewEngine?: 'rust' | 'react';
+  /** Gemini API キー */
+  geminiApiKey?: string;
+  /** 使用する Gemini モデル ('gemini-3.7-flash' 等) */
+  geminiModel?: string;
+  /** Gemini Base URL (プロキシ・カスタムエンドポイント対応) */
+  geminiBaseUrl?: string;
+  /** AI要約生成ルール（プロンプト） */
+  summaryRule?: string;
+  /** アクティブ要約実行モード ('api' | 'local_fallback' | 'web_proxy') */
+  activeSummaryMode?: 'api' | 'local_fallback' | 'web_proxy';
+  /** 直近のAPI接続テスト結果 */
+  lastTestResult?: {
+    testedAt?: string;
+    apiSuccess?: boolean;
+    apiMessage?: string;
+    apiLatency?: number;
+    urlSuccess?: boolean;
+    urlMessage?: string;
+    urlLatency?: number;
+  };
+  /** Google から動的取得した利用可能モデル一覧（スマートフィルター適用済み） */
+  cachedAvailableModels?: { value: string; label: string }[];
 }
 
 export interface TextStats {

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
+    "test:rust": "pwsh -ExecutionPolicy Bypass -File scripts/run_rust_tests.ps1",
     "docs:frontend": "npx typedoc --skipErrorChecking --out docs/typedoc src/utils/*.ts src/types.ts",
     "gen:specta": "cargo run --bin gen_specta --manifest-path src-tauri/Cargo.toml",
     "tauri": "tauri"

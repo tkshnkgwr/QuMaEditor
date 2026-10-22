@@ -178,4 +178,82 @@ graph TD
 | `mmap_reader`       | [`src-tauri/src/mmap_reader.rs`](../../src-tauri/src/mmap_reader.rs)      | `memmap2` を用いた OS 仮想メモリページキャッシュ直結・GB級巨大ファイルゼロコピー瞬時オープン        |
 | `workspace_scanner` | [`src-tauri/src/workspace_scanner.rs`](../../src-tauri/src/workspace_scanner.rs) | `ignore` クレートを用いた .gitignore 準拠マルチスレッド並列ファイルツリー走査                        |
 
+---
+
+## 6. フロントエンドモジュール構造 (Renderer Architecture)
+
+保守性と拡張性を高めるため、単一ファイル 1,000 行未満を厳格に維持し、責務ごとにカスタムフックおよびコンポーネントを分離しています。
+
+```mermaid
+graph TD
+    App["App.tsx<br/>(全体レイアウト ＆ 状態調停)"]
+
+    subgraph CustomHooks["カスタムフック群 (Hooks)"]
+        useDoc["useDocumentManager.ts<br/>(ドキュメントCRUD / 要約更新)"]
+        useDnD["useWindowDragDrop.ts<br/>(Tauri / HTML5 D&D)"]
+        useToolbar["useEditorToolbarActions.ts<br/>(書式挿入 / 表 / 見出しジャンプ)"]
+        useDual["useDualPane.ts<br/>(左右ペインスプリッター / フォーカス)"]
+        useShortcuts["useGlobalShortcuts.ts<br/>(グローバルキーバインド)"]
+    end
+
+    subgraph UIComponents["主要UIコンポーネント"]
+        DualPane["DualPaneWorkspace.tsx<br/>(左右分割ワークスペース)"]
+        Editor["Editor.tsx<br/>(CodeMirror / Front Matter)"]
+        Preview["Preview.tsx<br/>(Rust HTML / Obsidian / セグメント分離)"]
+        MermaidComp["MermaidRenderer.tsx<br/>(ズーム / 全画面 / SVG保存)"]
+        StatusBar["StatusBar.tsx<br/>(文字数 / 校正Lint / 保存状態)"]
+        SettingsModal["SettingsModal.tsx<br/>(設定モーダル親枠)"]
+    end
+
+    subgraph SettingsTabs["設定タブモジュール"]
+        GeneralTab["settings/GeneralTab.tsx<br/>(外観 / フォント / 自動保存)"]
+        AiTab["settings/AiTab.tsx<br/>(Gemini API / モデル選択 / テスト)"]
+        StorageTab["settings/StorageTab.tsx<br/>(ストレージ容量 / ZIP出力)"]
+    end
+
+    subgraph UtilityModules["ユーティリティ・API層"]
+        AiSummary["aiSummary.ts<br/>(Gemini API / safeFetch / ローカル要約)"]
+        YamlUtils["yamlUtils.ts<br/>(YAML Front Matter パース・生成)"]
+        TableUtils["tableUtils.ts<br/>(Markdown 表自動移動・整形)"]
+        TauriNative["tauriNative.ts<br/>(Rust IPC コマンドブリッジ)"]
+    end
+
+    App --> useDoc
+    App --> useDnD
+    App --> useToolbar
+    App --> useDual
+    App --> useShortcuts
+    App --> DualPane
+    App --> StatusBar
+    App --> SettingsModal
+
+    DualPane --> Editor
+    DualPane --> Preview
+    Preview --> MermaidComp
+
+    SettingsModal --> GeneralTab
+    SettingsModal --> AiTab
+    SettingsModal --> StorageTab
+
+    Editor --> YamlUtils
+    Editor --> AiSummary
+    useToolbar --> TableUtils
+    useDoc --> TauriNative
+```
+
+| ディレクトリ / ファイル              | 役割・詳細                                                                                            |
+| :----------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `src/App.tsx`                        | アプリケーションのルートコンポーネント。各フックから状態を受け取り全体レイアウトを統括              |
+| `src/hooks/useDocumentManager.ts`    | ドキュメントの新規作成・開く・保存・タイトル更新・タグ・要約更新等のライフサイクルを一元管理          |
+| `src/hooks/useWindowDragDrop.ts`     | OS ファイルエクスプローラーからのドラッグ＆ドロップ（テキスト・画像）を安全にハンドリング             |
+| `src/hooks/useEditorToolbarActions`  | ツールバーからの文字修飾（太字・斜体・下線）、Markdown テーブル生成、見出しジャンプを集中管理        |
+| `src/components/MermaidRenderer.tsx` | Mermaid ダイアグラムの SVG 描画、ズーム操作、全画面拡大、SVG 画像保存、構文エラー通知、差分キャッシュ |
+| `src/components/SettingsModal.tsx`   | 設定モーダルの外枠およびタブ切替制御（本体を 286 行へ大幅スリム化）                                   |
+| `src/components/settings/GeneralTab` | フォント、行間、タブ幅、自動保存間隔、見出し配色、スマートペースト、コードテーマの個別設定           |
+| `src/components/settings/AiTab.tsx`  | Google Gemini API キー、要約モデル選択、BaseURL、プロンプト編集、疎通テスト機能を提供                 |
+| `src/components/settings/StorageTab` | LocalStorage 容量計測、保存ノート件数、全ドキュメント ZIP 一括エクスポート、初期化を提供             |
+| `src/utils/aiSummary.ts`             | Google Gemini API (`@google/genai`) ＆ Tauri HTTP プラグイン連携、ローカル要約フォールバックエンジン   |
+| `src/utils/tableUtils.ts`            | Markdown 表編集中における Tab / Shift+Tab / Enter によるセル移動と自動行追加ロジック                 |
+
+
 

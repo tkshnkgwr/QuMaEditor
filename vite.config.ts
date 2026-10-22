@@ -20,12 +20,20 @@ export default defineConfig({
     },
   },
   build: {
-    // デスクトップアプリ（Tauri）環境向けにチャンクサイズ警告の上限を調整
-    chunkSizeWarningLimit: 1500,
+    // デスクトップアプリ（Tauri）環境向けにチャンクサイズ警告の上限を調整 (2MB)
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Google Gemini AI SDK
+            if (id.includes('@google/genai')) {
+              return 'vendor-ai';
+            }
+            // 数式レンダラー (KaTeX)
+            if (id.includes('katex')) {
+              return 'vendor-katex';
+            }
             // Markdown 解析・HTML 変換エンジン関連
             if (
               id.includes('react-markdown') ||

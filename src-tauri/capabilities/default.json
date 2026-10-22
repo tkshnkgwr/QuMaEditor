@@ -17,6 +17,13 @@
     "fs:allow-write-text-file",
     "fs:allow-create",
     "fs:allow-write",
-    "http:default"
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://*/*" },
+        { "url": "http://*/*" }
+      ]
+    }
   ]
 }
+

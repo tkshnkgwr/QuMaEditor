@@ -24,6 +24,10 @@ pub struct ParsedYamlDocResult {
     pub encoding: Option<String>,
     /// タグ一覧
     pub tags: Vec<String>,
+    /// 要約本文
+    pub summary: Option<String>,
+    /// 要約生成タイプ
+    pub summary_type: Option<String>,
 }
 
 /// YAML Front Matter と本文を高速分離・パースする
@@ -46,6 +50,8 @@ pub fn parse_yaml_front_matter_native(full_text: String) -> Result<ParsedYamlDoc
             updated_by: None,
             encoding: None,
             tags: Vec::new(),
+            summary: None,
+            summary_type: None,
         });
     }
 
@@ -64,6 +70,8 @@ pub fn parse_yaml_front_matter_native(full_text: String) -> Result<ParsedYamlDoc
         let mut updated_by = None;
         let mut encoding = None;
         let mut tags = Vec::new();
+        let mut summary = None;
+        let mut summary_type = None;
 
         if let serde_yaml::Value::Mapping(map) = yaml_val {
             for (k, v) in map {
@@ -77,6 +85,10 @@ pub fn parse_yaml_front_matter_native(full_text: String) -> Result<ParsedYamlDoc
                             updated_by = v.as_str().map(|s| s.to_string())
                         }
                         "encoding" => encoding = v.as_str().map(|s| s.to_string()),
+                        "summary" => summary = v.as_str().map(|s| s.to_string()),
+                        "summary_type" | "summaryType" => {
+                            summary_type = v.as_str().map(|s| s.to_string())
+                        }
                         "tags" => {
                             if let serde_yaml::Value::Sequence(tag_seq) = v {
                                 for t in tag_seq {
@@ -101,6 +113,8 @@ pub fn parse_yaml_front_matter_native(full_text: String) -> Result<ParsedYamlDoc
             updated_by,
             encoding,
             tags,
+            summary,
+            summary_type,
         })
     } else {
         Ok(ParsedYamlDocResult {
@@ -112,6 +126,8 @@ pub fn parse_yaml_front_matter_native(full_text: String) -> Result<ParsedYamlDoc
             updated_by: None,
             encoding: None,
             tags: Vec::new(),
+            summary: None,
+            summary_type: None,
         })
     }
 }
@@ -122,11 +138,13 @@ mod tests {
 
     #[test]
     fn test_parse_yaml_front_matter_native() {
-        let md = "---\ntitle: \"テスト文書\"\nauthor: \"山田太郎\"\ntags: [\"rust\", \"tauri\"]\n---\n\n# 本文タイトル";
+        let md = "---\ntitle: \"テスト文書\"\nauthor: \"山田太郎\"\ntags: [\"rust\", \"tauri\"]\nsummary: \"テストの要約文です。\"\nsummary_type: \"gemini-3.8-flash\"\n---\n\n# 本文タイトル";
         let parsed = parse_yaml_front_matter_native(md.to_string()).unwrap();
         assert_eq!(parsed.title.as_deref(), Some("テスト文書"));
         assert_eq!(parsed.author.as_deref(), Some("山田太郎"));
         assert_eq!(parsed.tags, vec!["rust", "tauri"]);
+        assert_eq!(parsed.summary.as_deref(), Some("テストの要約文です。"));
+        assert_eq!(parsed.summary_type.as_deref(), Some("gemini-3.8-flash"));
         assert!(parsed.body.contains("# 本文タイトル"));
     }
 }

@@ -1,7 +1,9 @@
 import React, { useRef, useState, useMemo } from 'react';
-import { Upload, Lock, Unlock, Tag, Plus, X, ChevronDown, ChevronRight, Edit3, Layers, Download, Zap } from 'lucide-react';
+import { Upload, Lock, Unlock, Tag, Plus, X, ChevronDown, ChevronRight, Edit3, Layers, Download, Zap, Sparkles, AlertCircle } from 'lucide-react';
 import { EditorSettings, MarkdownDoc, ViewMode } from '../types';
 import { handleAutoListContinuation, insertFormatting, handleTabIndent, applyTextReplacementWithUndo } from '../utils/markdownUtils';
+import { handleTableKeyNavigation } from '../utils/tableUtils';
+import { triggerDocumentSummary } from '../utils/aiSummary';
 
 interface EditorProps {
   content: string;
@@ -13,6 +15,7 @@ interface EditorProps {
   onDropFiles?: (files: File[]) => void;
   doc?: MarkdownDoc;
   onUpdateTags?: (newTags: string[]) => void;
+  onUpdateSummary?: (summary: string, summaryType?: string) => void;
   /** textareaRef を親コンポーネントへ公開するコールバック (フォーマット時の選択範囲取得に使用) */
   onTextareaRef?: (ref: HTMLTextAreaElement | null) => void;
   isDark?: boolean;
@@ -35,6 +38,7 @@ export const Editor: React.FC<EditorProps> = ({
   onDropFiles,
   doc,
   onUpdateTags,
+  onUpdateSummary,
   onTextareaRef,
   isDark = true,
   isReadOnly = false,
@@ -56,6 +60,10 @@ export const Editor: React.FC<EditorProps> = ({
   const [isFrontMatterOpen, setIsFrontMatterOpen] = useState(true);
   const [newTagInput, setNewTagInput] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isEditingSummary, setIsEditingSummary] = useState(false);
+  const [editedSummaryText, setEditedSummaryText] = useState('');
+  const [summaryErrorMessage, setSummaryErrorMessage] = useState<string | null>(null);
 
   const tags = doc?.tags || [];
 
@@ -72,6 +80,27 @@ export const Editor: React.FC<EditorProps> = ({
   const handleRemoveTag = (tagToRemove: string) => {
     const updated = tags.filter((t) => t !== tagToRemove);
     onUpdateTags?.(updated);
+  };
+
+  const handleGenerateSummary = async () => {
+    setIsSummarizing(true);
+    setSummaryErrorMessage(null);
+    try {
+      const res = await triggerDocumentSummary({
+        content,
+        title: doc?.title,
+        settings,
+      });
+      onUpdateSummary?.(res.summary, res.summaryType);
+      if (res.errorMessage) {
+        setSummaryErrorMessage(res.errorMessage);
+      }
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      setSummaryErrorMessage(msg);
+    } finally {
+      setIsSummarizing(false);
+    }
   };
 
   // 改行文字の高速カウント (ゼロアロケーション)
@@ -274,6 +303,24 @@ export const Editor: React.FC<EditorProps> = ({
       return;
     }
 
+    // テーブル簡易編集支援 (Tab / Shift+Tab / Enter)
+    if (e.key === 'Tab' || e.key === 'Enter') {
+      const tableRes = handleTableKeyNavigation(content, start, e.key, e.shiftKey);
+      if (tableRes.handled) {
+        e.preventDefault();
+        if (tableRes.newText !== undefined) {
+          onChange(tableRes.newText);
+        }
+        setTimeout(() => {
+          const newStart = tableRes.newCursorStart ?? start;
+          const newEnd = tableRes.newCursorEnd ?? newStart;
+          textareaRef.current?.setSelectionRange(newStart, newEnd);
+          updateCursorPos();
+        }, 0);
+        return;
+      }
+    }
+
     // Tab / Shift + Tab (インデント・階層ネスト・アンインデント)
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -297,6 +344,45 @@ export const Editor: React.FC<EditorProps> = ({
           textareaRef.current?.setSelectionRange(continuation.newCursor, continuation.newCursor);
         }, 0);
         return;
+      }
+    }
+  };
+
+  // スマートペースト (テキスト選択中のURL自動Markdownリンク化)
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (settings.smartPaste === false || isReadOnly) return;
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+
+    // テキストが選択されていない場合はブラウザのデフォルト貼り付けに任せる
+    if (start === end) return;
+
+    const pastedText = e.clipboardData?.getData('text');
+    if (!pastedText) return;
+
+    const trimmed = pastedText.trim();
+    // 改行を含まず、http:// または https:// で始まる有効なURLかを検証
+    if (!trimmed.includes('\n') && /^https?:\/\/[^\s]+$/.test(trimmed)) {
+      try {
+        new URL(trimmed);
+        e.preventDefault();
+        const selectedText = content.substring(start, end);
+        const markdownLink = `[${selectedText}](${trimmed})`;
+        applyTextReplacementWithUndo(
+          el,
+          start,
+          end,
+          markdownLink,
+          start + markdownLink.length,
+          start + markdownLink.length,
+          onChange
+        );
+        updateCursorPos();
+      } catch {
+        // 不正なURL形式の場合は通常のペースト
       }
     }
   };
@@ -497,6 +583,141 @@ export const Editor: React.FC<EditorProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* summary 要約行 */}
+              <div className="flex items-start gap-2 pt-1 border-t border-slate-800/60">
+                <span className={`flex items-center gap-1 shrink-0 mt-0.5 ${isDark ? 'text-cyan-400' : 'text-cyan-700 font-semibold'}`}>
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  summary:
+                </span>
+                <div className="flex-1 space-y-1">
+                  {isEditingSummary ? (
+                    <div className="space-y-1">
+                      <textarea
+                        rows={3}
+                        value={editedSummaryText}
+                        onChange={(e) => setEditedSummaryText(e.target.value)}
+                        placeholder="要約文を入力..."
+                        className={`w-full px-2 py-1 border rounded text-[11px] font-sans outline-none leading-relaxed ${
+                          isDark ? 'bg-slate-900 border-purple-500 text-slate-100' : 'bg-white border-purple-600 text-slate-900'
+                        }`}
+                      />
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onUpdateSummary?.(editedSummaryText, doc?.summaryType || 'manual');
+                            setIsEditingSummary(false);
+                          }}
+                          className="px-2.5 py-0.5 bg-purple-600 hover:bg-purple-500 text-white rounded text-[11px] font-medium cursor-pointer"
+                        >
+                          保存
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingSummary(false)}
+                          className="px-2 py-0.5 border border-slate-700 hover:bg-slate-800 text-slate-400 rounded text-[11px] cursor-pointer"
+                        >
+                          キャンセル
+                        </button>
+                      </div>
+                    </div>
+                  ) : doc?.summary ? (
+                    <div
+                      className={`p-2 rounded border text-[11px] font-sans leading-relaxed ${
+                        isDark ? 'bg-slate-900/80 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+                      }`}
+                    >
+                      <p>{doc.summary}</p>
+                      <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-slate-800/40 text-[10px]">
+                        {doc.summaryType && (
+                          <span
+                            className={`px-1.5 py-0.2 rounded font-mono ${
+                              isDark
+                                ? 'bg-purple-950/60 text-purple-300 border border-purple-800/50'
+                                : 'bg-purple-50 text-purple-700 border border-purple-200'
+                            }`}
+                          >
+                            {doc.summaryType}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2 ml-auto">
+                          <button
+                            type="button"
+                            onClick={handleGenerateSummary}
+                            disabled={isSummarizing}
+                            className="text-purple-400 hover:text-purple-300 flex items-center gap-0.5 cursor-pointer disabled:opacity-50"
+                            title="再要約"
+                          >
+                            <Sparkles className={`w-3 h-3 ${isSummarizing ? 'animate-spin' : ''}`} />
+                            <span>{isSummarizing ? '生成中...' : '再生成'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditedSummaryText(doc.summary || '');
+                              setIsEditingSummary(true);
+                            }}
+                            className="text-slate-400 hover:text-slate-200 cursor-pointer"
+                            title="要約を手動編集"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onUpdateSummary?.('', '')}
+                            className="text-rose-400 hover:text-rose-300 cursor-pointer"
+                            title="要約を削除"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleGenerateSummary}
+                        disabled={isSummarizing}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded text-[11px] font-sans font-medium shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                      >
+                        <Sparkles className={`w-3 h-3 ${isSummarizing ? 'animate-spin' : ''}`} />
+                        <span>{isSummarizing ? '要約生成中...' : '🪄 AI要約を自動生成'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditedSummaryText('');
+                          setIsEditingSummary(true);
+                        }}
+                        className="text-[11px] text-slate-400 hover:text-slate-200 underline font-sans cursor-pointer"
+                      >
+                        手動入力
+                      </button>
+                    </div>
+                  )}
+
+                  {summaryErrorMessage && (
+                    <div className="flex items-start gap-1.5 p-2 rounded bg-amber-950/40 border border-amber-800/60 text-amber-300 text-[10.5px] font-sans leading-relaxed">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+                      <div className="flex-1">
+                        <span className="font-semibold">AI通信エラー:</span> {summaryErrorMessage}
+                        <div className="text-[10px] text-amber-400/80 mt-0.5">※ 自動的にローカル抽出要約に切り替えました。</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSummaryErrorMessage(null)}
+                        className="text-amber-400/60 hover:text-amber-200 cursor-pointer"
+                        title="閉じる"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className={isDark ? 'text-slate-500' : 'text-amber-800/60 font-bold'}>---</div>
             </div>
           </div>
@@ -539,6 +760,7 @@ export const Editor: React.FC<EditorProps> = ({
           value={content}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           onKeyUp={updateCursorPos}
           onClick={updateCursorPos}
           onBlur={saveCursorState}

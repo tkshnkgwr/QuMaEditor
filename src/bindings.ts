@@ -717,7 +717,15 @@ encoding: string | null;
 /**
  * タグ一覧
  */
-tags: string[] }
+tags: string[]; 
+/**
+ * 要約本文
+ */
+summary: string | null; 
+/**
+ * 要約生成タイプ
+ */
+summary_type: string | null }
 /**
  * 校正指摘項目 DTO
  */
