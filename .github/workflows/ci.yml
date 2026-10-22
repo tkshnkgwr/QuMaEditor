@@ -50,4 +50,4 @@ jobs:
         run: npm run lint
 
       - name: Run Rust Unit Tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+        run: npm run test:rust

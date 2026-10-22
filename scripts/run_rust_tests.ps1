@@ -22,16 +22,24 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Windows MSVC 環境の mt.exe 探索
-$mtFile = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\mt.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
-$mtPath = if ($mtFile) { $mtFile.FullName } else { $null }
+$cmdMt = Get-Command "mt.exe" -ErrorAction SilentlyContinue
+$mtPath = if ($cmdMt) {
+    $cmdMt.Source
+} else {
+    $mtFile = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\mt.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+    if ($mtFile) { $mtFile.FullName } else { $null }
+}
 
 $testBinaries = Get-ChildItem -Path (Join-Path $tauriDir "target\debug\deps\quma_editor_lib-*.exe") -ErrorAction SilentlyContinue
 
 if ($mtPath -and (Test-Path $manifestPath)) {
+    Write-Host "Found Manifest Tool: $mtPath" -ForegroundColor Cyan
     foreach ($bin in $testBinaries) {
         Write-Host "==> 2. ComCtl32 v6 マニフェスト埋め込み: $($bin.Name)..." -ForegroundColor Cyan
-        & $mtPath -manifest $manifestPath "-outputresource:$($bin.FullName);#1" | Out-Null
+        & $mtPath -nologo -manifest $manifestPath "-outputresource:$($bin.FullName);#1" | Out-Null
     }
+} else {
+    Write-Host "Warning: mt.exe or manifest not found. Skipping manifest embedding." -ForegroundColor Yellow
 }
 
 Write-Host "==> 3. テスト実行..." -ForegroundColor Cyan
