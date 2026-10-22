@@ -6,9 +6,12 @@ QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 
 ## 🎯 完了済みタスク (Completed)
 
-### v1.5.0 リリース版 (2026-09-29)
+### v1.5.1 リリース版 (2026-10-22)
 
 - [x] **Mermaid記法のプレビュー完全統合 ＆ 拡張機能（SVG保存・HTMLエクスポート・雛形挿入） (`Preview / Mermaid`)**: Rust ネイティブプレビュー（`previewEngine === 'rust'`）でのブロック自動抽出＆`MermaidRenderer`透過マウント、インタラクティブズーム（50%〜600% / 100%↔200% トグル）、全画面拡大モーダル、リアルタイム構文エラー通知、150ms デバウンス最適化、SVG 画像ダウンロード保存、スタンドアロン HTML エクスポート時の自動描画スクリプト埋め込み、およびツールバーからの8大ダイアグラム雛形ワンクリック挿入を完備。
+- [x] **GitHub Actions CI/CD の Windows ComCtl32 v6 マニフェスト解決 (`CI / Build`)**: Windows ランナーでの `TaskDialogIndirect` 欠落によるテストクラッシュ（`0xc0000139`）を解消し、`npm run test:rust` によるマニフェスト自動埋め込みでテストを 100% 安定化。
+
+### v1.5.0 リリース版 (2026-09-29)
 - [x] **AI自動要約機能（Gemini API ＆ QuDaMemo準拠ハイブリッド方式） (`AI / Summary`)**: Google Gemini API（`gemini-2.5-flash`, `gemini-2.5-pro` 等の最新モデル自由選択対応）およびオフライン／未設定時のローカルテキスト抽出フォールバックによるハイブリッド要約エンジンを実装。設定モーダルに「AI設定」タブを新設し、APIキー設定、BaseURL設定、要約プロンプトカスタマイズ、接続テストを完備。エディタの Front Matter パネルおよび Markdown プレビュー上に要約文カードおよび生成モデル名バッジを表示し、手動編集・再生成・削除を自在に行えるよう統合。Rust側 YAML パーサーでも `summary` / `summary_type` を完全サポート。
 - [x] **日本語校正ステータスバー表示の改善 (`Status / Proofreading`)**: 画面左下の校正表示ツールチップ文言を「Rustバックグラウンド校正＆Lintの検出結果を表示」から、一般ユーザーにも直感的で分かりやすい「日本語校正＆記法Lint検出結果」へ更新。
 - [x] **1,000行超過コードの徹底モジュール分割リファクタリング (`Architecture / Refactoring`)**: プロジェクト開発ガイドライン（`AGENTS.md`）の1,000行警戒ラインを遵守し、`App.tsx`（1,104行 ➔ 958行）から `useWindowDragDrop.ts`（D&D処理）と `useEditorToolbarActions.ts`（書式・テーブル・見出しジャンプ）を分離、`SettingsModal.tsx`（923行 ➔ 286行）を `GeneralTab.tsx`, `AiTab.tsx`, `StorageTab.tsx` へタブ分割。手書きソースコード全ファイルで1,000行未満を達成し、保守性を劇的に向上。

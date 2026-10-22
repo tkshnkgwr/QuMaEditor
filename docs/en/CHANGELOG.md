@@ -2,9 +2,9 @@
 
 All notable changes and release history for QuMaEditor.
 
-## [1.5.0] - 2026-09-29
+## [1.5.1] - 2026-10-22
 
-### 🤖 AI Document Summary, Dual-Pane Workspace & Complete Mermaid Integration (v1.5.0)
+### 📐 Complete Mermaid Preview Integration & Windows CI Manifest Fix (v1.5.1)
 
 - **Complete Mermaid Preview Integration & Extended Utilities (SVG Download, Standalone HTML Export, Template Insertion) (`Preview / Mermaid`)**:
   - **Full Rust Preview Integration**: Automatically segments and extracts Mermaid blocks from Rust native Markdown HTML (`previewEngine === 'rust'`), seamlessly mounting the rich `MermaidRenderer` component. Retains native parsing speed while fully enabling interactive zoom (50%~600%, 100%↔200% toggle), fullscreen zoom modal, syntax error notifications, and SHA-256 caching.
@@ -12,6 +12,13 @@ All notable changes and release history for QuMaEditor.
   - **SVG Image Download & Save**: Added one-click `.svg` vector image export buttons directly in the diagram toolbar and fullscreen modal.
   - **Standalone HTML Export Support**: Embedded Mermaid CDN script and auto-initialization in `export_html_full_native`, allowing exported standalone HTML files to automatically render diagrams in any browser, accompanied by print CSS optimizations.
   - **Editor Toolbar Mermaid Template Dropdown**: Added a dedicated Mermaid dropdown menu in the editor toolbar offering one-click snippet insertion for 8 major diagram types (flowchart, sequenceDiagram, stateDiagram-v2, classDiagram, erDiagram, mindmap, gantt, gitGraph).
+- **GitHub Actions CI/CD Windows ComCtl32 v6 Manifest Resolution (`CI / Build`)**:
+  - Resolved `0xc0000139` (STATUS_ENTRYPOINT_NOT_FOUND) test crashes on Windows caused by missing Common Controls v6 manifests needed by `rfd` and native dialogs.
+  - Configured `npm run test:rust` via `scripts/run_rust_tests.ps1` in CI workflows (`ci.yml`, `release.yml`) for 100% stable cloud test passes.
+
+## [1.5.0] - 2026-09-29
+
+### 🤖 AI Document Summary, Dual-Pane Workspace & Modular Refactoring (v1.5.0)
 - **AI-Powered Document Summary & Hybrid Fallback Engine (`AI / Summary`)**:
   - Integrated Google Gemini API (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, etc.) with flexible user model selection and offline local text extraction fallback (`aiSummary.ts`).
   - **Settings Expansion**: Added dedicated "AI Settings" tab in Settings modal for API key configuration (with visibility mask), model selection, custom base URL, prompt tuning, and live connectivity testing.

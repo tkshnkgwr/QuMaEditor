@@ -6,9 +6,12 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
-### v1.5.0 Release (2026-09-29)
+### v1.5.1 Release (2026-10-22)
 
-- [x] **Complete Mermaid Preview Integration & Extended Utilities (`Preview / Mermaid`)**: Full integration into the Rust native preview engine (`previewEngine === 'rust'`) with interactive zoom (50%~600%, 100%↔200% toggle), fullscreen zoom modal, syntax error detection, 150ms debounce typing optimization, one-click SVG vector download/save, standalone HTML export auto-rendering scripts, and 8-diagram template insertion from the editor toolbar.
+- [x] **Complete Mermaid Preview Integration & Extended Utilities (`Preview / Mermaid`)**: Full integration into the Rust native preview engine (`previewEngine === 'rust'`) with block separation and transparent `MermaidRenderer` mounting, interactive zoom (50%~600%, 100%↔200% toggle), fullscreen zoom modal, syntax error detection, 150ms debounce typing optimization, one-click SVG vector download/save, standalone HTML export auto-rendering scripts, and 8-diagram template insertion from the editor toolbar.
+- [x] **Resolved Windows ComCtl32 v6 Manifest for GitHub Actions CI/CD (`CI / Build`)**: Fixed test crash (`0xc0000139`) on Windows runners caused by missing `TaskDialogIndirect` in ComCtl32 v5 by routing through `npm run test:rust` with automatic manifest embedding, achieving 100% stable CI tests.
+
+### v1.5.0 Release (2026-09-29)
 - [x] **AI-Powered Document Summary (Gemini API & Hybrid Fallback) (`AI / Summary`)**: Integrated an intelligent document summarization engine supporting user-selected Google Gemini models (`gemini-2.5-flash`, `gemini-2.5-pro`, etc.) with offline/unconfigured local fallback. Added an "AI Settings" tab in the Settings modal with API key, custom base URL, prompt customization, and live connection testing. Summaries are rendered as interactive cards with model badges in both the Front Matter editor panel and Markdown preview, supporting inline editing and one-click regeneration. Extended Rust YAML parser to support `summary` and `summary_type`.
 - [x] **Refined Status Bar Proofreading Tooltip (`Status / Proofreading`)**: Updated the bottom-left status tooltip from "Rustバックグラウンド校正＆Lintの検出結果を表示" to intuitive user-facing text: "日本語校正＆記法Lint検出結果" (Japanese Proofreading & Syntax Lint Detection Results).
 - [x] **Modular Architecture Refactoring (>1,000 Lines Enforcement) (`Architecture / Refactoring`)**: Enforced the project's 1,000-line guideline by decomposing `App.tsx` (1,104 ➔ 958 lines) into `useWindowDragDrop.ts` and `useEditorToolbarActions.ts`, and decomposing `SettingsModal.tsx` (923 ➔ 286 lines) into `GeneralTab.tsx`, `AiTab.tsx`, and `StorageTab.tsx`. Eradicated all single files exceeding 1,000 lines across the entire codebase.
