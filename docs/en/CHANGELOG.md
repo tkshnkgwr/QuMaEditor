@@ -4,6 +4,14 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.5.3] - 2026-10-27
+
+### 📄 License Transition to GPL-3.0-or-later (v1.5.3)
+
+- **Open Source License Update (`License / Legal`)**:
+  - Changed the project license from `MIT License` to **`GNU General Public License v3.0 or later (GPL-3.0-or-later)`**.
+  - Updated `LICENSE`, `package.json`, `src-tauri/Cargo.toml`, and EN/JA `README` badges and license sections to `GPL-3.0-or-later`.
+
 ## [1.5.2] - 2026-10-27
 
 ### 🛡️ Comprehensive Codebase Audit, Bug Fixes, XSS Hardening & Documentation Sync (v1.5.2)

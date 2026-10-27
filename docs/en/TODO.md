@@ -8,6 +8,10 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.5.3 Release (2026-10-27)
+
+- [x] **License Transition to GPL-3.0-or-later (`License / Legal`)**: Updated `LICENSE`, `package.json`, `src-tauri/Cargo.toml`, and EN/JA `README` badges and license notices to `GNU General Public License v3.0 or later (GPL-3.0-or-later)`.
+
 ### v1.5.2 Release (2026-10-27)
 
 - [x] **Comprehensive Project Audit, Editor/Dual-Pane Bug Fixes, XSS Hardening & Full Documentation Sync (`Stability / Security / Docs`)**: Fixed `updateDocContent` target ID resolution, added chunked-loading auto-save truncation guards, resolved `StatsModal` React Hooks crash and dual-pane `onCursorChange` crash, fixed binary image drag-and-drop Base64 conversion, hardened Rust HTML renderer against XSS, added Mermaid ER diagram syntax validation support (44/44 unit tests passing), aligned chunk reads to UTF-8 boundaries, and synchronized all EN/JA documentation with strict table alignment.

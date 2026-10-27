@@ -1,11 +1,11 @@
 # QuMaEditor — High-Performance Native Markdown Desktop Editor
 
-[![Version](https://img.shields.io/badge/Version-v1.5.2-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.5.3-green)](package.json)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue?logo=tauri)](https://tauri.app/)
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v19-61dafb?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-v5-3178c6?logo=typescript)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 
 **English** | [日本語版 (Japanese)](README_JA.md)
 
@@ -79,4 +79,4 @@ npm run tauri build
 
 ## 📄 License
 
-This project is licensed under the MIT License - Copyright (c) 2026 tkshnkgwr. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 or later (GPL-3.0-or-later) - Copyright (c) 2026 tkshnkgwr. See the [LICENSE](LICENSE) file for details.

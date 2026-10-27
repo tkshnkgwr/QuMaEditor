@@ -4,6 +4,14 @@
 
 QuMaEditor の主要な変更点およびリリース履歴です。
 
+## [1.5.3] - 2026-10-27
+
+### 📄 ライセンスの GPL-3.0-or-later への変更 (v1.5.3)
+
+- **オープンソースライセンスの変更 (`License / Legal`)**:
+  - プロジェクトのライセンスを `MIT License` から **`GNU General Public License v3.0 or later (GPL-3.0-or-later)`** へ変更。
+  - `LICENSE` 全文、`package.json`、`src-tauri/Cargo.toml`、および日英 `README` のライセンス表記・バッジをすべて `GPL-3.0-or-later` に統一。
+
 ## [1.5.2] - 2026-10-27
 
 ### 🛡️ プロジェクト総点検・不具合修正・XSS対策・全ドキュメント同期 (v1.5.2)

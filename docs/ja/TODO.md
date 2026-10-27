@@ -8,6 +8,10 @@ QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 
 ## 🎯 完了済みタスク (Completed)
 
+### v1.5.3 リリース版 (2026-10-27)
+
+- [x] **プロジェクトライセンスの GPL-3.0-or-later への移行 (`License / Legal`)**: `LICENSE`、`package.json`、`src-tauri/Cargo.toml`、および日英 `README` のライセンス定義・バッジを `GNU General Public License v3.0 or later (GPL-3.0-or-later)` に変更・統一。
+
 ### v1.5.2 リリース版 (2026-10-27)
 
 - [x] **プロジェクト総点検・エディタ/デュアルペイン不具合修正・XSS対策・全ドキュメント完全同期 (`Stability / Security / Docs`)**: `updateDocContent` の対象ID判定修正、大容量チャンク読込中の自動保存データ切り捨て防止ガード、`StatsModal` の React Hooks クラッシュ修正、デュアルペイン編集時の `onCursorChange` クラッシュ修正、画像ドラッグ＆ドロップのバイナリ Base64 変換、Rust HTML レンダラーの XSS エスケープ強化、Mermaid ER 図構文検証対応（全44単体テストPASS）、マルチバイト文字境界チャンク読込、および日英全ドキュメントの最新化・テーブル垂直整列を完了。

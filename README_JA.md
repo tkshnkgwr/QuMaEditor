@@ -2,8 +2,8 @@
 
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue)](https://v2.tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
-[![Version](https://img.shields.io/badge/Version-v1.5.2-green)](package.json)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-v1.5.3-green)](package.json)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 
 [English Version](README.md) | **日本語版**
 
@@ -77,4 +77,4 @@ npm run tauri build
 
 ## 📄 ライセンス
 
-本プロジェクトは MIT License のもとで公開されています - Copyright (c) 2026 tkshnkgwr。詳細は [LICENSE](LICENSE) をご覧ください。
+本プロジェクトは GNU General Public License v3.0 or later (GPL-3.0-or-later) のもとで公開されています - Copyright (c) 2026 tkshnkgwr。詳細は [LICENSE](LICENSE) をご覧ください。
