@@ -1,10 +1,16 @@
 # Development Plan & TODO List (TODO)
 
+**English Version** | [日本語版](../ja/TODO.md)
+
 List of completed features and upcoming development tasks for QuMaEditor.
 
 ---
 
 ## 🎯 Completed Tasks
+
+### v1.5.2 Release (2026-10-27)
+
+- [x] **Comprehensive Project Audit, Editor/Dual-Pane Bug Fixes, XSS Hardening & Full Documentation Sync (`Stability / Security / Docs`)**: Fixed `updateDocContent` target ID resolution, added chunked-loading auto-save truncation guards, resolved `StatsModal` React Hooks crash and dual-pane `onCursorChange` crash, fixed binary image drag-and-drop Base64 conversion, hardened Rust HTML renderer against XSS, added Mermaid ER diagram syntax validation support (44/44 unit tests passing), aligned chunk reads to UTF-8 boundaries, and synchronized all EN/JA documentation with strict table alignment.
 
 ### v1.5.1 Release (2026-10-22)
 
@@ -107,6 +113,6 @@ List of completed features and upcoming development tasks for QuMaEditor.
 | 12  | `Plugin System`        | **Plugin & Extension Architecture Exploration**                                                                                              | Low      | 🔲 Proposed  |
 | 13  | `Cloud Storage`        | **Cloud Sync Prototype (Google Drive / OneDrive)**                                                                                           | Low      | 🔲 Proposed  |
 | 14  | `Multi Window`         | **Multi-Window / Tab Detachment Exploration**                                                                                                | Low      | 🔲 Proposed  |
-| 15  | `AI / Summary`         | **AI-Powered Document Summary (Gemini API & Hybrid Fallback)** — User model selection, Front Matter summary card, local fallback             | High     | ✅ Completed  |
-| 16  | `Preview / Mermaid`    | **Complete Mermaid Preview Integration & Utilities** — Zoom, fullscreen, SVG download, HTML export, toolbar templates          | High     | ✅ Completed  |
+| 15  | `AI / Summary`         | **AI-Powered Document Summary (Gemini API & Hybrid Fallback)** — User model selection, Front Matter summary card, local fallback             | High     | ✅ Completed |
+| 16  | `Preview / Mermaid`    | **Complete Mermaid Preview Integration & Utilities** — Zoom, fullscreen, SVG download, HTML export, toolbar templates                        | High     | ✅ Completed |
 

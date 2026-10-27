@@ -5,10 +5,12 @@
 ## 1. ディレクトリ構成
 
 ```
-├── .agents/                        # AIエージェント開発ガイドライン (AGENTS.md)
+├── .agents/                        # AIエージェント開発ガイドライン (AGENTS.md / skills/)
 ├── docs/                           # プロジェクトドキュメント
-│   ├── ja/                         # 日本語ドキュメント
-│   └── en/                         # 英語版ドキュメント
+│   ├── ja/                         # 日本語ドキュメント (14ファイル)
+│   └── en/                         # 英語版ドキュメント (14ファイル)
+├── scripts/                        # 開発・テスト補助スクリプト
+│   └── run_rust_tests.ps1          # Rust単体テスト実行＆ComCtl32 v6マニフェスト自動解決スクリプト
 ├── src/                            # フロントエンドソースコード (React 19 / TypeScript)
 │   ├── components/                 # UIコンポーネント群
 │   │   ├── settings/               # 設定タブコンポーネント群
@@ -64,6 +66,8 @@
 ├── src-tauri/                      # Tauri バックエンドソースコード (Rust)
 │   ├── capabilities/               # パーミッション設定
 │   ├── src/                        # Rustソースコード
+│   │   ├── bin/                    # 補助バイナリ
+│   │   │   └── gen_specta.rs       # Specta TypeScript 型バインディング生成バイナリ
 │   │   ├── text_processing/        # テキスト処理サブモジュール群
 │   │   │   ├── mod.rs              # サブモジュール統合 & re-export
 │   │   │   ├── stats.rs            # テキスト統計計算 (文字数・単語数・読了時間)
@@ -87,7 +91,14 @@
 │   │   ├── sync_manager.rs         # 実ファイル・LocalStorage 双方向同期＆mtime 管理
 │   │   └── workspace_scanner.rs    # ignore による .gitignore 準拠並列ツリー走査
 │   ├── Cargo.toml                  # Rust依存関係・ビルドプロファイル定義
+│   ├── common_controls_v6.manifest # Windows Common Controls v6 マニフェスト
 │   └── tauri.conf.json             # Tauriアプリケーション設定
+├── CHANGELOG.md                    # 更新履歴インデックス (日英リンク)
+├── CLAUDE.md                       # Claude Code 向け最優先ルール定義
+├── GEMINI.md                       # Gemini (大賢者) 向け最優先ルール定義
+├── README.md                       # プロジェクト概要 (英語版)
+├── README_JA.md                    # プロジェクト概要 (日本語版)
+├── RULES.md                        # 全AIエージェント共通絶対遵守ルール
 ├── index.html                      # HTMLエントリーポイント
 ├── package.json                    # 依存関係・スクリプト定義
 └── vite.config.ts                  # Vite設定ファイル
@@ -109,7 +120,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy 厳格品質検証
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust ユニットテスト検証 (全43件 PASS / Windows ComCtl32 v6 マニフェスト自動解決)
+# 4. Rust ユニットテスト検証 (全44件 PASS / Windows ComCtl32 v6 マニフェスト自動解決)
 npm run test:rust
 
 # 5. TypeScript 型検証

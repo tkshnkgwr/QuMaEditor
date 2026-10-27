@@ -33,13 +33,91 @@ const KNOWN_DIAGRAM_PREFIXES: &[(&str, &str)] = &[
     ("gitgraph", "gitGraph"),
     ("quadrantchart", "quadrantChart"),
     ("c4context", "c4Context"),
+    ("c4container", "c4Container"),
+    ("c4component", "c4Component"),
+    ("c4dynamic", "c4Dynamic"),
+    ("c4deployment", "c4Deployment"),
     ("mindmap", "mindmap"),
     ("timeline", "timeline"),
     ("kanban", "kanban"),
+    ("sankey-beta", "sankey"),
     ("sankey", "sankey"),
+    ("xychart-beta", "xychart"),
+    ("xychart", "xychart"),
+    ("journey", "journey"),
+    ("requirementdiagram", "requirementDiagram"),
+    ("zenuml", "zenuml"),
+    ("packet-beta", "packet"),
     ("block-beta", "block"),
     ("architecture", "architecture"),
 ];
+
+/// ER 図のリレーション記法（`||--o{`, `}o--||`, `|o..|{` 等）や文字列・コメントを除外して括弧の均衡を検証する
+fn check_brackets_balanced(code: &str, diagram_type: &str) -> Option<&'static str> {
+    let mut open_parens = 0usize;
+    let mut close_parens = 0usize;
+    let mut open_brackets = 0usize;
+    let mut close_brackets = 0usize;
+    let mut open_braces = 0usize;
+    let mut close_braces = 0usize;
+
+    for raw_line in code.lines() {
+        let trimmed_line = raw_line.trim();
+        if trimmed_line.is_empty() || trimmed_line.starts_with("%%") {
+            continue;
+        }
+
+        // ER 図のリレーション記号 (}o, o{, }|, |{) を一時的に無害化
+        let sanitized_line = if diagram_type == "erDiagram" {
+            trimmed_line
+                .replace("}o", "||")
+                .replace("o{", "||")
+                .replace("}|", "||")
+                .replace("|{", "||")
+        } else {
+            trimmed_line.to_string()
+        };
+
+        let mut in_quotes = false;
+        let chars: Vec<char> = sanitized_line.chars().collect();
+        let mut i = 0;
+        while i < chars.len() {
+            let c = chars[i];
+            // 行内コメント %% の開始
+            if !in_quotes && c == '%' && i + 1 < chars.len() && chars[i + 1] == '%' {
+                break;
+            }
+            if c == '"' && (i == 0 || chars[i - 1] != '\\') {
+                in_quotes = !in_quotes;
+                i += 1;
+                continue;
+            }
+            if !in_quotes {
+                match c {
+                    '(' => open_parens += 1,
+                    ')' => close_parens += 1,
+                    '[' => open_brackets += 1,
+                    ']' => close_brackets += 1,
+                    '{' => open_braces += 1,
+                    '}' => close_braces += 1,
+                    _ => {}
+                }
+            }
+            i += 1;
+        }
+    }
+
+    if open_parens != close_parens {
+        return Some("丸括弧 () の整合性がとれていません");
+    }
+    if open_brackets != close_brackets {
+        return Some("角括弧 [] の整合性がとれていません");
+    }
+    if open_braces != close_braces {
+        return Some("波括弧 {} の整合性がとれていません");
+    }
+    None
+}
 
 /// Mermaid コードブロックの構文検証と SHA-256 ハッシュ計算を行う
 pub fn validate_mermaid_syntax_native(code: String) -> Result<MermaidValidationResult, String> {
@@ -60,10 +138,21 @@ pub fn validate_mermaid_syntax_native(code: String) -> Result<MermaidValidationR
         });
     }
 
-    // 先頭行からコメント（%% ...）を除外してヘッダーを特定
+    // 先頭行から YAML フロントマター（--- ... ---）およびコメント（%% ...）を除外してヘッダーを特定
     let mut header_line = "";
-    for line in trimmed.lines() {
+    let mut in_frontmatter = false;
+    for (idx, line) in trimmed.lines().enumerate() {
         let l = line.trim();
+        if idx == 0 && l == "---" {
+            in_frontmatter = true;
+            continue;
+        }
+        if in_frontmatter {
+            if l == "---" {
+                in_frontmatter = false;
+            }
+            continue;
+        }
         if !l.is_empty() && !l.starts_with("%%") {
             header_line = l;
             break;
@@ -92,38 +181,13 @@ pub fn validate_mermaid_syntax_native(code: String) -> Result<MermaidValidationR
         });
     }
 
-    // 括弧の簡易不均衡チェック
-    let open_parens = trimmed.chars().filter(|&c| c == '(').count();
-    let close_parens = trimmed.chars().filter(|&c| c == ')').count();
-    let open_brackets = trimmed.chars().filter(|&c| c == '[').count();
-    let close_brackets = trimmed.chars().filter(|&c| c == ']').count();
-    let open_braces = trimmed.chars().filter(|&c| c == '{').count();
-    let close_braces = trimmed.chars().filter(|&c| c == '}').count();
-
-    if open_parens != close_parens {
+    // 括弧の不均衡チェック（ER図記法・文字列・コメント考慮）
+    if let Some(err_msg) = check_brackets_balanced(trimmed, detected_type) {
         return Ok(MermaidValidationResult {
             is_valid: false,
             diagram_type: detected_type.to_string(),
             content_hash,
-            error_message: Some("丸括弧 () の整合性がとれていません".to_string()),
-        });
-    }
-
-    if open_brackets != close_brackets {
-        return Ok(MermaidValidationResult {
-            is_valid: false,
-            diagram_type: detected_type.to_string(),
-            content_hash,
-            error_message: Some("角括弧 [] の整合性がとれていません".to_string()),
-        });
-    }
-
-    if open_braces != close_braces {
-        return Ok(MermaidValidationResult {
-            is_valid: false,
-            diagram_type: detected_type.to_string(),
-            content_hash,
-            error_message: Some("波括弧 {} の整合性がとれていません".to_string()),
+            error_message: Some(err_msg.to_string()),
         });
     }
 
@@ -163,5 +227,15 @@ mod tests {
         let res = validate_mermaid_syntax_native(code).unwrap();
         assert!(!res.is_valid);
         assert_eq!(res.diagram_type, "unknown");
+    }
+
+    #[test]
+    fn test_validate_er_diagram_with_crow_foot() {
+        let code =
+            "erDiagram\n    USER ||--o{ DOCUMENT : creates\n    USER {\n        string id\n    }"
+                .to_string();
+        let res = validate_mermaid_syntax_native(code).unwrap();
+        assert!(res.is_valid);
+        assert_eq!(res.diagram_type, "erDiagram");
     }
 }

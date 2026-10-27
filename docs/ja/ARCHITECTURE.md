@@ -81,36 +81,39 @@ flowchart TD
 
 ## 4. Rust ネイティブコマンド拡張 (Native Commands)
 
-| コマンド名                    | 概要                                                                                                  |
-| :---------------------------- | :---------------------------------------------------------------------------------------------------- |
-| `read_file_native`            | 権限制限を受けずに高速・確実にローカルディスクからファイルを直読み込み                                |
-| `read_file_chunk_native`      | 大容量ファイルを指定オフセットから部分ストリーミング読み込み（遅延ロード）                            |
-| `write_file_native`           | 指定ファイルパスへの UTF-8 テキスト直接上書き保存を実行                                               |
-| `write_file_bytes_native`     | 指定文字コードにエンコードされた生バイト列を直接ディスクへ保存                                        |
-| `get_file_metadata_native`    | ファイルの存在有無、最終更新日時 (`mtime`)、ファイルサイズを高速取得                                  |
-| `open_folder_native`          | 対象ファイルの親フォルダを Windows エクスプローラー (`explorer.exe`) で直接オープンしハイライト選択  |
-| `search_documents_native`     | メモリ上転置インデックスを用いた Rust 高速全文検索                                                    |
-| `parse_markdown_native`       | `pulldown-cmark` による高速 Markdown 構文解析                                                         |
-| `compute_text_diff_native`    | `similar` クレートによるリアルタイム行単位・単語単位差分計算                                          |
-| `calculate_text_stats_native` | リアルタイム文字数・単語数・行数・読了目安時間の高速ネイティブ計算                                    |
-| `parse_yaml_front_matter_native` | YAML Front Matter と本文の高速分離・メタデータパース                                               |
-| `extract_headings_native`     | Markdown から H1〜H6 見出しアウトラインツリーを高速抽出                                               |
-| `toggle_task_native`          | タスクチェックボックス状態の高速トグル                                                                |
-| `format_markdown_native`      | 表組み垂直整列・過剰空行圧縮・見出し空行自動挿入の高速ネイティブ自動整形                              |
-| `render_markdown_html_native` | `syntect` によるプログラミング構文ハイライト付き高速 HTML レンダリング                                |
-| `export_html_full_native`     | 完全スタンドアロン HTML エクスポートドキュメント生成                                                  |
-| `atomic_write_file_native`    | 一時ファイル先行書込＆アトミックリネームによる破損防止 UTF-8 保存（mtime 保証）                      |
-| `atomic_write_file_bytes_native` | 生バイト列のアトミック書き込み保存（mtime 保証）                                                   |
-| `search_workspace_dir_native` | `rayon` によるディレクトリ内全ファイル並列走査・高速全文検索                                          |
-| `rope_init_buffer` 等         | `ropey` による大容量テキスト Bツリー Rope バッファ管理（部分抽出・行スライス・高速編集）             |
-| `sync_register_file` 等       | `FileSyncManager` による実ファイル mtime・自プロセス保存ロック・双方向同期一元管理                   |
-| `watch_file_native` 等        | `notify` クレートによる OS カーネル直結の外部ファイル変更監視・自動フィルタリング                     |
-| `compute_detailed_diff_native` | `similar` クレートによる行番号・単語レベルインライン差分（`inline_changes`）の爆速計算               |
-| `export_notes_to_zip_native`  | `zip` クレート（Deflate 圧縮）による複数ノート・アセットの一括 ZIP アーカイブ出力                     |
-| `lint_markdown_document_native` | 連続助詞・表記ゆれ・未閉じ括弧/コードブロックの非同期バックグラウンド校正                             |
-| `validate_mermaid_syntax_native` | Mermaid ダイアグラム構文事前検証 ＆ SHA-256 ハッシュによる SVG インメモリ差分キャッシュ最適化        |
-| `mmap_read_file_chunk_native` | `memmap2` クレートによる OS 仮想メモリ直結・超巨大ファイルゼロコピー瞬時オープン                      |
-| `scan_workspace_tree_native`  | `ignore` クレートによる .gitignore 準拠マルチスレッド並列ファイルツリー走査                          |
+| コマンド名                       | 概要                                                                                                  |
+| :------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `detect_and_convert_to_utf8`     | バイト配列の文字コード自動判別 & UTF-8 デコード                                                       |
+| `convert_utf8_to_encoding`       | 指定エンコーディングへのエンコード保存バイト生成                                                      |
+| `read_file_native`               | 権限制限を受けずに高速・確実にローカルディスクからファイルを直読み込み                                |
+| `read_file_chunk_native`         | 大容量ファイルを指定オフセットから部分ストリーミング読み込み（遅延ロード）                            |
+| `write_file_native`              | 指定ファイルパスへの UTF-8 テキスト直接上書き保存を実行                                               |
+| `write_file_bytes_native`        | 指定文字コードにエンコードされた生バイト列を直接ディスクへ保存                                        |
+| `get_file_metadata_native`       | ファイルの存在有無、最終更新日時 (`mtime`)、ファイルサイズを高速取得                                  |
+| `open_folder_native`             | 対象ファイルの親フォルダを Windows エクスプローラー (`explorer.exe`) で直接オープンしハイライト選択   |
+| `index_documents_native`         | 転置インデックス検索エンジンへのドキュメント一括登録                                                  |
+| `search_documents_native`        | メモリ上転置インデックスを用いた Rust 高速全文検索                                                    |
+| `parse_markdown_native`          | `pulldown-cmark` による高速 Markdown 構文解析                                                         |
+| `compute_text_diff_native`       | `similar` クレートによるリアルタイム行単位・単語単位差分計算                                          |
+| `calculate_text_stats_native`    | リアルタイム文字数・単語数・行数・読了目安時間の高速ネイティブ計算                                    |
+| `parse_yaml_front_matter_native` | YAML Front Matter と本文の高速分離・メタデータパース                                                  |
+| `extract_headings_native`        | Markdown から H1〜H6 見出しアウトラインツリーを高速抽出                                               |
+| `toggle_task_native`             | タスクチェックボックス状態の高速トグル                                                                |
+| `format_markdown_native`         | 表組み垂直整列・過剰空行圧縮・見出し空行自動挿入の高速ネイティブ自動整形                              |
+| `render_markdown_html_native`    | `syntect` によるプログラミング構文ハイライト付き高速 HTML レンダリング                                |
+| `export_html_full_native`        | 完全スタンドアロン HTML エクスポートドキュメント生成                                                  |
+| `atomic_write_file_native`       | 一時ファイル先行書込＆アトミックリネームによる破損防止 UTF-8 保存（mtime 保証）                       |
+| `atomic_write_file_bytes_native` | 生バイト列のアトミック書き込み保存（mtime 保証）                                                      |
+| `search_workspace_dir_native`    | `rayon` によるディレクトリ内全ファイル並列走査・高速全文検索                                          |
+| `rope_init_buffer` 等            | `ropey` による大容量テキスト Bツリー Rope バッファ管理（部分抽出・行スライス・高速編集）              |
+| `sync_register_file` 等          | `FileSyncManager` による実ファイル mtime・自プロセス保存ロック・双方向同期一元管理                    |
+| `watch_file_native` 等           | `notify` クレートによる OS カーネル直結の外部ファイル変更監視・自動フィルタリング                     |
+| `compute_detailed_diff_native`   | `similar` クレートによる行番号・単語レベルインライン差分（`inline_changes`）の爆速計算                |
+| `export_notes_to_zip_native`     | `zip` クレート（Deflate 圧縮）による複数ノート・アセットの一括 ZIP アーカイブ出力                     |
+| `lint_markdown_document_native`  | 連続助詞・表記ゆれ・未閉じ括弧/コードブロックの非同期バックグラウンド校正                             |
+| `validate_mermaid_syntax_native` | Mermaid ダイアグラム構文事前検証 ＆ SHA-256 ハッシュによる SVG インメモリ差分キャッシュ最適化         |
+| `mmap_read_file_chunk_native`    | `memmap2` クレートによる OS 仮想メモリ直結・超巨大ファイルゼロコピー瞬時オープン                      |
+| `scan_workspace_tree_native`     | `ignore` クレートによる .gitignore 準拠マルチスレッド並列ファイルツリー走査                           |
 
 ---
 
@@ -160,23 +163,23 @@ graph TD
     Commands --> ScannerMod
 ```
 
-| モジュール名        | ファイルパス                                                              | 役割・概要                                                                                            |
-| :------------------ | :------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- |
-| `lib`               | [`src-tauri/src/lib.rs`](../../src-tauri/src/lib.rs)                      | アプリケーションのエントリポイント、プラグイン登録、Specta型自動バインディング出力ハンドラー          |
-| `commands`          | [`src-tauri/src/commands.rs`](../../src-tauri/src/commands.rs)            | フロントエンド (IPC) から受け取る全 Tauri コマンドハンドラーおよび Specta マッピング定義              |
-| `encoding`          | [`src-tauri/src/encoding.rs`](../../src-tauri/src/encoding.rs)            | `encoding_rs` を用いた多言語文字コード (UTF-8, Shift_JIS, EUC-JP) 自動判定および相互変換             |
-| `file_io`           | [`src-tauri/src/file_io.rs`](../../src-tauri/src/file_io.rs)              | ネイティブファイル直接読込・アトミック書き込み保存・大容量チャンク読込・エクスプローラー起動          |
-| `search`            | [`src-tauri/src/search.rs`](../../src-tauri/src/search.rs)                | メモリ内転置インデックス検索 ＆ `rayon` によるディレクトリ内マルチスレッド並列全文検索               |
-| `diff`              | [`src-tauri/src/diff.rs`](../../src-tauri/src/diff.rs)                    | `similar` クレートを用いた行単位・インライン単語単位 Diff 計算 ＆ `pulldown-cmark` ネイティブパース    |
-| `text_processing`   | [`src-tauri/src/text_processing/`](../../src-tauri/src/text_processing/) | 統計計算、YAMLパース、見出し抽出、表組み垂直整列、`syntect` 構文ハイライト付き HTML レンダリング     |
-| `rope_buffer`       | [`src-tauri/src/rope_buffer.rs`](../../src-tauri/src/rope_buffer.rs)      | `ropey` クレートによる Bツリー Rope バッファ管理（100MB級ファイルの $O(\log N)$ 高速編集・スライス）   |
-| `sync_manager`      | [`src-tauri/src/sync_manager.rs`](../../src-tauri/src/sync_manager.rs)    | `FileSyncManager` による実ファイル同期、mtime 排他ロック、自プロセス保存状態の一元調停               |
-| `file_watcher`      | [`src-tauri/src/file_watcher.rs`](../../src-tauri/src/file_watcher.rs)    | `notify` クレートを用いた OS カーネル直結の外部ファイル変更監視エンジン                               |
-| `export_zip`        | [`src-tauri/src/export_zip.rs`](../../src-tauri/src/export_zip.rs)        | `zip` クレートを用いた複数ノート・画像アセットの一括 Deflate 圧縮 ZIP アーカイブ出力                |
-| `proofreading`      | [`src-tauri/src/proofreading.rs`](../../src-tauri/src/proofreading.rs)    | 連続助詞・表記ゆれ・未閉じ括弧・未閉じコードブロックの非同期高速バックグラウンド構文解析              |
+| モジュール名        | ファイルパス                                                                     | 役割・概要                                                                                                 |
+| :------------------ | :------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `lib`               | [`src-tauri/src/lib.rs`](../../src-tauri/src/lib.rs)                             | アプリケーションのエントリポイント、プラグイン登録、Specta型自動バインディング出力ハンドラー               |
+| `commands`          | [`src-tauri/src/commands.rs`](../../src-tauri/src/commands.rs)                   | フロントエンド (IPC) から受け取る全 Tauri コマンドハンドラーおよび Specta マッピング定義                   |
+| `encoding`          | [`src-tauri/src/encoding.rs`](../../src-tauri/src/encoding.rs)                   | `encoding_rs` を用いた多言語文字コード (UTF-8, Shift_JIS, EUC-JP) 自動判定および相互変換                  |
+| `file_io`           | [`src-tauri/src/file_io.rs`](../../src-tauri/src/file_io.rs)                     | ネイティブファイル直接読込・アトミック書き込み保存・大容量チャンク読込・エクスプローラー起動               |
+| `search`            | [`src-tauri/src/search.rs`](../../src-tauri/src/search.rs)                       | メモリ内転置インデックス検索 ＆ `rayon` によるディレクトリ内マルチスレッド並列全文検索                     |
+| `diff`              | [`src-tauri/src/diff.rs`](../../src-tauri/src/diff.rs)                           | `similar` クレートを用いた行単位・インライン単語単位 Diff 計算 ＆ `pulldown-cmark` ネイティブパース         |
+| `text_processing`   | [`src-tauri/src/text_processing/`](../../src-tauri/src/text_processing/)         | 統計計算、YAMLパース、見出し抽出、表組み垂直整列、`syntect` 構文ハイライト付き HTML レンダリング           |
+| `rope_buffer`       | [`src-tauri/src/rope_buffer.rs`](../../src-tauri/src/rope_buffer.rs)             | `ropey` クレートによる Bツリー Rope バッファ管理（100MB級ファイルの $O(\log N)$ 高速編集・スライス）        |
+| `sync_manager`      | [`src-tauri/src/sync_manager.rs`](../../src-tauri/src/sync_manager.rs)           | `FileSyncManager` による実ファイル同期、mtime 排他ロック、自プロセス保存状態の一元調停                     |
+| `file_watcher`      | [`src-tauri/src/file_watcher.rs`](../../src-tauri/src/file_watcher.rs)           | `notify` クレートを用いた OS カーネル直結の外部ファイル変更監視エンジン                                    |
+| `export_zip`        | [`src-tauri/src/export_zip.rs`](../../src-tauri/src/export_zip.rs)               | `zip` クレートを用いた複数ノート・画像アセットの一括 Deflate 圧縮 ZIP アーカイブ出力                       |
+| `proofreading`      | [`src-tauri/src/proofreading.rs`](../../src-tauri/src/proofreading.rs)           | 連続助詞・表記ゆれ・未閉じ括弧・未閉じコードブロックの非同期高速バックグラウンド構文解析                   |
 | `mermaid_validator` | [`src-tauri/src/mermaid_validator.rs`](../../src-tauri/src/mermaid_validator.rs) | Mermaid コードの構文事前検証、ダイアグラム種別判定、および SHA-256 ハッシュ計算による SVG キャッシュ最適化 |
-| `mmap_reader`       | [`src-tauri/src/mmap_reader.rs`](../../src-tauri/src/mmap_reader.rs)      | `memmap2` を用いた OS 仮想メモリページキャッシュ直結・GB級巨大ファイルゼロコピー瞬時オープン        |
-| `workspace_scanner` | [`src-tauri/src/workspace_scanner.rs`](../../src-tauri/src/workspace_scanner.rs) | `ignore` クレートを用いた .gitignore 準拠マルチスレッド並列ファイルツリー走査                        |
+| `mmap_reader`       | [`src-tauri/src/mmap_reader.rs`](../../src-tauri/src/mmap_reader.rs)             | `memmap2` を用いた OS 仮想メモリページキャッシュ直結・GB級巨大ファイルゼロコピー瞬時オープン               |
+| `workspace_scanner` | [`src-tauri/src/workspace_scanner.rs`](../../src-tauri/src/workspace_scanner.rs) | `ignore` クレートを用いた .gitignore 準拠マルチスレッド並列ファイルツリー走査                              |
 
 ---
 
@@ -198,7 +201,7 @@ graph TD
 
     subgraph UIComponents["主要UIコンポーネント"]
         DualPane["DualPaneWorkspace.tsx<br/>(左右分割ワークスペース)"]
-        Editor["Editor.tsx<br/>(CodeMirror / Front Matter)"]
+        Editor["Editor.tsx<br/>(Textarea / Front Matter)"]
         Preview["Preview.tsx<br/>(Rust HTML / Obsidian / セグメント分離)"]
         MermaidComp["MermaidRenderer.tsx<br/>(ズーム / 全画面 / SVG保存)"]
         StatusBar["StatusBar.tsx<br/>(文字数 / 校正Lint / 保存状態)"]
@@ -241,19 +244,19 @@ graph TD
     useDoc --> TauriNative
 ```
 
-| ディレクトリ / ファイル              | 役割・詳細                                                                                            |
-| :----------------------------------- | :---------------------------------------------------------------------------------------------------- |
-| `src/App.tsx`                        | アプリケーションのルートコンポーネント。各フックから状態を受け取り全体レイアウトを統括              |
-| `src/hooks/useDocumentManager.ts`    | ドキュメントの新規作成・開く・保存・タイトル更新・タグ・要約更新等のライフサイクルを一元管理          |
-| `src/hooks/useWindowDragDrop.ts`     | OS ファイルエクスプローラーからのドラッグ＆ドロップ（テキスト・画像）を安全にハンドリング             |
-| `src/hooks/useEditorToolbarActions`  | ツールバーからの文字修飾（太字・斜体・下線）、Markdown テーブル生成、見出しジャンプを集中管理        |
-| `src/components/MermaidRenderer.tsx` | Mermaid ダイアグラムの SVG 描画、ズーム操作、全画面拡大、SVG 画像保存、構文エラー通知、差分キャッシュ |
-| `src/components/SettingsModal.tsx`   | 設定モーダルの外枠およびタブ切替制御（本体を 286 行へ大幅スリム化）                                   |
-| `src/components/settings/GeneralTab` | フォント、行間、タブ幅、自動保存間隔、見出し配色、スマートペースト、コードテーマの個別設定           |
-| `src/components/settings/AiTab.tsx`  | Google Gemini API キー、要約モデル選択、BaseURL、プロンプト編集、疎通テスト機能を提供                 |
-| `src/components/settings/StorageTab` | LocalStorage 容量計測、保存ノート件数、全ドキュメント ZIP 一括エクスポート、初期化を提供             |
-| `src/utils/aiSummary.ts`             | Google Gemini API (`@google/genai`) ＆ Tauri HTTP プラグイン連携、ローカル要約フォールバックエンジン   |
-| `src/utils/tableUtils.ts`            | Markdown 表編集中における Tab / Shift+Tab / Enter によるセル移動と自動行追加ロジック                 |
+| ディレクトリ / ファイル                  | 役割・詳細                                                                                             |
+| :--------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| `src/App.tsx`                            | アプリケーションのルートコンポーネント。各フックから状態を受け取り全体レイアウトを統括                 |
+| `src/hooks/useDocumentManager.ts`        | ドキュメントの新規作成・開く・保存・タイトル更新・タグ・要約更新等のライフサイクルを一元管理           |
+| `src/hooks/useWindowDragDrop.ts`         | OS ファイルエクスプローラーからのドラッグ＆ドロップ（テキスト・画像）を安全にハンドリング              |
+| `src/hooks/useEditorToolbarActions.ts`   | ツールバーからの文字修飾（太字・斜体・下線）、Markdown テーブル生成、見出しジャンプを集中管理          |
+| `src/components/MermaidRenderer.tsx`     | Mermaid ダイアグラムの SVG 描画、ズーム操作、全画面拡大、SVG 画像保存、構文エラー通知、差分キャッシュ  |
+| `src/components/SettingsModal.tsx`       | 設定モーダルの外枠およびタブ切替制御（本体を 286 行へ大幅スリム化）                                    |
+| `src/components/settings/GeneralTab.tsx` | フォント、行間、タブ幅、自動保存間隔、見出し配色、スマートペースト、コードテーマの個別設定             |
+| `src/components/settings/AiTab.tsx`      | Google Gemini API キー、要約モデル選択、BaseURL、プロンプト編集、疎通テスト機能を提供                  |
+| `src/components/settings/StorageTab.tsx` | LocalStorage 容量計測、保存ノート件数、全ドキュメント ZIP 一括エクスポート、初期化を提供               |
+| `src/utils/aiSummary.ts`                 | Google Gemini API (`@google/genai`) ＆ Tauri HTTP プラグイン連携、ローカル要約フォールバックエンジン    |
+| `src/utils/tableUtils.ts`                | Markdown 表編集中における Tab / Shift+Tab / Enter によるセル移動と自動行追加ロジック                   |
 
 
 

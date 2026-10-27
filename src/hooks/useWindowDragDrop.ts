@@ -41,23 +41,24 @@ export function useWindowDragDrop({
 
         if (isImage) {
           try {
-            const nativeRes = await commands.readFileNative(cleanPath);
-            if (nativeRes.status === 'ok') {
-              const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-              const dataUrl = `data:${mimeType};utf8,${encodeURIComponent(nativeRes.data.text)}`;
-              handleFormat('image', dataUrl);
-            } else {
-              const fileBytes = await readFile(cleanPath);
-              let binary = '';
-              const bytes = new Uint8Array(fileBytes);
-              for (let i = 0; i < bytes.byteLength; i++) {
-                binary += String.fromCharCode(bytes[i]);
+            if (ext === 'svg') {
+              const nativeRes = await commands.readFileNative(cleanPath);
+              if (nativeRes.status === 'ok') {
+                const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(nativeRes.data.text)}`;
+                handleFormat('image', dataUrl);
+                continue;
               }
-              const base64 = btoa(binary);
-              const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-              const dataUrl = `data:${mimeType};base64,${base64}`;
-              handleFormat('image', dataUrl);
             }
+            const fileBytes = await readFile(cleanPath);
+            let binary = '';
+            const bytes = new Uint8Array(fileBytes);
+            for (let i = 0; i < bytes.byteLength; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            const base64 = btoa(binary);
+            const mimeType = ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+            const dataUrl = `data:${mimeType};base64,${base64}`;
+            handleFormat('image', dataUrl);
           } catch (e) {
             console.error('Failed to read image path:', cleanPath, e);
           }

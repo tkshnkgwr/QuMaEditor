@@ -43,8 +43,6 @@ export const StatsModal: React.FC<StatsModalProps> = ({
   stats,
   isDark = true,
 }) => {
-  if (!isOpen) return null;
-
   const content = doc.content || '';
 
   // 詳細集計計算
@@ -174,6 +172,8 @@ export const StatsModal: React.FC<StatsModalProps> = ({
       readingTimeSpeech,
     };
   }, [content, stats.charactersNoSpace]);
+
+  if (!isOpen) return null;
 
   return (
     <div

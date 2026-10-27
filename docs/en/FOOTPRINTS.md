@@ -28,7 +28,7 @@ By combining Tauri v2 with a Rust native backend, QuMaEditor achieves drasticall
    - Non-blocking ultra-fast Markdown rendering without freezing the JS main thread.
 3. **Parallel Processing Engine (`rayon`)**:
    - Multi-threaded batch encoding conversion utilizing multi-core CPUs.
-4. **Binary Footprint Optimization (`opt-level = 'z'`, `lto = true`, `strip = true`)**:
+4. **Binary Footprint Optimization (`opt-level = "z"`, `lto = "thin"`, `strip = true`)**:
    - Symbol stripping and link-time optimization for minimal executable size and memory usage.
 5. **Print Layout Isolation (`print:hidden` / `print:block`)**:
    - Complete uncoupling of flex container offsets during print/PDF generation for 100% A4 page width coverage.

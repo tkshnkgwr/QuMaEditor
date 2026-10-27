@@ -24,8 +24,8 @@ description: >-
 # 1. Rust 高速構文・型チェック
 cargo check --manifest-path src-tauri/Cargo.toml
 
-# 2. Rust 単体テスト実行
-cargo test --manifest-path src-tauri/Cargo.toml
+# 2. Rust 単体テスト実行 (Windows ComCtl32 v6 マニフェスト自動解決)
+npm run test:rust
 
 # 3. Rust Clippy 静的リント解析（警告ゼロを担保）
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings

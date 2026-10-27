@@ -95,6 +95,7 @@ export const ModalGroup: React.FC<ModalGroupProps> = ({
         isOpen={isTemplateModalOpen}
         onClose={() => setIsTemplateModalOpen(false)}
         onSelectTemplate={onSelectTemplate}
+        currentDoc={currentDoc}
         isDark={isDark}
       />
 

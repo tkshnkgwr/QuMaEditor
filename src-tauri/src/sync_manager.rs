@@ -59,14 +59,18 @@ impl FileSyncManager {
     /// ファイルの監視・同期状態を登録または更新
     pub fn register_file(&mut self, file_path: &str, mtime_ms: f64) {
         let key = Self::normalize_path(file_path);
-        let now = Self::current_time_ms();
+        let prev_saved_at = self
+            .files
+            .get(&key)
+            .map(|s| s.last_saved_at_ms)
+            .unwrap_or(0.0);
         self.files.insert(
-            key.clone(),
+            key,
             FileSyncState {
                 file_path: file_path.to_string(),
                 last_mtime_ms: mtime_ms,
                 is_saving: false,
-                last_saved_at_ms: now,
+                last_saved_at_ms: prev_saved_at,
             },
         );
     }

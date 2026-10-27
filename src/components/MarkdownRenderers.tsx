@@ -259,9 +259,18 @@ export function createMarkdownComponents({
         return (
           <li className="list-none flex items-start gap-2.5 text-sm my-1.5 font-sans group task-list-item">
             <div
-              onClick={() => {
+              onClick={(e) => {
+                const container = e.currentTarget.closest('.preview-markdown');
+                if (container) {
+                  const checkboxes = Array.from(container.querySelectorAll('.task-checkbox'));
+                  const idx = checkboxes.indexOf(e.currentTarget as HTMLElement);
+                  if (idx !== -1) {
+                    onToggleTaskItem?.(idx);
+                    return;
+                  }
+                }
                 if (node && typeof node.position?.start?.line === 'number') {
-                  onToggleTaskItem?.(node.position.start.line);
+                  onToggleTaskItem?.(Math.max(0, node.position.start.line - 1));
                 }
               }}
               className={`mt-0.5 shrink-0 w-4 h-4 rounded border transition-all duration-150 flex items-center justify-center select-none cursor-pointer hover:scale-105 task-checkbox ${

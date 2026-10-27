@@ -5,10 +5,12 @@
 ## 1. Directory Structure
 
 ```
-├── .agents/                        # AI Agent development guidelines (AGENTS.md)
+├── .agents/                        # AI Agent development guidelines (AGENTS.md / skills/)
 ├── docs/                           # Project documentation
-│   ├── ja/                         # Japanese documentation
-│   └── en/                         # English documentation
+│   ├── ja/                         # Japanese documentation (14 files)
+│   └── en/                         # English documentation (14 files)
+├── scripts/                        # Development & test helper scripts
+│   └── run_rust_tests.ps1          # Rust unit test runner & ComCtl32 v6 manifest resolver
 ├── src/                            # Frontend source code (React 19 / TypeScript)
 │   ├── components/                 # UI components
 │   │   ├── settings/               # Settings tab components
@@ -64,6 +66,8 @@
 ├── src-tauri/                      # Tauri backend source code (Rust)
 │   ├── capabilities/               # Security permission settings
 │   ├── src/                        # Rust source code
+│   │   ├── bin/                    # Helper binaries
+│   │   │   └── gen_specta.rs       # Specta TypeScript bindings generator binary
 │   │   ├── text_processing/        # Text processing submodules
 │   │   │   ├── mod.rs              # Submodule integration & re-exports
 │   │   │   ├── stats.rs            # Text statistics counter
@@ -87,7 +91,14 @@
 │   │   ├── sync_manager.rs         # Disk file & LocalStorage bi-directional sync manager
 │   │   └── workspace_scanner.rs    # Parallel workspace tree scanner via ignore
 │   ├── Cargo.toml                  # Rust dependencies & build profile
+│   ├── common_controls_v6.manifest # Windows Common Controls v6 manifest
 │   └── tauri.conf.json             # Tauri configuration
+├── CHANGELOG.md                    # Changelog index (EN/JA links)
+├── CLAUDE.md                       # Top-priority rules for Claude Code
+├── GEMINI.md                       # Top-priority rules for Gemini (Grand Sage)
+├── README.md                       # Project overview (English)
+├── README_JA.md                    # Project overview (Japanese)
+├── RULES.md                        # Mandatory shared rules for all AI agents
 ├── index.html                      # HTML entrypoint
 ├── package.json                    # Dependencies & scripts
 └── vite.config.ts                  # Vite configuration
@@ -109,7 +120,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 # 3. Rust Clippy strict quality check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 
-# 4. Rust unit tests (43 tests PASS / with Windows ComCtl32 v6 manifest)
+# 4. Rust unit tests (44 tests PASS / with Windows ComCtl32 v6 manifest)
 npm run test:rust
 
 # 5. TypeScript type verification

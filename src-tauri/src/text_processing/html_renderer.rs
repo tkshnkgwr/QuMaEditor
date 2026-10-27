@@ -142,7 +142,12 @@ fn transform_inline_obsidian(text: &str) -> Option<String> {
             }
         }
 
-        result.push(chars[i]);
+        match chars[i] {
+            '&' => result.push_str("&amp;"),
+            '<' => result.push_str("&lt;"),
+            '>' => result.push_str("&gt;"),
+            c => result.push(c),
+        }
         i += 1;
     }
 
@@ -293,7 +298,7 @@ pub fn export_html_full_native(
   </script>
 </body>
 </html>"#,
-        title,
+        escape_html(&title),
         bg_color,
         text_color,
         border_color,
@@ -462,13 +467,19 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
     // Step 3: コードブロック・インライン記法・タスクリスト
     let mut final_events = Vec::new();
     let mut in_code_block = false;
+    let mut just_started_list_item = false;
     let mut current_lang = String::new();
     let mut code_buffer = String::new();
     let mut task_index = 0;
 
     for event in processed_events {
         match event {
+            Event::Start(Tag::Item) => {
+                just_started_list_item = true;
+                final_events.push(Event::Start(Tag::Item));
+            }
             Event::TaskListMarker(checked) => {
+                just_started_list_item = false;
                 let checked_attr = if checked { "checked " } else { "" };
                 let task_html = format!(
                     r#"<input type="checkbox" class="task-list-item-checkbox cursor-pointer align-middle mr-1.5" data-task-index="{}" {}/>"#,
@@ -556,27 +567,42 @@ pub fn render_markdown_html_native(markdown_text: String, is_dark: bool) -> Resu
                 }
 
                 let copy_button = r#"<button class="code-copy-btn absolute top-2 right-2 px-2 py-1 rounded text-[11px] font-sans opacity-70 hover:opacity-100 transition-opacity bg-slate-700/60 hover:bg-slate-600 text-slate-200" onclick="window.__copyCodeBlock(this)">コピー</button>"#;
+                let escaped_lang = if lang_trimmed.is_empty() {
+                    "text".to_string()
+                } else {
+                    escape_html(lang_trimmed)
+                };
                 let pre_html = format!(
                     r#"<div class="code-block-wrapper relative my-3 group rounded-lg overflow-hidden border border-slate-700/60 font-mono text-xs"><div class="code-header px-3 py-1 bg-slate-950/80 text-slate-400 text-[10px] flex items-center justify-between select-none"><span>{}</span></div>{}<pre class="p-3 overflow-x-auto m-0 leading-relaxed"><code>{}</code></pre></div>"#,
-                    if lang_trimmed.is_empty() {
-                        "text"
-                    } else {
-                        lang_trimmed
-                    },
-                    copy_button,
-                    highlighted_code
+                    escaped_lang, copy_button, highlighted_code
                 );
 
                 final_events.push(Event::Html(pre_html.into()));
             }
             Event::Text(text) if !in_code_block => {
-                if let Some(transformed) = transform_inline_obsidian(&text) {
+                let mut target_text = text.to_string();
+                if just_started_list_item {
+                    just_started_list_item = false;
+                    if let Some(rest) = target_text.strip_prefix("[/] ") {
+                        let task_html = format!(
+                            r#"<input type="checkbox" class="task-list-item-checkbox task-in-progress cursor-pointer align-middle mr-1.5" data-task-index="{}" data-in-progress="true" />"#,
+                            task_index
+                        );
+                        task_index += 1;
+                        final_events.push(Event::Html(task_html.into()));
+                        target_text = rest.to_string();
+                    }
+                }
+                if let Some(transformed) = transform_inline_obsidian(&target_text) {
                     final_events.push(Event::Html(transformed.into()));
                 } else {
-                    final_events.push(Event::Text(text));
+                    final_events.push(Event::Text(target_text.into()));
                 }
             }
             _ => {
+                if !matches!(event, Event::Start(Tag::Paragraph)) {
+                    just_started_list_item = false;
+                }
                 if !in_code_block {
                     final_events.push(event);
                 }

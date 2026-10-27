@@ -90,15 +90,37 @@ pub fn scan_workspace_tree_native(
         );
     }
 
-    // ツリーの階層化構築（ルート直下への整理）
+    // ツリーの階層化構築（深い階層から親ノードへ再帰的に集約）
+    let mut keys_by_depth: Vec<String> = flat_nodes.keys().cloned().collect();
+    keys_by_depth.sort_by(|a, b| {
+        let depth_a = Path::new(a).components().count();
+        let depth_b = Path::new(b).components().count();
+        depth_b.cmp(&depth_a).then_with(|| a.cmp(b))
+    });
+
     let mut root_children: Vec<WorkspaceTreeNode> = Vec::new();
 
-    // 直下エントリの収集とソート
-    for (path_str, node) in &flat_nodes {
-        let p = Path::new(path_str);
-        if let Some(parent) = p.parent() {
-            if parent == root_path {
-                root_children.push(node.clone());
+    for key in keys_by_depth {
+        if let Some(mut node) = flat_nodes.remove(&key) {
+            if let Some(ref mut ch) = node.children {
+                ch.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+                    (true, false) => std::cmp::Ordering::Less,
+                    (false, true) => std::cmp::Ordering::Greater,
+                    _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                });
+            }
+            let p = Path::new(&key);
+            if let Some(parent) = p.parent() {
+                if parent == root_path {
+                    root_children.push(node);
+                } else {
+                    let parent_key = parent.to_string_lossy().to_string();
+                    if let Some(parent_node) = flat_nodes.get_mut(&parent_key) {
+                        if let Some(ref mut ch) = parent_node.children {
+                            ch.push(node);
+                        }
+                    }
+                }
             }
         }
     }

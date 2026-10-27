@@ -172,7 +172,7 @@ pub fn format_markdown_native(markdown_text: String) -> Result<String, String> {
     let (front_matter, body) = if let Some(stripped) = normalized.strip_prefix("---\n") {
         if let Some(end_idx) = stripped.find("\n---\n") {
             let fm = &normalized[..end_idx + 8];
-            let rest = &normalized[end_idx + 8..];
+            let rest = &normalized[end_idx + 9..];
             (Some(fm.to_string()), rest)
         } else {
             (None, normalized.as_str())
@@ -332,6 +332,9 @@ pub fn format_markdown_native(markdown_text: String) -> Result<String, String> {
     if let Some(fm) = front_matter {
         result.push_str(&fm);
         if !fm.ends_with('\n') {
+            result.push('\n');
+        }
+        if !compressed_lines.is_empty() {
             result.push('\n');
         }
     }

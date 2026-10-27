@@ -100,9 +100,30 @@ pub fn extract_headings_native(markdown_text: String) -> Result<Vec<HeadingItemD
 pub fn toggle_task_native(markdown_text: String, target_index: u32) -> Result<String, String> {
     let mut current_idx = 0u32;
     let mut result = String::with_capacity(markdown_text.len());
+    let mut in_code_block = false;
+    let mut code_fence = "";
 
     for line in markdown_text.lines() {
         let trimmed = line.trim_start();
+        if !in_code_block && (trimmed.starts_with("```") || trimmed.starts_with("~~~")) {
+            in_code_block = true;
+            code_fence = if trimmed.starts_with("```") {
+                "```"
+            } else {
+                "~~~"
+            };
+            result.push_str(line);
+            result.push('\n');
+            continue;
+        } else if in_code_block {
+            if trimmed.starts_with(code_fence) {
+                in_code_block = false;
+            }
+            result.push_str(line);
+            result.push('\n');
+            continue;
+        }
+
         if trimmed.starts_with("- [ ] ")
             || trimmed.starts_with("- [/] ")
             || trimmed.starts_with("- [x] ")
@@ -110,9 +131,11 @@ pub fn toggle_task_native(markdown_text: String, target_index: u32) -> Result<St
             || trimmed.starts_with("* [ ] ")
             || trimmed.starts_with("* [/] ")
             || trimmed.starts_with("* [x] ")
+            || trimmed.starts_with("* [X] ")
             || trimmed.starts_with("+ [ ] ")
             || trimmed.starts_with("+ [/] ")
             || trimmed.starts_with("+ [x] ")
+            || trimmed.starts_with("+ [X] ")
         {
             if current_idx == target_index {
                 let indent_len = line.len() - trimmed.len();

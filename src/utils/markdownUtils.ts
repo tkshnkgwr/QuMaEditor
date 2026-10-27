@@ -125,12 +125,12 @@ export function insertFormatting(
       break;
     case 'link':
       prefix = '[';
-      suffix = '](https://example.com)';
+      suffix = `](${value || 'https://example.com'})`;
       replacement = selectedText || 'リンクテキスト';
       break;
     case 'image':
       prefix = '![';
-      suffix = '](https://via.placeholder.com/600x300)';
+      suffix = `](${value || 'https://via.placeholder.com/600x300'})`;
       replacement = selectedText || '画像の説明';
       break;
     case 'table':
@@ -319,10 +319,28 @@ export function handleAutoListContinuation(
  */
 export function toggleTaskInMarkdown(markdown: string, targetIndex: number): string {
   let currentIndex = 0;
-  // [-*+] \[( |x|X|/|-)] のパターンにマッチ
-  const taskRegex = /^([ \t]*[-*+]\s+\[)( |x|X|\/|-)(\])/gm;
+  let inCodeBlock = false;
+  let codeFence = '';
+  const lines = markdown.split('\n');
+  const taskRegex = /^([ \t]*[-*+]\s+\[)( |x|X|\/|-)(\])(.*)$/;
 
-  return markdown.replace(taskRegex, (match, prefix, state, suffix) => {
+  const updatedLines = lines.map((line) => {
+    const trimmed = line.trimStart();
+    if (!inCodeBlock && (trimmed.startsWith('```') || trimmed.startsWith('~~~'))) {
+      inCodeBlock = true;
+      codeFence = trimmed.startsWith('```') ? '```' : '~~~';
+      return line;
+    } else if (inCodeBlock) {
+      if (trimmed.startsWith(codeFence)) {
+        inCodeBlock = false;
+      }
+      return line;
+    }
+
+    const match = line.match(taskRegex);
+    if (!match) return line;
+
+    const [, prefix, state, suffix, rest] = match;
     if (currentIndex === targetIndex) {
       currentIndex++;
       let newState = 'x';
@@ -333,11 +351,13 @@ export function toggleTaskInMarkdown(markdown: string, targetIndex: number): str
       } else {
         newState = ' '; // 完了/その他 -> 未完了
       }
-      return `${prefix}${newState}${suffix}`;
+      return `${prefix}${newState}${suffix}${rest}`;
     }
     currentIndex++;
-    return match;
+    return line;
   });
+
+  return updatedLines.join('\n');
 }
 
 /**

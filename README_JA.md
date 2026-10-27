@@ -2,7 +2,7 @@
 
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue)](https://v2.tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
-[![Version](https://img.shields.io/badge/Version-v1.5.1-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.5.2-green)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 [English Version](README.md) | **日本語版**
@@ -38,12 +38,12 @@ QuMaEditor (Quick & Minimal Markdown Editor) は、**Tauri v2**, **Rust**, **Rea
 
 ## 💻 動作要件・技術スタック
 
-| 区分                 | 採用技術                                                       |
-| :------------------- | :------------------------------------------------------------- |
-| **OS**               | Windows 10 / 11 (x64)                                          |
-| **フレームワーク**   | Tauri v2 (Rust 1.80+)                                          |
-| **フロントエンド**   | React 19, TypeScript 5, Vite, Tailwind CSS v4, Lucide Icons   |
-| **バックエンド**     | Rust, pulldown-cmark, syntect, ropey, similar, notify, zip   |
+| 区分               | 採用技術                                                     |
+| :----------------- | :----------------------------------------------------------- |
+| **OS**             | Windows 10 / 11 (x64)                                        |
+| **フレームワーク** | Tauri v2 (Rust 1.80+)                                        |
+| **フロントエンド** | React 19, TypeScript 5, Vite, Tailwind CSS v4, Lucide Icons  |
+| **バックエンド**   | Rust, pulldown-cmark, syntect, ropey, similar, notify, zip   |
 
 ---
 

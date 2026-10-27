@@ -9,7 +9,7 @@ interface EditorProps {
   content: string;
   onChange: (newContent: string) => void;
   settings: EditorSettings;
-  onCursorChange: (line: number, col: number) => void;
+  onCursorChange?: (line: number, col: number) => void;
   onScrollSync?: (scrollTop: number, scrollHeight: number, clientHeight: number) => void;
   onImageDrop?: (file: File) => void;
   onDropFiles?: (files: File[]) => void;
@@ -171,7 +171,7 @@ export const Editor: React.FC<EditorProps> = ({
       }
     }
     const col = pos - lastLineStart + 1;
-    onCursorChange(line, col);
+    onCursorChange?.(line, col);
 
     if (settings.typewriterScroll) {
       applyTypewriterScroll(line);
@@ -186,7 +186,7 @@ export const Editor: React.FC<EditorProps> = ({
       if (lineNumbersRef.current) {
         lineNumbersRef.current.scrollTop = scrollTop;
       }
-      if (onScrollSync) {
+      if (onScrollSync && settings.syncScroll) {
         onScrollSync(scrollTop, scrollHeight, clientHeight);
       }
     }

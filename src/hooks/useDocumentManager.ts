@@ -211,16 +211,15 @@ export function useDocumentManager() {
 
   // 開いたドキュメントのリスト追加＆アクティブ化処理（共通ロジック）
   const handleAddOpenedDoc = useCallback((openedDoc: MarkdownDoc) => {
-    let targetDocId = openedDoc.id;
-
     setDocs((prevDocs) => {
       const existingIndex = prevDocs.findIndex((d) => d.filePath === openedDoc.filePath && d.filePath);
       let updated: MarkdownDoc[];
+      let resolvedId = openedDoc.id;
 
       if (existingIndex !== -1) {
         // 既存ドキュメントがある場合、既存のIDやお気に入り状態を保持しつつ、ディスクからの最新内容で上書き更新
         const existing = prevDocs[existingIndex];
-        targetDocId = existing.id;
+        resolvedId = existing.id;
         const mergedDoc: MarkdownDoc = {
           ...existing,
           ...openedDoc,
@@ -231,20 +230,18 @@ export function useDocumentManager() {
         updated = [...prevDocs];
         updated[existingIndex] = mergedDoc;
       } else {
-        targetDocId = openedDoc.id;
         updated = [openedDoc, ...prevDocs];
       }
 
       saveStoredDocs(updated);
+      setActiveDocId(resolvedId);
+      saveActiveDocId(resolvedId);
+      setOpenTabIds((prevTabs) => {
+        const next = prevTabs.includes(resolvedId) ? prevTabs : [...prevTabs, resolvedId];
+        saveOpenTabIds(next);
+        return next;
+      });
       return updated;
-    });
-
-    setActiveDocId(targetDocId);
-    saveActiveDocId(targetDocId);
-    setOpenTabIds((prev) => {
-      const next = prev.includes(targetDocId) ? prev : [...prev, targetDocId];
-      saveOpenTabIds(next);
-      return next;
     });
   }, []);
 

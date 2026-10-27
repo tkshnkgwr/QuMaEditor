@@ -15,7 +15,7 @@ interface DualPaneWorkspaceProps {
   settings: EditorSettings;
   isDark: boolean;
   onCursorChange: (line: number, col: number) => void;
-  onScrollSync?: (percentage: number) => void;
+  onScrollSync?: (scrollTop: number, scrollHeight: number, clientHeight: number) => void;
   onImageDrop?: (file: File) => void;
   onDropFiles?: (files: File[]) => void;
   onUpdateTags?: (tags: string[]) => void;

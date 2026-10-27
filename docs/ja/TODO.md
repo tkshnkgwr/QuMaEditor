@@ -1,10 +1,16 @@
 # 今後の開発計画・TODO リスト (TODO)
 
+[English Version](../en/TODO.md) | **日本語版**
+
 QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 
 ---
 
 ## 🎯 完了済みタスク (Completed)
+
+### v1.5.2 リリース版 (2026-10-27)
+
+- [x] **プロジェクト総点検・エディタ/デュアルペイン不具合修正・XSS対策・全ドキュメント完全同期 (`Stability / Security / Docs`)**: `updateDocContent` の対象ID判定修正、大容量チャンク読込中の自動保存データ切り捨て防止ガード、`StatsModal` の React Hooks クラッシュ修正、デュアルペイン編集時の `onCursorChange` クラッシュ修正、画像ドラッグ＆ドロップのバイナリ Base64 変換、Rust HTML レンダラーの XSS エスケープ強化、Mermaid ER 図構文検証対応（全44単体テストPASS）、マルチバイト文字境界チャンク読込、および日英全ドキュメントの最新化・テーブル垂直整列を完了。
 
 ### v1.5.1 リリース版 (2026-10-22)
 
@@ -110,6 +116,6 @@ QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 | 12  | `Plugin System`        | **プラグイン / 拡張機能アーキテクチャの基礎検討**                                                                                                             | 低     | 🔲 検討中   |
 | 13  | `Cloud Storage`        | **クラウドストレージ連携 (Google Drive / OneDrive) の同期プロトタイプ**                                                                                       | 低     | 🔲 検討中   |
 | 14  | `Multi Window`         | **マルチウィンドウ（タブの分離独立化）対応の調査・探索**                                                                                                      | 低     | 🔲 検討中   |
-| 15  | `AI / Summary`         | **AI自動要約（Gemini API ＆ QuDaMemo準拠ハイブリッド方式）** — モデル自由選択、Front Matter要約カード、ローカルフォールバック                               | 高     | ✅ 完了     |
-| 16  | `Preview / Mermaid`    | **Mermaid記法のプレビュー完全統合 ＆ 拡張機能** — ズーム・全画面・SVG保存・HTML出力・雛形挿入                                  | 高     | ✅ 完了     |
+| 15  | `AI / Summary`         | **AI自動要約（Gemini API ＆ QuDaMemo準拠ハイブリッド方式）** — モデル自由選択、Front Matter要約カード、ローカルフォールバック                                 | 高     | ✅ 完了     |
+| 16  | `Preview / Mermaid`    | **Mermaid記法のプレビュー完全統合 ＆ 拡張機能** — ズーム・全画面・SVG保存・HTML出力・雛形挿入                                                                 | 高     | ✅ 完了     |
 

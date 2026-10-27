@@ -1,6 +1,6 @@
 # 機能・技術仕様書 (SPECIFICATION)
 
-[English](docs/en/SPECIFICATION.md) | **日本語版**
+[English](../en/SPECIFICATION.md) | **日本語版**
 
 ## 1. 概要 (Overview)
 
@@ -21,7 +21,7 @@ QuMaEditor は、**Tauri v2**, **Rust**, **React 19**, **TypeScript** で構築�
 | **テキスト編集**         | タイプライター・スクロール                       | カーソル行を画面中央高さに自動固定し、視線移動を最小化（設定でトグル可能）                                    |
 | **テキスト編集**         | 文字修飾 Undo/Redo 連動                          | `document.execCommand` によるネイティブ Undo/Redo 履歴保持、ツールバー押下時フォーカス保護 (`preventDefault`) |
 | **テキスト編集**         | 下線ショートカット (`Ctrl+U`)                    | `Ctrl+U` による `<u>...</u>` タグ挿入および選択テキストラッピング対応                                         |
-| **テキスト編集**         | ツールバー Mermaid 雛形挿入メニュー              | フローチャート・シーケンス図・状態遷移図等 8大ダイアグラムテンプレートのワンクリック挿入                     |
+| **テキスト編集**         | ツールバー Mermaid 雛形挿入メニュー              | フローチャート・シーケンス図・状態遷移図等 8大ダイアグラムテンプレートのワンクリック挿入                      |
 | **校正・Lint**           | 日本語校正 ＆ 構文 lint 非同期解析               | Rust `proofreading.rs` による連続助詞・表記ゆれ・未閉じ括弧/ブロックの非同期高速検出 ＆ StatusBar 表示        |
 | **ナビゲーション**       | 見出しアウトライン / 目次ツリー                  | Rust ネイティブ H1〜H6 高速抽出、階層インデントバッジ、キーワード絞り込み、エディタ＆プレビュー双方向ジャンプ |
 | **プレビュー**           | 完全 Rust ネイティブ HTML レンダリング           | `pulldown-cmark` + `syntect` によるゼロ遅延・60fps ネイティブ HTML レンダリング ＆ 双方向タスク操作           |
@@ -40,7 +40,7 @@ QuMaEditor は、**Tauri v2**, **Rust**, **React 19**, **TypeScript** で構築�
 | **多言語文字コード**     | UTF-8 / Shift_JIS / EUC-JP 自動判別・相互変換    | `encoding_rs` ネイティブエンジン、改行コード (CRLF / LF) 自動同期                                             |
 | **統計・ダッシュボード** | 詳細統計モーダル (`StatsModal`)                  | 文字数、単語数、行数、読了時間、見出し数、リンク数のリアルタイム集計                                          |
 | **差分比較**             | ネイティブ詳細 Text Diff                         | Rust `similar` による行番号 Old/New・インライン単語レベル差分ハイライト表示 (`DiffModal`)                     |
-| **AI 要約**              | AI自動要約 ＆ ハイブリッドフォールバック         | Google Gemini API (`@google/genai`) 連携（モデル選択・プロンプト・テスト）と未設定時ローカル抽出フォールバック |
+| **AI 要約**              | AI自動要約 ＆ ハイブリッドフォールバック         | Google Gemini API (`@google/genai`) 連携（モデル選択・プロンプト・テスト）と未設定時ローカル抽出フォールバック|
 | **メタデータ**           | YAML Front Matter ＆ 要約カード                  | Rust `yaml.rs` ＆ フロントエンドによる `summary` / `summary_type` 双方向管理、エディタ編集、プレビューカード  |
 | **UI / 設定**            | モジュール化設定モーダル (`SettingsModal`)       | 「全般・外観」「AI設定」「ストレージ管理」の3タブ構造、1,000行未満徹底スリム化設計                            |
 
@@ -82,7 +82,7 @@ stateDiagram-v2
 
 | 項目       | 詳細                                     |
 | :--------- | :--------------------------------------- |
-| バージョン | v1.5.1                                   |
+| バージョン | v1.5.2                                   |
 | OS         | Windows 10 / 11 (Tauri v2 Native Window) |
 | ランタイム | Rust Native Engine + WebView2            |
 | フロント   | React 19 + TypeScript 5.8                |

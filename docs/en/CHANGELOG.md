@@ -1,6 +1,24 @@
 # Changelog (CHANGELOG)
 
+**English Version** | [日本語版](../ja/CHANGELOG.md)
+
 All notable changes and release history for QuMaEditor.
+
+## [1.5.2] - 2026-10-27
+
+### 🛡️ Comprehensive Codebase Audit, Bug Fixes, XSS Hardening & Documentation Sync (v1.5.2)
+
+- **Frontend Stability & Dual-Pane Fixes (`Frontend / Stability`)**:
+  - Fixed target document ID matching in `updateDocContent` so single-pane edits, auto-formatting, and task checkbox toggles reliably update state.
+  - Added data-loss guards preventing auto-save and in-place disk overwrite from truncating partially loaded chunked files (`isChunkedLoaded`).
+  - Resolved React Rules of Hooks crash in `StatsModal` and `onCursorChange` undefined crash in dual-pane editing mode.
+  - Fixed `currentDoc` prop forwarding to `TemplateModal`, binary image drag-and-drop Base64 encoding, scroll sync ratio math, and multibyte byte-offset tracking in chunked file loading.
+- **Rust Backend Security & Robustness (`Backend / Rust`)**:
+  - Hardened `html_renderer.rs` against XSS by escaping HTML entities in inline Obsidian parsing, document titles, and code block headers, and synchronized in-progress task (`- [/] `) indices.
+  - Enhanced `mermaid_validator.rs` to support ER diagram crow's-foot notation (`||--o{`, etc.) and YAML frontmatter (44/44 unit tests passing).
+  - Aligned non-EOF chunk slices to UTF-8 character boundaries in `file_io.rs` and `mmap_reader.rs`, ensured save-lock release on error paths, and built hierarchical directory trees in `workspace_scanner.rs`.
+- **Full Documentation Synchronization & Table Alignment (`Docs`)**:
+  - Synchronized all files across `docs/ja/`, `docs/en/`, and root `README*.md` / `RULES.md` with v1.5.2 specifications, fixing relative links and enforcing strict vertical alignment on all Markdown tables.
 
 ## [1.5.1] - 2026-10-22
 
@@ -220,6 +238,16 @@ All notable changes and release history for QuMaEditor.
 
 ---
 
+## [1.3.1] - 2026-08-12
+
+### 🚀 Direct File Open via Explorer Drag & Drop (v1.3.1)
+
+- **Direct Drag & Drop File Open from Windows Explorer**:
+  - Added support for dragging `.md` and `.txt` files from Explorer directly onto the editor window to open them in a new tab.
+  - Dropping image files (`.png`, `.jpg`, etc.) automatically converts them to Data URLs and inserts Markdown image syntax at the cursor position.
+
+---
+
 ## [1.3.0] - 2026-08-12
 
 ### 🚀 Rust Inverted Index Search, Chunk Streaming & Memory GC (v1.3.0)
@@ -230,3 +258,27 @@ All notable changes and release history for QuMaEditor.
   - Real-time in-memory inverted index search engine.
 - **Memory Slimming GC**:
   - Converts saved documents to placeholders in LocalStorage to prevent `QuotaExceededError`.
+
+---
+
+## [1.2.0] - 2026-08-05
+
+### 💾 Direct In-Place File Save & Windows Context Menu (v1.2.0)
+
+- **Direct In-Place Save (`Ctrl + S`) & Save As (`Ctrl + Shift + S`)**:
+  - Retains the actual local `.md` file path on disk for direct overwrite saving.
+- **Windows Explorer "Open with QuMaEditor" Context Menu Registration**:
+  - Automatically registers the right-click context menu entry on startup and installation.
+- **Single Instance Enforcement**:
+  - Focuses the existing QuMaEditor window and opens the incoming file path in a new tab.
+
+---
+
+## [1.1.0] - 2026-08-04
+
+### 🛠️ Automated Specta TypeScript Bindings & Quality Foundation (v1.1.0)
+
+- **Automated TypeScript Type Generation via Specta**:
+  - Automatically synchronizes TypeScript bindings (`src/bindings.ts`) from all Rust DTOs and Tauri IPC commands.
+- **TypeDoc & RustDoc Documentation Setup**:
+  - Established automated API documentation generation for both frontend and backend.

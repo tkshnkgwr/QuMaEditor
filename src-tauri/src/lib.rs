@@ -89,7 +89,7 @@ fn register_context_menu_native() -> Result<bool, String> {
         let exe_path = std::env::current_exe()
             .map_err(|e| format!("実行ファイルパス取得失敗: {}", e))?
             .to_string_lossy()
-            .to_string();
+            .replace('\'', "''");
 
         let ps_script = format!(
             "$key = 'HKCU:\\Software\\Classes\\*\\shell\\QuMaEditor'; \
@@ -134,13 +134,24 @@ pub fn run() {
 
                 if argv.len() > 1 {
                     let file_path = argv[1].clone();
+                    let _ = window.emit("open-file", file_path.clone());
                     let _ = window.emit("open-file-from-args", file_path);
                 }
             }
         }))
-        .setup(|_app| {
+        .setup(|app| {
+            let app_handle = app.handle().clone();
             tauri::async_runtime::spawn_blocking(move || {
                 let _ = register_context_menu_native();
+                if let Some(arg_path) = std::env::args().nth(1) {
+                    if !arg_path.starts_with('-') && std::path::Path::new(&arg_path).exists() {
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let _ = window.emit("open-file", arg_path.clone());
+                            let _ = window.emit("open-file-from-args", arg_path);
+                        }
+                    }
+                }
             });
             Ok(())
         })

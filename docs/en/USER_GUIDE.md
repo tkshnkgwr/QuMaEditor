@@ -1,14 +1,14 @@
 # User Guide (USER_GUIDE)
 
-**English** | [日本語版](docs/ja/USER_GUIDE.md)
+**English** | [日本語版](../ja/USER_GUIDE.md)
 
-## 1. UI Components Overview (v1.5.1)
+## 1. UI Components Overview (v1.5.2)
 
 QuMaEditor features an intuitive Windows desktop-native layout:
 
 1. **Title Bar (Header)**:
    - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), line-ending badge (`LF`, `CRLF`), character and line counters.
-   - Right: Theme toggle (Light/Dark/System), version info (`v1.5.1`), settings button, native window controls.
+   - Right: Theme toggle (Light/Dark/System), version info (`v1.5.2`), settings button, native window controls.
    - Sub-bar: File / Template / Help dropdown menus, view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
 2. **Left Sidebar (Sidebar & Outline)**:
    - **📁 Documents Tab**: Switch, search, tag-filter, favorite, and manage active/stored documents.
@@ -103,17 +103,19 @@ Click the ⚙️ icon in the top right to access full application settings acros
 
 ### 🎨 General & Appearance (`GeneralTab`)
 - **Base Font Size**: 12px ~ 24px (slider)
-- **Line Height**: 1.2 (compact) ~ 2.2 (extra wide)
-- **Editor Font**: System Default, Monospace, Sans-serif
+- **Line Height**: 1.4 (Compact) / 1.625 (Standard) / 1.8 (Wide) / 2.0 (Extra Wide)
+- **Editor Font**: Monospace, Sans-serif, Serif
 - **Tab Size**: 2 spaces / 4 spaces
-- **Auto-Save Interval**: 1s ~ 10s (or disabled)
-- **Heading Color Palette**: Subtle, Vibrant, High Contrast, Monochrome
+- **Auto-Save Interval**: 1.0s ~ 10.0s (slider)
+- **Display & Scroll Options**: Word wrap, line numbers, editor/preview synchronized scrolling, and typewriter scrolling (keep cursor line centered) toggles
+- **Preview Engine**: Switch between Rust Native Engine (ultra-fast recommended) and React Engine
+- **Heading Color Palette**: Indigo, Emerald, Amber, Rose, Slate, or Custom palette
 - **Smart Paste (Auto URL Link)**: Automatically converts pasted URLs into `[Selected Text](URL)` format (toggle)
 - **Syntax Theme**: Select among VS Code Dark+, Dracula, Nord, Monokai, One Dark, and Prism
 
 ### 🤖 AI Settings (`AiTab`)
 - **Gemini API Key**: Set your Google AI Studio API key with visibility mask toggling
-- **Model Selector**: Freely choose among latest recommended models (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, etc.) or input custom models
+- **Model Selector**: Freely choose among latest recommended models (`gemini-3.7-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, etc.) or input custom models
 - **Custom Base URL**: Proxy or custom enterprise gateway support
 - **Summary Prompt**: Fully customize instructions, tone, and formatting constraints for AI summaries
 - **Connection Test**: Perform real-time connectivity and authorization validation against Google Gemini API
@@ -138,12 +140,13 @@ To elevate writing quality and prevent Markdown structural mistakes, QuMaEditor 
 
 ### Inspection Rules Overview
 
-| Category    | Check Rule         | Description & Examples                                                           |
-| :---------- | :----------------- | :------------------------------------------------------------------------------- |
-| **Grammar** | Duplicate Particle | Identifies redundant consecutive usages of the particle "の" (3+ times in a sentence) |
-| **Spelling**| Variant Spellings  | Detects inconsistent Japanese katakana prolonged sound marks (e.g. サーバー vs サーバ) |
-| **Syntax**  | Unclosed Brackets  | Finds unclosed opening brackets and quotation marks (「」, 『』, （）, etc.)       |
-| **Syntax**  | Unclosed Blocks    | Flags code fences starting with ```` ``` ```` that remain unclosed to file end   |
+| Category     | Check Rule           | Description & Examples                                                                 |
+| :----------- | :------------------- | :------------------------------------------------------------------------------------- |
+| **Grammar**  | Duplicate Particle   | Identifies consecutive duplicate Japanese particles (`のの`, `はは`, `がが`, `をを`, etc.) |
+| **Spelling** | Variant Spellings    | Detects inconsistent Japanese katakana prolonged sound marks (e.g. サーバー vs サーバ) |
+| **Spelling** | Mixed Punctuation    | Detects mixed usage of Japanese comma (`、`) and full-width comma (`，`)               |
+| **Syntax**   | Unclosed Brackets    | Finds unclosed brackets (`（）`, `()`, `「」`, `【】`) and inline code backticks (`` ` ``)|
+| **Syntax**   | Unclosed Code Blocks | Flags code fences starting with ```` ``` ```` that remain unclosed to file end         |
 
 ---
 
@@ -166,24 +169,27 @@ QuMaEditor integrates Google Gemini API with seamless YAML Front Matter metadata
 
 ## 9. Keyboard Shortcuts
 
-
-| Shortcut           | Action / Feature                               |
-| :----------------- | :--------------------------------------------- |
-| `Ctrl + N`         | Create new Markdown document                   |
-| `Ctrl + O`         | Open local text file (.md, .txt)               |
-| `Ctrl + S`         | Direct save to disk                            |
-| `Ctrl + Shift + S` | Save As (choose file location)                 |
-| `Ctrl + Shift + F` | Markdown auto-formatting (align tables, lines) |
-| `Ctrl + E`         | Toggle View Mode (Editor Only ↔ Preview Only)  |
-| `Ctrl + Z`         | Undo (reverts typing and text formatting)      |
-| `Ctrl + Y`         | Redo (re-applies reverted action)              |
-| `Tab`              | Indent line / nest bullet item                 |
-| `Shift + Tab`      | Unindent line / promote bullet item            |
-| `F5` / `Ctrl + R`  | Force reload file from disk                    |
-| `Ctrl + P`         | A4 Print / PDF Export dialog                   |
-| `Ctrl + B`         | Bold formatting / wrap selection               |
-| `Ctrl + I`         | Italic formatting / wrap selection             |
-| `Ctrl + U`         | Underline formatting / wrap selection          |
-| `Ctrl + Shift + Z` | Toggle Zen Focus Mode (Exit with `Esc`)        |
-| `F1`               | Open Keyboard Shortcuts Help                   |
+| Shortcut           | Action / Feature                                      |
+| :----------------- | :---------------------------------------------------- |
+| `Ctrl + N`         | Create new Markdown document                          |
+| `Ctrl + O`         | Open local text file (.md, .txt)                      |
+| `Ctrl + S`         | Direct save to disk                                   |
+| `Ctrl + Shift + S` | Save As (choose file location)                        |
+| `Ctrl + W`         | Close current tab                                     |
+| `Ctrl + Shift + F` | Markdown auto-formatting (align tables, lines)        |
+| `Ctrl + E`         | Toggle View Mode (Editor Only ↔ Preview Only)         |
+| `Ctrl + Z`         | Undo (reverts typing and text formatting)             |
+| `Ctrl + Y`         | Redo (re-applies reverted action)                     |
+| `Tab`              | Indent line / nest bullet item / next table cell      |
+| `Shift + Tab`      | Unindent line / promote bullet item / prev table cell |
+| `F5` / `Ctrl + R`  | Force reload file from disk                           |
+| `Ctrl + P`         | A4 Print / PDF Export dialog                          |
+| `Ctrl + B`         | Bold formatting / wrap selection                      |
+| `Ctrl + I`         | Italic formatting / wrap selection                    |
+| `Ctrl + U`         | Underline formatting / wrap selection                 |
+| `Ctrl + K`         | Insert link syntax / wrap selection                   |
+| `Ctrl + Shift + D` | Open Document Diff Comparison modal                   |
+| `Ctrl + Shift + L` | Open System Activity Logs modal                       |
+| `Ctrl + Shift + Z` | Toggle Zen Focus Mode (Exit with `Esc`)               |
+| `F1`               | Open Keyboard Shortcuts Help                          |
 

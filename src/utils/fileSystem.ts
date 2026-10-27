@@ -75,7 +75,8 @@ export async function openNativeFileFromPath(
       const chunkRes = await commands.readFileChunkNative(cleanPath, 0, initialChunkBytes);
       if (chunkRes.status === 'ok') {
         text = chunkRes.data.chunk_text;
-        loadedBytes = text.length;
+        loadedBytes = chunkRes.data.next_offset;
+        totalSizeBytes = chunkRes.data.total_bytes || totalSizeBytes;
         isChunkedLoaded = !chunkRes.data.is_eof;
       }
     }
@@ -143,7 +144,7 @@ export async function openNativeFileFromPath(
  *
  * @returns 選択および読み込み成功時は OpenedFileResult、キャンセルまたは失敗時は null
  */
-export async function openNativeFileDialog(): Promise<OpenedFileResult | null> {
+export async function openNativeFileDialog(): Promise<OpenedFileResult | 'canceled' | null> {
   try {
     const selected = await open({
       multiple: false,
@@ -161,7 +162,7 @@ export async function openNativeFileDialog(): Promise<OpenedFileResult | null> {
     });
 
     if (!selected || Array.isArray(selected)) {
-      return null;
+      return 'canceled';
     }
 
     const filePath = selected as string;
@@ -185,6 +186,13 @@ export async function saveNativeFile(
   options: { forceSaveAs?: boolean; defaultAuthor?: string } = {}
 ): Promise<SaveFileResult> {
   try {
+    if (doc.isChunkedLoaded && !options.forceSaveAs) {
+      return {
+        success: false,
+        error: '大容量ファイルの部分読み込み（チャンク表示）中は、後半データの消失を防ぐため「全文を読み込む」実行後に上書き保存してください。',
+      };
+    }
+
     let targetPath = doc.filePath;
     let isSaveAs = false;
 
@@ -306,7 +314,7 @@ export async function loadMoreChunkNativeDoc(
 
     if (chunkRes.status === 'ok') {
       const nextContent = doc.content + chunkRes.data.chunk_text;
-      const nextLoadedBytes = currentOffset + chunkRes.data.chunk_text.length;
+      const nextLoadedBytes = chunkRes.data.next_offset;
       const isStillChunked = !chunkRes.data.is_eof;
 
       return {

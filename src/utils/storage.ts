@@ -37,8 +37,8 @@ export const DEFAULT_SETTINGS: EditorSettings = {
 const SAMPLE_DOCS: MarkdownDoc[] = [
   {
     id: 'doc-welcome',
-    title: '👋 WinMarkdown Editor へようこそ',
-    content: `# WinMarkdown Editor
+    title: '👋 QuMaEditor へようこそ',
+    content: `# QuMaEditor
 
 Windows 11 のモダンなデザインイメージ・暗色モード対応のフル機能 Markdown エディタです。
 

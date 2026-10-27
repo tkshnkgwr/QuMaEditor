@@ -405,7 +405,7 @@ export default function App() {
 
     setDocs((prevDocs) =>
       prevDocs.map((doc) =>
-        doc.id === targetDocId
+        doc.id === docId
           ? {
               ...doc,
               content: newContent,
@@ -430,6 +430,14 @@ export default function App() {
         setSaveStatus('unsaved');
         logger.info(
           `[自動保存スキップ] リモートファイル "${docToSave.title}" (ID: ${docToSave.id}) はリモート仕様に基づき自動保存されません。`
+        );
+        return;
+      }
+
+      if (docToSave.isChunkedLoaded) {
+        setSaveStatus('unsaved');
+        logger.info(
+          `[自動保存スキップ] 大容量チャンク部分読込中のファイル "${docToSave.title}" は後半データ保護のため全文読込まで自動上書き保存をスキップします。`
         );
         return;
       }
@@ -583,23 +591,31 @@ export default function App() {
 
   // 起動時のファイルオープンイベントリスナー
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
+    let unlistenOpenFile: (() => void) | undefined;
+    let unlistenOpenFromArgs: (() => void) | undefined;
+
+    const handleIncomingFilePath = async (filePath: string) => {
+      if (!filePath) return;
+      const openResult = await openNativeFileFromPath(filePath);
+      if (openResult && openResult.doc) {
+        handleAddOpenedDoc(openResult.doc);
+        try {
+          const win = getCurrentWebviewWindow();
+          await win.unminimize();
+          await win.setFocus();
+        } catch (e) {
+          console.log('Window focus error:', e);
+        }
+      }
+    };
+
     const setupListener = async () => {
       try {
-        unlisten = await listen<string>('open-file', async (event) => {
-          const filePath = event.payload;
-          if (!filePath) return;
-          const openResult = await openNativeFileFromPath(filePath);
-          if (openResult && openResult.doc) {
-            handleAddOpenedDoc(openResult.doc);
-            try {
-              const win = getCurrentWebviewWindow();
-              await win.unminimize();
-              await win.setFocus();
-            } catch (e) {
-              console.log('Window focus error:', e);
-            }
-          }
+        unlistenOpenFile = await listen<string>('open-file', async (event) => {
+          await handleIncomingFilePath(event.payload);
+        });
+        unlistenOpenFromArgs = await listen<string>('open-file-from-args', async (event) => {
+          await handleIncomingFilePath(event.payload);
         });
       } catch (e) {
         console.log('Tauri listen error:', e);
@@ -608,18 +624,29 @@ export default function App() {
 
     setupListener();
     return () => {
-      if (unlisten) unlisten();
+      if (unlistenOpenFile) unlistenOpenFile();
+      if (unlistenOpenFromArgs) unlistenOpenFromArgs();
     };
   }, [handleAddOpenedDoc]);
 
   // スクロール連動
-  const handleScrollSync = useCallback((percentage: number) => {
-    if (previewScrollRef.current) {
+  const handleScrollSync = useCallback(
+    (scrollTopOrPercentage: number, scrollHeight?: number, clientHeight?: number) => {
+      if (!settings.syncScroll || !previewScrollRef.current) return;
       const el = previewScrollRef.current;
-      const maxScroll = el.scrollHeight - el.clientHeight;
-      el.scrollTop = maxScroll * percentage;
-    }
-  }, []);
+      const maxPreviewScroll = el.scrollHeight - el.clientHeight;
+      if (maxPreviewScroll <= 0) return;
+
+      if (typeof scrollHeight === 'number' && typeof clientHeight === 'number') {
+        const maxEditorScroll = scrollHeight - clientHeight;
+        const percentage = maxEditorScroll > 0 ? scrollTopOrPercentage / maxEditorScroll : 0;
+        el.scrollTop = maxPreviewScroll * Math.max(0, Math.min(1, percentage));
+      } else {
+        el.scrollTop = maxPreviewScroll * Math.max(0, Math.min(1, scrollTopOrPercentage));
+      }
+    },
+    [settings.syncScroll]
+  );
 
   // ツールバー各種フォーマット挿入＆見出しジャンプアクション (useEditorToolbarActions)
   const {

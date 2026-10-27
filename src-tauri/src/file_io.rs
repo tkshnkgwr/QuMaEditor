@@ -79,8 +79,19 @@ pub fn read_file_chunk_native(
         .map_err(|e| format!("チャンク読み込み失敗: {}", e))?;
 
     let is_eof = (offset + read_size) >= total_bytes;
-    let next_offset = offset + read_size;
-    let chunk_text = String::from_utf8_lossy(&buffer).to_string();
+    // EOF でない場合、末尾でマルチバイト UTF-8 文字が分断されていれば文字境界まで切り詰める
+    let valid_len = if !is_eof {
+        match std::str::from_utf8(&buffer) {
+            Ok(_) => buffer.len(),
+            Err(e) if e.error_len().is_none() && e.valid_up_to() > 0 => e.valid_up_to(),
+            Err(_) => buffer.len(),
+        }
+    } else {
+        buffer.len()
+    };
+
+    let next_offset = offset + (valid_len as u32);
+    let chunk_text = String::from_utf8_lossy(&buffer[..valid_len]).to_string();
 
     Ok(FileChunkResult {
         chunk_text,
@@ -177,16 +188,24 @@ pub fn atomic_write_file_bytes_native(
 
     if let Err(e) = write_res {
         let _ = fs::remove_file(&temp_path);
+        let _ = crate::sync_manager::sync_finish_save(clean_path.to_string(), 0.0);
         return Err(format!("一時ファイル書き込み失敗: {}", e));
     }
 
     // アトミックなリネーム置換（同一ディレクトリ内のためアトミック）
     if let Err(e) = fs::rename(&temp_path, path) {
         let _ = fs::remove_file(&temp_path);
+        let _ = crate::sync_manager::sync_finish_save(clean_path.to_string(), 0.0);
         return Err(format!("アトミック置換リネーム失敗: {}", e));
     }
 
-    let meta = fs::metadata(path).map_err(|e| format!("メタデータ取得失敗: {}", e))?;
+    let meta = match fs::metadata(path) {
+        Ok(m) => m,
+        Err(e) => {
+            let _ = crate::sync_manager::sync_finish_save(clean_path.to_string(), 0.0);
+            return Err(format!("メタデータ取得失敗: {}", e));
+        }
+    };
     let mtime_ms = meta
         .modified()
         .ok()
@@ -243,31 +262,37 @@ pub fn get_file_metadata_native(file_path: String) -> Result<FileMetadataDto, St
 pub fn open_folder_native(file_path: String) -> Result<bool, String> {
     #[cfg(target_os = "windows")]
     {
-        #[cfg(target_os = "windows")]
-        use std::os::windows::process::CommandExt;
-        use std::process::Command;
-
         let clean_path = file_path.trim_matches('"').to_string();
         let path_obj = Path::new(&clean_path);
 
-        if path_obj.exists() && path_obj.is_file() {
-            let select_arg = format!("/select,{}", clean_path);
-            let _ = Command::new("explorer.exe")
-                .creation_flags(0x08000000)
-                .arg(&select_arg)
-                .spawn()
-                .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
-        } else {
-            let folder_path = path_obj
-                .parent()
-                .map(|p| p.to_string_lossy().to_string())
-                .unwrap_or(clean_path.clone());
+        #[cfg(not(test))]
+        {
+            use std::os::windows::process::CommandExt;
+            use std::process::Command;
 
-            let _ = Command::new("explorer.exe")
-                .creation_flags(0x08000000)
-                .arg(&folder_path)
-                .spawn()
-                .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
+            if path_obj.exists() && path_obj.is_file() {
+                let select_arg = format!("/select,{}", clean_path);
+                let _ = Command::new("explorer.exe")
+                    .creation_flags(0x08000000)
+                    .arg(&select_arg)
+                    .spawn()
+                    .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
+            } else {
+                let folder_path = path_obj
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|| clean_path.clone());
+
+                let _ = Command::new("explorer.exe")
+                    .creation_flags(0x08000000)
+                    .arg(&folder_path)
+                    .spawn()
+                    .map_err(|e| format!("エクスプローラー起動失敗: {}", e))?;
+            }
+        }
+        #[cfg(test)]
+        {
+            let _ = path_obj;
         }
         Ok(true)
     }

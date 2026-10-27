@@ -1,5 +1,7 @@
 # Contribution Guidelines (CONTRIBUTING)
 
+**English Version** | [日本語版](../ja/CONTRIBUTING.md)
+
 ## 1. Commit Message Conventions
 
 Please follow standard conventional commit prefixes:

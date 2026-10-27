@@ -47,12 +47,12 @@
 
 ## 🧰 ワークスペース・スキル一覧
 
-| スキル名             | 役割・トリガー条件                                                      | 参照先                                                                          |
-| :------------------- | :---------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| `tauri-verification` | Rust/フロントエンド変更時の事前検証 (`cargo`/`npm`) とMarkdown検証省略 | [.agents/skills/tauri-verification/SKILL.md](file:///.agents/skills/tauri-verification/SKILL.md) |
-| `git-commit`         | ボスから明示的なコミット・Push指示があった際の安全実行手順・規約        | [.agents/skills/git-commit/SKILL.md](file:///.agents/skills/git-commit/SKILL.md)               |
-| `markdown-table`     | Markdown テーブル作成・編集時の垂直整列ガイド（gVim視認性）             | [.agents/skills/markdown-table/SKILL.md](file:///.agents/skills/markdown-table/SKILL.md)       |
-| `mermaid-diagram`    | ドキュメント・設計書内での Mermaid による作図・視覚化ガイドライン        | [.agents/skills/mermaid-diagram/SKILL.md](file:///.agents/skills/mermaid-diagram/SKILL.md)     |
+| スキル名             | 役割・トリガー条件                                                      | 参照先                                                                                           |
+| :------------------- | :---------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- |
+| `tauri-verification` | Rust/フロントエンド変更時の事前検証 (`cargo`/`npm`) とMarkdown検証省略  | [.agents/skills/tauri-verification/SKILL.md](file:///.agents/skills/tauri-verification/SKILL.md) |
+| `git-commit`         | ボスから明示的なコミット・Push指示があった際の安全実行手順・規約        | [.agents/skills/git-commit/SKILL.md](file:///.agents/skills/git-commit/SKILL.md)                 |
+| `markdown-table`     | Markdown テーブル作成・編集時の垂直整列ガイド（gVim視認性）             | [.agents/skills/markdown-table/SKILL.md](file:///.agents/skills/markdown-table/SKILL.md)         |
+| `mermaid-diagram`    | ドキュメント・設計書内での Mermaid による作図・視覚化ガイドライン        | [.agents/skills/mermaid-diagram/SKILL.md](file:///.agents/skills/mermaid-diagram/SKILL.md)       |
 
 ---
 

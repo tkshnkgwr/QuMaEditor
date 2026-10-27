@@ -140,6 +140,9 @@ export function useFileOperations({
   // PC/ファイルサーバーのローカルファイルを開く
   const handleOpenLocalFile = useCallback(async () => {
     const nativeResult = await openNativeFileDialog();
+    if (nativeResult === 'canceled') {
+      return;
+    }
     if (nativeResult) {
       const { doc: openedDoc } = nativeResult;
       handleAddOpenedDoc(openedDoc);

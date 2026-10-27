@@ -1,6 +1,24 @@
 # 更新履歴 (CHANGELOG)
 
+[English Version](../en/CHANGELOG.md) | **日本語版**
+
 QuMaEditor の主要な変更点およびリリース履歴です。
+
+## [1.5.2] - 2026-10-27
+
+### 🛡️ プロジェクト総点検・不具合修正・XSS対策・全ドキュメント同期 (v1.5.2)
+
+- **エディタ・デュアルペイン・モーダルの安定性向上 (`Frontend / Stability`)**:
+  - `updateDocContent` の対象ドキュメント ID 判定不具合を修正し、通常編集・自動整形・タスクチェック操作が確実に反映されるよう改善。
+  - 500KB 超の大容量チャンク読込中（`isChunkedLoaded`）の自動保存・上書き保存による後半データ消失防止ガードを追加。
+  - `StatsModal` の React Hooks 呼び出し順序違反によるクラッシュ、およびデュアルペイン編集時の `onCursorChange` 未定義クラッシュを解消。
+  - `TemplateModal` への現在文書引き渡し、バイナリ画像ドラッグ＆ドロップ時の Base64 Data URL 変換、スクロール同期比率計算、マルチバイト文字チャンク読込のバイトオフセット計算を修正。
+- **Rust バックエンドのセキュリティ・堅牢性強化 (`Backend / Rust`)**:
+  - `html_renderer.rs` における Obsidian インライン記法・タイトル・コードブロック言語名の HTML エスケープ（XSS 対策）および進行中タスク (`- [/] `) のタスクインデックス同期を強化。
+  - `mermaid_validator.rs` で ER 図のリレーション記法（`||--o{` 等）および YAML フロントマターをサポート（全 44 単体テスト PASS）。
+  - `file_io.rs` / `mmap_reader.rs` の UTF-8 マルチバイト文字境界スライス調整、アトミック保存エラー時のロック解放保証、`workspace_scanner.rs` の階層ディレクトリツリー構築を修正。
+- **全ドキュメントの最新化 ＆ Markdown テーブル垂直整列 (`Docs`)**:
+  - `docs/ja/`、`docs/en/`、およびルート `README*.md` / `RULES.md` の全ドキュメントを v1.5.2 実装と完全同期し、相対リンク切れ修正と Markdown テーブル垂直整列を徹底。
 
 ## [1.5.1] - 2026-10-22
 

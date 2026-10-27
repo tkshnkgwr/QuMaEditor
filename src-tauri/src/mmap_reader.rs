@@ -76,17 +76,28 @@ pub fn mmap_read_file_chunk_native(
     let read_len = std::cmp::min(length as usize, available_len);
     let end = start + read_len;
 
-    let slice = &mmap[start..end];
+    let raw_slice = &mmap[start..end];
     let is_eof = end >= mmap.len();
 
-    // UTF-8 文字列へデコード (不正なマルチバイト境界は置換)
+    // EOF でない場合、末尾でマルチバイト UTF-8 文字が分断されていれば文字境界まで切り詰める
+    let valid_len = if !is_eof {
+        match std::str::from_utf8(raw_slice) {
+            Ok(_) => raw_slice.len(),
+            Err(e) if e.error_len().is_none() && e.valid_up_to() > 0 => e.valid_up_to(),
+            Err(_) => raw_slice.len(),
+        }
+    } else {
+        raw_slice.len()
+    };
+
+    let slice = &raw_slice[..valid_len];
     let chunk_text = String::from_utf8_lossy(slice).to_string();
 
     Ok(MmapChunkResult {
         chunk_text,
         total_file_size,
         loaded_offset: offset,
-        loaded_length: read_len as u32,
+        loaded_length: valid_len as u32,
         is_eof,
     })
 }
