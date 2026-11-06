@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import mermaid from 'mermaid';
+import { render as renderPele } from 'pele';
 import {
   Network,
   Copy,
@@ -49,7 +49,6 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
 
   useEffect(() => {
     let isMounted = true;
-    const uniqueId = `mermaid-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
     const trimmedChart = chart.trim();
     if (!trimmedChart) {
@@ -86,38 +85,20 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
       setIsCached(false);
 
       try {
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: isDark ? 'dark' : 'default',
-          securityLevel: 'loose',
-          fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial',
-          darkMode: isDark,
-          themeVariables: {
-            fontSize: '15px',
-          },
-        });
-
-        mermaid
-          .render(uniqueId, trimmedChart)
-          .then(({ svg }) => {
-            if (isMounted) {
-              if (valRes) {
-                const cacheKey = `${valRes.content_hash}-${isDark ? 'dark' : 'light'}`;
-                svgCache.set(cacheKey, svg);
-              }
-              setSvgHtml(svg);
-              setError(null);
-            }
-          })
-          .catch((err) => {
-            if (isMounted) {
-              setError(err?.message || 'Mermaid 構文の解析エラー');
-              setSvgHtml('');
-            }
-          });
+        // 次世代 Mermaid レンダラー (Pele) によるミリ秒未満の同期 SVG レンダリング
+        const result = renderPele(trimmedChart);
+        if (isMounted) {
+          const svg = result.svg;
+          if (valRes) {
+            const cacheKey = `${valRes.content_hash}-${isDark ? 'dark' : 'light'}`;
+            svgCache.set(cacheKey, svg);
+          }
+          setSvgHtml(svg);
+          setError(null);
+        }
       } catch (err: any) {
         if (isMounted) {
-          setError(err?.message || 'Mermaid 初期化エラー');
+          setError(err?.message || 'Mermaid (Pele) 構文の解析エラー');
           setSvgHtml('');
         }
       }
@@ -125,10 +106,6 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
 
     return () => {
       isMounted = false;
-      const tempElement = document.getElementById(uniqueId);
-      if (tempElement) {
-        tempElement.remove();
-      }
     };
   }, [chart, isDark]);
 

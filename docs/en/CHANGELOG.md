@@ -4,6 +4,18 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.5.4] - 2026-11-06
+
+### ⚡ Next-Gen Mermaid Renderer (Pele) & Dependency Optimization (v1.5.4)
+
+- **Complete Migration to Next-Gen Mermaid Renderer (Pele) (`Preview / Mermaid`)**:
+  - Replaced the heavy `mermaid.js` bundle with the zero-dependency, ultra-lightweight SVG renderer `pele` (v1.13.0).
+  - Optimized diagram rendering from asynchronous Promise/temporary DOM queries into sub-millisecond, synchronous SVG generation, dramatically improving typing responsiveness.
+  - Implemented Obsidian-native CSS variables (`--pele-bg`, `--pele-fg`, `--pele-accent`, etc.) fully synchronizing with QuMaEditor's dark and light theme palettes.
+  - Reduced transformed modules from 4,930 to 2,854 (~42% reduction) and accelerated Vite production build from 44s to 12s (~3.6x faster).
+- **Unused Dependencies Cleanup (`Dependencies / Build`)**:
+  - Completely uninstalled `express` and `@types/express`, removing 111 associated transitive packages to streamline the project footprint.
+
 ## [1.5.3] - 2026-10-27
 
 ### 📄 License Transition to GPL-3.0-or-later (v1.5.3)

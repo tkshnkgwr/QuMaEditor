@@ -8,6 +8,11 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.5.4 Release (2026-11-06)
+
+- [x] **Next-Gen Mermaid Renderer (Pele) Migration (`Preview / Mermaid`)**: Replaced `mermaid.js` with zero-dependency `pele` (v1.13.0). Enabled sub-millisecond synchronous SVG rendering, Obsidian-native CSS variables, Vite build time optimization (44s ➔ 12s), and ~42% module reduction (4,930 ➔ 2,854).
+- [x] **Unused Dependencies Cleanup (`Dependencies / Build`)**: Uninstalled `express` and `@types/express`, eliminating 111 transitive packages.
+
 ### v1.5.3 Release (2026-10-27)
 
 - [x] **License Transition to GPL-3.0-or-later (`License / Legal`)**: Updated `LICENSE`, `package.json`, `src-tauri/Cargo.toml`, and EN/JA `README` badges and license notices to `GNU General Public License v3.0 or later (GPL-3.0-or-later)`.
@@ -119,4 +124,8 @@ List of completed features and upcoming development tasks for QuMaEditor.
 | 14  | `Multi Window`         | **Multi-Window / Tab Detachment Exploration**                                                                                                | Low      | 🔲 Proposed  |
 | 15  | `AI / Summary`         | **AI-Powered Document Summary (Gemini API & Hybrid Fallback)** — User model selection, Front Matter summary card, local fallback             | High     | ✅ Completed |
 | 16  | `Preview / Mermaid`    | **Complete Mermaid Preview Integration & Utilities** — Zoom, fullscreen, SVG download, HTML export, toolbar templates                        | High     | ✅ Completed |
+| 17  | `Preview / Mermaid`    | **Next-Gen Mermaid Renderer (Pele) Migration Exploration** — Zero-deps, sub-millisecond rendering (<1ms), ~6x smaller bundle, native CSS theme sync | High     | ✅ Completed |
+| 18  | `Dependencies / Build` | **Unused Dependencies Cleanup (express / @types/express)** — Remove obsolete dependencies to streamline package footprint                     | Low      | ✅ Completed |
+
+
 

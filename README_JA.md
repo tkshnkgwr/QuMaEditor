@@ -2,7 +2,7 @@
 
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue)](https://v2.tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
-[![Version](https://img.shields.io/badge/Version-v1.5.3-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.5.4-green)](package.json)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 
 [English Version](README.md) | **日本語版**

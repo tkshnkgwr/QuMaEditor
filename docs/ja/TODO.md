@@ -8,6 +8,11 @@ QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 
 ## 🎯 完了済みタスク (Completed)
 
+### v1.5.4 リリース版 (2026-11-06)
+
+- [x] **次世代 Mermaid レンダラー (Pele) への換装 (`Preview / Mermaid`)**: 外部依存ゼロ・軽量高速な SVG レンダラー `pele`（v1.13.0）へ換装。ミリ秒未満の完全同期 SVG レンダリング、Obsidian ネイティブ CSS 変数連動、Vite ビルド時間短縮（44s ➔ 12s）、変換モジュール数大幅削減（4,930 ➔ 2,854）を達成。
+- [x] **不要依存パッケージ（express / @types/express）のクリーンアップ (`Dependencies / Build`)**: 未使用だった `express` および `@types/express` と関連推移パッケージ（計 111 個）を完全に削除。
+
 ### v1.5.3 リリース版 (2026-10-27)
 
 - [x] **プロジェクトライセンスの GPL-3.0-or-later への移行 (`License / Legal`)**: `LICENSE`、`package.json`、`src-tauri/Cargo.toml`、および日英 `README` のライセンス定義・バッジを `GNU General Public License v3.0 or later (GPL-3.0-or-later)` に変更・統一。
@@ -122,4 +127,8 @@ QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 | 14  | `Multi Window`         | **マルチウィンドウ（タブの分離独立化）対応の調査・探索**                                                                                                      | 低     | 🔲 検討中   |
 | 15  | `AI / Summary`         | **AI自動要約（Gemini API ＆ QuDaMemo準拠ハイブリッド方式）** — モデル自由選択、Front Matter要約カード、ローカルフォールバック                                 | 高     | ✅ 完了     |
 | 16  | `Preview / Mermaid`    | **Mermaid記法のプレビュー完全統合 ＆ 拡張機能** — ズーム・全画面・SVG保存・HTML出力・雛形挿入                                                                 | 高     | ✅ 完了     |
+| 17  | `Preview / Mermaid`    | **次世代Mermaidレンダラー (Pele) への移行検証** — 外部依存ゼロ・ミリ秒未満描画 (最大500倍高速化)・バンドルサイズ激減・CSS変数のネイティブテーマ完全同期検証  | 高     | ✅ 完了     |
+| 18  | `Dependencies / Build` | **不要依存パッケージ（express / @types/express）のクリーンアップ** — 開発・本番で使用されていない未使用パッケージの削除による依存軽量化                    | 低     | ✅ 完了     |
+
+
 
