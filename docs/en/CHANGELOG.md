@@ -4,6 +4,20 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.5.6] - 2026-11-10
+
+### 🧘 Current Line Focus, Pomodoro Focus Timer & Zero-Dependency Ambient Soundscapes (v1.5.6)
+
+- **Current Line Focus Mode (`ZenMode / Editor`)**:
+  - Implemented an active cursor line highlight with neighboring lines dimmed for distraction-free typing immersion.
+  - Can be toggled via Settings ("General & Appearance"), TitleBar "Line Focus" button, or the Zen Mode floating toolbar.
+- **Pomodoro & Focus Timer (`FocusTimer`) (`ZenMode / Editor`)**:
+  - Introduced customizable 25m focus + 5m short break + 15m long break timer cycles.
+  - Added serene Web Audio chord chime notifications, session completion counters (🍅 x N), and compact floating toolbar integration.
+- **Zero-Dependency Ambient Sound Synthesizer (`AmbientSound`) (`ZenMode / Editor`)**:
+  - Engineered a pure Web Audio DSP synthesis engine (`ambientSound.ts`) requiring 0KB external audio assets.
+  - Generates real-time soundscapes: Gentle Rain, White Noise, Brook Stream, Forest Breeze, and Cosmic Meditation Drone with volume controls and quick toggles.
+
 ## [1.5.5] - 2026-11-10
 
 ### 🔍 Inline Find & Replace, Collapsible Outline, Revision History & Refactoring (v1.5.5)

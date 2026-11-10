@@ -151,6 +151,20 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         />
       </div>
 
+      {/* 現在行フォーカス */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>現在行フォーカス (Focus Mode)</div>
+          <div className="text-[10px] text-slate-400 font-sans">入力中のカーソル行を強調し、前後の行を薄暗く減光して執筆に没頭</div>
+        </div>
+        <input
+          type="checkbox"
+          checked={settings.currentLineFocus === true}
+          onChange={(e) => onUpdateSettings({ currentLineFocus: e.target.checked })}
+          className="w-4 h-4 rounded accent-cyan-500 cursor-pointer"
+        />
+      </div>
+
       {/* スマートペースト */}
       <div className="flex items-center justify-between">
         <div>

@@ -29,7 +29,9 @@ import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
 import { DualPaneWorkspace } from './components/DualPaneWorkspace';
 import { StatusBar } from './components/StatusBar';
-import { Minimize2, Upload } from 'lucide-react';
+import { Minimize2, Upload, Eye } from 'lucide-react';
+import { FocusTimer } from './components/FocusTimer';
+import { AmbientSoundControl } from './components/AmbientSoundControl';
 import { ModalGroup } from './components/ModalGroup';
 import { Toast, ToastMessage } from './components/Toast';
 import { logger } from './utils/logger';
@@ -582,6 +584,9 @@ export default function App() {
           onChangeTheme={handleChangeTheme}
           isDark={isDark}
           isDualPane={isDualPane}
+          settings={settings}
+          onUpdateSettings={handleUpdateSettings}
+          onTimerComplete={(msg) => setToast({ id: Date.now().toString(), message: msg, type: 'info', duration: 6000 })}
         />
       )}
 
@@ -642,12 +647,45 @@ export default function App() {
             />
           )}
 
-          {/* Zenモード時の浮遊解除ボタン */}
+          {/* Zenモード時の浮遊ツールバー */}
           {isZenMode && (
-            <div className="absolute top-3 right-4 z-40 transition-opacity opacity-50 hover:opacity-100">
+            <div className="absolute top-3 right-4 z-40 flex items-center gap-2 transition-opacity opacity-75 hover:opacity-100">
+              {/* ポモドーロタイマー */}
+              <FocusTimer
+                isDark={isDark}
+                compact
+                onTimerComplete={(msg) => setToast({ id: Date.now().toString(), message: msg, type: 'info', duration: 6000 })}
+              />
+
+              {/* 環境音コントロール */}
+              <AmbientSoundControl
+                isDark={isDark}
+                defaultType={settings.ambientSoundType}
+                defaultVolume={settings.ambientSoundVolume}
+                onSettingsChange={(type, vol) => handleUpdateSettings({ ambientSoundType: type, ambientSoundVolume: vol })}
+              />
+
+              {/* 現在行フォーカストグルボタン */}
+              <button
+                type="button"
+                onClick={() => handleUpdateSettings({ currentLineFocus: !settings.currentLineFocus })}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border shadow-lg backdrop-blur-md transition-all cursor-pointer ${
+                  settings.currentLineFocus
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-cyan-950'
+                    : isDark
+                    ? 'bg-slate-900/90 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-cyan-400'
+                    : 'bg-white/90 border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-cyan-700'
+                }`}
+                title={`現在行フォーカス: ${settings.currentLineFocus ? '有効 (カーソル行強調・減光中)' : '無効'}`}
+              >
+                <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden sm:inline">行フォーカス</span>
+              </button>
+
+              {/* Zenモード解除ボタン */}
               <button
                 onClick={() => setIsZenMode(false)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border shadow-lg backdrop-blur-md transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border shadow-lg backdrop-blur-md transition-all cursor-pointer ${
                   isDark
                     ? 'bg-slate-900/90 border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-amber-400'
                     : 'bg-white/90 border-slate-300 text-slate-800 hover:bg-slate-100 hover:text-amber-600'
@@ -655,7 +693,7 @@ export default function App() {
                 title="Zen集中執筆モードを解除 (Esc または Ctrl+Shift+Z)"
               >
                 <Minimize2 className="w-3.5 h-3.5 text-amber-500" />
-                <span>Zenモード解除 (Esc)</span>
+                <span>Zen解除 (Esc)</span>
               </button>
             </div>
           )}

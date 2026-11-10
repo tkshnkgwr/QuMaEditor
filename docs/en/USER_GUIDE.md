@@ -2,13 +2,13 @@
 
 **English** | [日本語版](../ja/USER_GUIDE.md)
 
-## 1. UI Components Overview (v1.5.5)
+## 1. UI Components Overview (v1.5.6)
 
 QuMaEditor features an intuitive Windows desktop-native layout:
 
 1. **Title Bar (Header)**:
    - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), line-ending badge (`LF`, `CRLF`), character and line counters.
-   - Right: Theme toggle (Light/Dark/System), version info (`v1.5.5`), settings button, native window controls.
+   - Right: Focus timer (🍅 Pomodoro), ambient sound BGM controls, line focus toggle, theme toggle (Light/Dark/System), version info (`v1.5.6`), settings button, native window controls.
    - Sub-bar: File / Template / Help dropdown menus (including "Backups & History..." and "Diff Comparison..."), view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
 2. **Left Sidebar (Sidebar & Outline)**:
    - **📁 Documents Tab**: Switch, search, tag-filter, favorite, and manage active/stored documents.
@@ -44,6 +44,10 @@ A distraction-free, full-screen writing sanctuary.
 ### Highlights
 - **Hidden UI Chrome**: Conceals title bar, toolbar, sidebar, and status bar for 100% writing focus.
 - **Centered Typography**: Centers the editor area to minimize eye and neck fatigue on wide monitors.
+- **Floating Focus Toolbar**: Convenient top-right floating toolbar providing one-click access to focus tools:
+  - **🍅 Pomodoro Timer**: 25m focus + 5m short break + 15m long break cycles with gentle Web Audio bell chime alerts.
+  - **🎧 Ambient Sound BGM**: Zero-dependency synthesis for rain, white noise, brook, breeze, and cosmic meditation drone with volume slider.
+  - **👁️ Current Line Focus (Focus Mode)**: Highlights active cursor line while dimming neighboring text for deep immersion.
 - **Instant Escape**: Resume full UI immediately with a single keystroke.
 
 ### How to Use

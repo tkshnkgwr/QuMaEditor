@@ -67,6 +67,8 @@ export const Editor: React.FC<EditorProps> = ({
   const [summaryErrorMessage, setSummaryErrorMessage] = useState<string | null>(null);
   const [isFindOpen, setIsFindOpen] = useState(false);
   const [findMode, setFindMode] = useState<'find' | 'replace'>('find');
+  const [currentCursorLine, setCurrentCursorLine] = useState<number>(1);
+  const [currentScrollTop, setCurrentScrollTop] = useState<number>(0);
 
   const tags = doc?.tags || [];
 
@@ -174,6 +176,7 @@ export const Editor: React.FC<EditorProps> = ({
       }
     }
     const col = pos - lastLineStart + 1;
+    setCurrentCursorLine(line);
     onCursorChange?.(line, col);
 
     if (settings.typewriterScroll) {
@@ -186,6 +189,7 @@ export const Editor: React.FC<EditorProps> = ({
     if (textareaRef.current) {
       saveCursorState();
       const { scrollTop, scrollHeight, clientHeight } = textareaRef.current;
+      setCurrentScrollTop(scrollTop);
       if (lineNumbersRef.current) {
         lineNumbersRef.current.scrollTop = scrollTop;
       }
@@ -814,6 +818,47 @@ export const Editor: React.FC<EditorProps> = ({
             paddingBottom: settings.typewriterScroll ? '50vh' : undefined,
           }}
         />
+
+        {/* 現在行フォーカス・ハイライト＆上下減光オーバーレイ */}
+        {settings.currentLineFocus && (
+          <div
+            className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
+            style={{
+              left: settings.lineNumbers && lineNumbersRef.current ? `${lineNumbersRef.current.offsetWidth}px` : '0px',
+            }}
+          >
+            {/* 現在行より上の減光エリア */}
+            <div
+              className={`absolute left-0 right-0 top-0 transition-all duration-75 ${
+                isDark ? 'bg-slate-950/65' : 'bg-slate-900/20'
+              }`}
+              style={{
+                height: `${Math.max(0, (currentCursorLine - 1) * ((settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)) + 12 - currentScrollTop)}px`,
+              }}
+            />
+            {/* 現在行のハイライトバー */}
+            <div
+              className={`absolute left-0 right-0 border-y transition-all duration-75 ${
+                isDark
+                  ? 'bg-cyan-500/10 border-cyan-500/30 shadow-xs shadow-cyan-950'
+                  : 'bg-amber-500/10 border-amber-500/30'
+              }`}
+              style={{
+                top: `${(currentCursorLine - 1) * ((settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)) + 12 - currentScrollTop}px`,
+                height: `${(settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)}px`,
+              }}
+            />
+            {/* 現在行より下の減光エリア */}
+            <div
+              className={`absolute left-0 right-0 bottom-0 transition-all duration-75 ${
+                isDark ? 'bg-slate-950/65' : 'bg-slate-900/20'
+              }`}
+              style={{
+                top: `${Math.max(0, currentCursorLine * ((settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)) + 12 - currentScrollTop)}px`,
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* 大容量ファイルの遅延読み込み（部分表示中）アクションバー */}

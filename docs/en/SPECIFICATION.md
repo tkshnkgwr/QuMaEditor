@@ -23,6 +23,9 @@ QuMaEditor is a performance-first desktop Markdown editor built with **Tauri v2*
 | **Editing**       | Underline Shortcut (`Ctrl+U`)                | Inserts `<u>...</u>` tags and wraps selection via `Ctrl+U`                                                                     |
 | **Editing**       | Toolbar Mermaid Template Dropdown            | One-click insertion of 8 major diagram templates (flowchart, sequence, state, class, ER, mindmap, gantt, git)                  |
 | **Editing**       | Inline Find & Replace Bar (`Ctrl+F`/`Ctrl+H`) | `FindReplaceBar` with case/whole-word/regex toggle, match counters, jump navigation, single & batch replace                    |
+| **Editing**       | Current Line Focus (Focus Mode)              | Active cursor line highlight with neighboring text dimming overlays (`pointer-events-none`)                                    |
+| **Focus / Timer** | Pomodoro Focus Timer (`FocusTimer`)          | 25m focus + 5m/15m break cycles, Web Audio chord bell chime, session counter, Zen toolbar & TitleBar integration                |
+| **Focus / Sound** | Ambient Sound BGM DSP Synthesizer           | Zero-deps real-time Web Audio synthesis for rain, white noise, brook stream, breeze, and space meditation drone (0KB footprint)|
 | **Proofreading**  | Japanese Proofreading & Syntax Linting       | Rust background worker checking duplicate particles, variant spellings, brackets, and code blocks                              |
 | **Navigation**    | Heading Outline & TOC Tree                   | Native H1~H6 extraction, indentation badges, keyword filter, bi-directional jump scrolling                                     |
 | **Navigation**    | Collapsible Heading Outline (TOC)            | Heading collapse/expand toggles (`ChevronDown`/`Right`) and global expand-all / collapse-all buttons (`Chevrons`)               |
@@ -86,7 +89,7 @@ stateDiagram-v2
 
 | Item     | Details                                  |
 | :------- | :--------------------------------------- |
-| Version  | v1.5.5                                   |
+| Version  | v1.5.6                                   |
 | OS       | Windows 10 / 11 (Tauri v2 Native Window) |
 | Runtime  | Rust Native Engine + WebView2            |
 | Frontend | React 19 + TypeScript 5.8                |

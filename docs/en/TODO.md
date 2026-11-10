@@ -8,6 +8,12 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.5.6 Release (2026-11-10)
+
+- [x] **Current Line Focus Mode (`ZenMode / Editor`)**: Highlights the active cursor line and dims neighboring lines for distraction-free typing. Accessible via settings, TitleBar, and Zen floating toolbar.
+- [x] **Pomodoro & Focus Timer (`FocusTimer`) (`ZenMode / Editor`)**: Integrated 25min focus + 5min/15min break cycles, Web Audio bell chime notifications, completed session counters (🍅 x N), with Zen mode floating toolbar and TitleBar integration.
+- [x] **Real-Time Ambient Sound Generator (`AmbientSound`) (`ZenMode / Editor`)**: Zero-dependency Web Audio DSP synthesizer generating gentle rain, white noise, brook stream, forest breeze, and cosmic meditation drone with volume controls and zero network asset footprint.
+
 ### v1.5.5 Release (2026-11-10)
 
 - [x] **In-Editor Inline Find & Replace Bar (`Editor / Search`)**: Added floating find & replace bar triggered via `Ctrl+F` and `Ctrl+H`. Includes case-sensitive (Aa), whole-word (\b), regex (.*) toggles, real-time match counts (`3 / 12`), Enter / Shift+Enter navigation, single replace, batch replace-all, and Esc dismissal with focus restoration.
@@ -124,9 +130,9 @@ List of completed features and upcoming development tasks for QuMaEditor.
 | 6   | `Preview / Syntax`     | **Syntax Highlighting Expansion & Themes** — Expand Prism grammar rules for major languages and allow preview theme fine-tuning              | Low      | ✅ Completed  |
 | 7   | `ZenMode / Editor`     | **Zen Mode Audio Mute** — Automatically mute sounds/alerts during Zen focus mode                                                             | Medium   | 🔲 Proposed  |
 | 8   | `ZenMode / Editor`     | **Zen Mode Notification Suppression** — Suppress toasts/popups during Zen mode                                                               | Medium   | 🔲 Proposed  |
-| 9   | `ZenMode / Editor`     | **Current Line Focus** — Dim non-active lines to emphasize the current cursor line                                                           | Medium   | 🔲 Proposed  |
-| 10  | `ZenMode / Editor`     | **Pomodoro / Focus Timer** — Integrated 25min focus + 5min break timer                                                                       | Low      | 🔲 Proposed  |
-| 11  | `ZenMode / Editor`     | **Ambient Background Sounds** — Rain, white noise, cafe sounds for concentration                                                             | Low      | 🔲 Proposed  |
+| 9   | `ZenMode / Editor`     | **Current Line Focus** — Dim non-active lines and highlight active cursor line for distraction-free typing                                    | Medium   | ✅ Completed  |
+| 10  | `ZenMode / Editor`     | **Pomodoro / Focus Timer** — 25min focus + 5min/15min break cycles, Web Audio bell chime, session counter                                    | Low      | ✅ Completed  |
+| 11  | `ZenMode / Editor`     | **Ambient Background Sounds** — Real-time Web Audio synthesis for rain, white noise, brook, breeze, and drone                                | Low      | ✅ Completed  |
 | 12  | `Plugin System`        | **Plugin & Extension Architecture Exploration**                                                                                              | Low      | 🔲 Proposed  |
 | 13  | `Cloud Storage`        | **Cloud Sync Prototype (Google Drive / OneDrive)**                                                                                           | Low      | 🔲 Proposed  |
 | 14  | `Multi Window`         | **Multi-Window / Tab Detachment Exploration**                                                                                                | Low      | 🔲 Proposed  |
