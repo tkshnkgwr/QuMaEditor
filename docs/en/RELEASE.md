@@ -4,7 +4,7 @@
 
 ## 1. Versioning Policy
 
-This project strictly adheres to Semantic Versioning 2.0.0 (`MAJOR.MINOR.PATCH`, e.g., `1.5.3`).
+This project strictly adheres to Semantic Versioning 2.0.0 (`MAJOR.MINOR.PATCH`, e.g., `1.5.5`).
 
 - **MAJOR**: Incompatible API or structural changes.
 - **MINOR**: Backward-compatible feature additions.
@@ -25,6 +25,7 @@ When bumping the version, synchronize all relevant files according to the Single
 | User Guides (EN / JA)              | [`docs/en/USER_GUIDE.md`](USER_GUIDE.md) / [`docs/ja/USER_GUIDE.md`](../ja/USER_GUIDE.md)             |
 | Release Notes (EN / JA)            | [`docs/en/CHANGELOG.md`](CHANGELOG.md) / [`docs/ja/CHANGELOG.md`](../ja/CHANGELOG.md)                 |
 | TODO Lists (EN / JA)               | [`docs/en/TODO.md`](TODO.md) / [`docs/ja/TODO.md`](../ja/TODO.md)                                     |
+| Test Reports (EN / JA)             | [`docs/en/TEST_REPORT.md`](TEST_REPORT.md) / [`docs/ja/TEST_REPORT.md`](../ja/TEST_REPORT.md)         |
 
 ---
 
@@ -42,7 +43,7 @@ Continuous integration and automated release packaging workflows are configured 
 
 ### 3.2 Release Workflow (`.github/workflows/release.yml`)
 
-- **Trigger**: Pushing a `v*` tag (e.g. `git push origin v1.5.3`) or manual trigger via `workflow_dispatch`
+- **Trigger**: Pushing a `v*` tag (e.g. `git push origin v1.5.5`) or manual trigger via `workflow_dispatch`
 - **Tasks**:
   - Full quality verification & all 44 unit tests
   - Automated building of Windows desktop installers (`.msi` / `.exe`)
@@ -61,6 +62,6 @@ npm run test:rust
 npm run lint
 
 # 2. Tag and Push (Triggers GitHub Actions Release Workflow)
-git tag -a v1.5.3 -m "QuMaEditor v1.5.3 Release"
-git push origin v1.5.3
+git tag -a v1.5.5 -m "QuMaEditor v1.5.5 Release"
+git push origin v1.5.5
 ```

@@ -5,6 +5,7 @@ import { decodeFileContent, prepareEncodedBlob } from '../utils/encodingUtils';
 import { parseYamlFrontMatter, buildFullMarkdownWithFrontMatter } from '../utils/yamlUtils';
 import { generatePdfNative, exportHtmlFullNative } from '../utils/tauriNative';
 import { saveStoredDocs } from '../utils/storage';
+import { saveSnapshot } from '../utils/snapshotManager';
 import { logger } from '../utils/logger';
 import { ToastMessage } from '../components/Toast';
 
@@ -89,6 +90,7 @@ export function useFileOperations({
           return updated;
         });
 
+        saveSnapshot({ ...currentDoc, filePath: updatedDocPath, title: newTitle }, 'save');
         setSaveStatus('saved_file');
         const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         setLastSavedTime(timeStr);

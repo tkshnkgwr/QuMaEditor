@@ -10,6 +10,9 @@ import {
   Sparkles,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronsDownUp,
   FilePlus,
   Download,
   Globe,
@@ -101,6 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [filterMode, setFilterMode] = useState<'all' | 'favorites'>('all');
   const [nativeHits, setNativeHits] = useState<SearchHit[] | null>(null);
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
+  const [collapsedHeadings, setCollapsedHeadings] = useState<Set<number>>(new Set());
   const [isResizing, setIsResizing] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ id: string; x: number; y: number } | null>(null);
 
@@ -201,9 +205,71 @@ export const Sidebar: React.FC<SidebarProps> = ({
   });
 
   const normalizedOutlineFilter = outlineFilter.trim().toLowerCase();
-  const filteredHeadings = headings.filter((h) =>
-    h.text.toLowerCase().includes(normalizedOutlineFilter)
-  );
+
+  // 見出しアウトラインの階層折りたたみ・子見出し判定
+  const { visibleHeadings, hasChildrenMap } = useMemo(() => {
+    const hasChildren = new Map<number, boolean>();
+    for (let i = 0; i < headings.length; i++) {
+      const current = headings[i];
+      const next = headings[i + 1];
+      hasChildren.set(current.lineNumber, next ? next.level > current.level : false);
+    }
+
+    if (normalizedOutlineFilter) {
+      // フィルター入力中は一致する見出しをすべて表示
+      const filtered = headings.filter((h) =>
+        h.text.toLowerCase().includes(normalizedOutlineFilter)
+      );
+      return { visibleHeadings: filtered, hasChildrenMap: hasChildren };
+    }
+
+    const visible: typeof headings = [];
+    let hiddenBelowLevel: number | null = null;
+
+    for (let i = 0; i < headings.length; i++) {
+      const h = headings[i];
+
+      if (hiddenBelowLevel !== null) {
+        if (h.level > hiddenBelowLevel) {
+          continue;
+        } else {
+          hiddenBelowLevel = null;
+        }
+      }
+
+      visible.push(h);
+
+      if (collapsedHeadings.has(h.lineNumber) && hasChildren.get(h.lineNumber)) {
+        hiddenBelowLevel = h.level;
+      }
+    }
+
+    return { visibleHeadings: visible, hasChildrenMap: hasChildren };
+  }, [headings, collapsedHeadings, normalizedOutlineFilter]);
+
+  const toggleCollapseHeading = (e: React.MouseEvent, lineNumber: number) => {
+    e.stopPropagation();
+    setCollapsedHeadings((prev) => {
+      const next = new Set(prev);
+      if (next.has(lineNumber)) {
+        next.delete(lineNumber);
+      } else {
+        next.add(lineNumber);
+      }
+      return next;
+    });
+  };
+
+  const handleCollapseAll = () => {
+    const allParentLines = headings
+      .filter((h, idx) => idx + 1 < headings.length && headings[idx + 1].level > h.level)
+      .map((h) => h.lineNumber);
+    setCollapsedHeadings(new Set(allParentLines));
+  };
+
+  const handleExpandAll = () => {
+    setCollapsedHeadings(new Set());
+  };
 
   const formatDate = (isoString: string) => {
     try {
@@ -539,21 +605,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </span>
       </div>
 
-      {/* 目次内検索フィルター */}
-      <div className={`p-2.5 border-b ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
-        <div className="relative">
-          <Search className={`w-3.5 h-3.5 absolute left-2.5 top-2.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-          <input
-            type="text"
-            placeholder="見出しを絞り込み検索..."
-            value={outlineFilter}
-            onChange={(e) => setOutlineFilter(e.target.value)}
-            className={`w-full text-xs rounded pl-8 pr-3 py-1.5 focus:outline-none border transition-colors ${
-              isDark
-                ? 'bg-slate-900 border-slate-800 text-slate-200 focus:border-cyan-500/80 placeholder:text-slate-500'
-                : 'bg-white border-slate-300 text-slate-800 focus:border-cyan-600 placeholder:text-slate-400'
-            }`}
-          />
+      {/* 目次内検索フィルター ＆ 折りたたみ一括操作 */}
+      <div className={`p-2.5 border-b space-y-1.5 ${isDark ? 'border-slate-800/80' : 'border-slate-200'}`}>
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <Search className={`w-3.5 h-3.5 absolute left-2.5 top-2.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+            <input
+              type="text"
+              placeholder="見出しを絞り込み検索..."
+              value={outlineFilter}
+              onChange={(e) => setOutlineFilter(e.target.value)}
+              className={`w-full text-xs rounded pl-8 pr-3 py-1.5 focus:outline-none border transition-colors ${
+                isDark
+                  ? 'bg-slate-900 border-slate-800 text-slate-200 focus:border-cyan-500/80 placeholder:text-slate-500'
+                  : 'bg-white border-slate-300 text-slate-800 focus:border-cyan-600 placeholder:text-slate-400'
+              }`}
+            />
+          </div>
+          {/* 一括展開・折りたたみボタン */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              onClick={handleExpandAll}
+              className={`p-1.5 rounded transition-colors cursor-pointer ${
+                isDark ? 'text-slate-400 hover:text-cyan-400 hover:bg-slate-800' : 'text-slate-600 hover:text-cyan-800 hover:bg-slate-200'
+              }`}
+              title="すべて展開"
+            >
+              <ChevronsUpDown className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleCollapseAll}
+              className={`p-1.5 rounded transition-colors cursor-pointer ${
+                isDark ? 'text-slate-400 hover:text-cyan-400 hover:bg-slate-800' : 'text-slate-600 hover:text-cyan-800 hover:bg-slate-200'
+              }`}
+              title="すべて折りたたみ"
+            >
+              <ChevronsDownUp className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -567,26 +656,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
               本文に <code className={`px-1 py-0.5 rounded font-mono ${isDark ? 'bg-slate-900 text-cyan-400' : 'bg-slate-200 text-cyan-800'}`}># 見出し</code> を記述すると<br />自動で目次が生成されます
             </p>
           </div>
-        ) : filteredHeadings.length === 0 ? (
+        ) : visibleHeadings.length === 0 ? (
           <div className={`p-6 text-center text-xs select-none ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
             該当する見出しは見つかりません
           </div>
         ) : (
           <div className="space-y-0.5">
-            {filteredHeadings.map((heading, idx) => {
+            {visibleHeadings.map((heading, idx) => {
+              const hasChild = hasChildrenMap.get(heading.lineNumber);
+              const isCollapsed = collapsedHeadings.has(heading.lineNumber);
+
               // 見出しレベルに応じた階層インデントとバッジスタイル
               const indentClass =
                 heading.level === 1
-                  ? 'pl-1.5'
+                  ? 'pl-1'
                   : heading.level === 2
-                  ? 'pl-4'
+                  ? 'pl-3.5'
                   : heading.level === 3
-                  ? 'pl-7'
+                  ? 'pl-6'
                   : heading.level === 4
-                  ? 'pl-9'
+                  ? 'pl-8'
                   : heading.level === 5
-                  ? 'pl-11'
-                  : 'pl-12';
+                  ? 'pl-10'
+                  : 'pl-11';
 
               const badgeStyle =
                 heading.level === 1
@@ -610,12 +702,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div
                   key={idx}
                   onClick={() => onJumpToHeading?.(heading.lineNumber, heading.text)}
-                  className={`group flex items-center justify-between gap-1.5 py-1.5 pr-2 rounded-md cursor-pointer transition-all hover:bg-cyan-500/10 ${indentClass} ${
+                  className={`group flex items-center justify-between gap-1 py-1.5 pr-2 rounded-md cursor-pointer transition-all hover:bg-cyan-500/10 ${indentClass} ${
                     isDark ? 'hover:text-cyan-300' : 'hover:text-cyan-900 hover:bg-cyan-50'
                   }`}
                   title={`行 ${heading.lineNumber}: ${heading.text} へジャンプ`}
                 >
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    {/* 階層折りたたみトグルアイコン */}
+                    {hasChild ? (
+                      <button
+                        type="button"
+                        onClick={(e) => toggleCollapseHeading(e, heading.lineNumber)}
+                        className={`p-0.5 rounded hover:bg-slate-700/50 transition-colors cursor-pointer shrink-0 ${
+                          isDark ? 'text-slate-400 hover:text-cyan-300' : 'text-slate-500 hover:text-cyan-800'
+                        }`}
+                        title={isCollapsed ? '展開' : '折りたたみ'}
+                      >
+                        {isCollapsed ? (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    ) : (
+                      <span className="w-3.5 h-3.5 shrink-0" />
+                    )}
+
                     {/* レベルバッジ (H1, H2, H3...) */}
                     <span className={`text-[9px] px-1 py-0.2 rounded font-mono border shrink-0 ${badgeStyle}`}>
                       H{heading.level}

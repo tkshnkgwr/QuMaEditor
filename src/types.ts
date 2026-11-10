@@ -135,3 +135,14 @@ export interface SelectionState {
   start: number;
   end: number;
 }
+
+export interface DocumentSnapshot {
+  id: string;
+  docId: string;
+  docTitle: string;
+  timestamp: string;
+  content: string;
+  charCount: number;
+  lineCount: number;
+  trigger: 'auto' | 'save' | 'manual';
+}

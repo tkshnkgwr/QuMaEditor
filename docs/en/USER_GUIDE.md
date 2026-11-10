@@ -2,17 +2,17 @@
 
 **English** | [日本語版](../ja/USER_GUIDE.md)
 
-## 1. UI Components Overview (v1.5.4)
+## 1. UI Components Overview (v1.5.5)
 
 QuMaEditor features an intuitive Windows desktop-native layout:
 
 1. **Title Bar (Header)**:
    - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), line-ending badge (`LF`, `CRLF`), character and line counters.
-   - Right: Theme toggle (Light/Dark/System), version info (`v1.5.4`), settings button, native window controls.
-   - Sub-bar: File / Template / Help dropdown menus, view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
+   - Right: Theme toggle (Light/Dark/System), version info (`v1.5.5`), settings button, native window controls.
+   - Sub-bar: File / Template / Help dropdown menus (including "Backups & History..." and "Diff Comparison..."), view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
 2. **Left Sidebar (Sidebar & Outline)**:
    - **📁 Documents Tab**: Switch, search, tag-filter, favorite, and manage active/stored documents.
-   - **📑 Outline / TOC Tab**: Instantly extracts H1~H6 headings into a hierarchical tree. Clicking any heading jumps both the editor cursor (scrolling into center view) and the preview smoothly.
+   - **📑 Outline / TOC Tab**: Instantly extracts H1~H6 headings into a hierarchical tree. Includes per-heading collapse/expand toggles (`>` / `v`) and global expand-all / collapse-all buttons in the TOC header. Clicking any heading jumps both the editor cursor (scrolling into center view) and the preview smoothly.
 3. **Formatting Toolbar**:
    - Headings (H1~H3), Bold, Italic, Underline, Strikethrough, List, Task, Table, Code, Quote, Link, Image upload, Horizontal Rule, Timestamp.
    - **Mermaid Template Dropdown**: Click the Network icon in the toolbar to insert one-click starter snippets for 8 major diagram types: flowchart (`flowchart TD`), sequence (`sequenceDiagram`), state (`stateDiagram-v2`), class (`classDiagram`), ER (`erDiagram`), mindmap (`mindmap`), gantt (`gantt`), and git graph (`gitGraph`).
@@ -21,12 +21,13 @@ QuMaEditor features an intuitive Windows desktop-native layout:
    - **Heading Insertion**: Inserts `# ` markers at the beginning of the active cursor line.
    - **Native Undo/Redo Integration**: Text wrapping via shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`) or toolbar buttons seamlessly integrates into the browser's native Undo history (`Ctrl + Z` to revert, `Ctrl + Y` to redo) while preserving text selection.
 4. **Workspace (Editor & Preview)**:
+   - **In-Editor Inline Find & Replace Bar (`Ctrl+F` / `Ctrl+H`)**: Floating search & replace bar with case-sensitivity, whole-word matching, regex support, live match count (`3 / 12`), Enter / Shift+Enter navigation, single replace, and batch replace-all.
    - **Side-by-Side Dual-Pane Editing & Preview**: Open up to 2 documents side-by-side for simultaneous comparison and editing. Launch via right-click "Open in Right Pane" in the sidebar or tabs, or use the "Side-by-Side" button on the tab bar. View mode (Editor/Preview) synchronizes across both panes.
    - **Editor Tab Indentation & Nested Lists**: Tab key stays focused, supporting nested bullet level increment (`- ` ➔ `  - `), multi-line block indent, and `Shift + Tab` unindent.
    - **Zero-Latency Typing**: Bypasses preview parsing in "Editor Only" mode for lag-free typing.
    - **`Ctrl + E` Focus Restoration**: Restores cursor position when toggling between editor and preview.
    - **Enhanced PowerShell Syntax Highlighting**: Fully highlights parameters (`-Path`), comparison operators (`-eq`), numbers, and special variables for `powershell`, `pwsh`, `ps`, `posh`, and `ps1` code blocks.
-   - **Mermaid Diagrams & SVG Export**: Dynamic SVG diagram rendering with zoom controls (50%~600%, 100%↔200% toggle), fullscreen zoom modal, inline syntax error alerts, one-click **SVG image download/save**, and code copy. Diagrams also render automatically in standalone HTML exports.
+   - **Next-Gen Mermaid (Pele) & SVG Export**: Sub-millisecond zero-deps synchronous SVG diagram rendering (`pele`) with zoom controls (50%~600%, 100%↔200% toggle), fullscreen zoom modal, inline syntax error alerts, one-click **SVG image download/save**, and code copy. Diagrams also render automatically in standalone HTML exports.
 5. **Status Bar (Footer)**:
    - Persistence status badge (💾 Saved to Disk / 📦 Saved in App).
    - **"💾 Save to PC File" Button**: Dedicated one-click button for documents stored solely in browser LocalStorage.
@@ -176,6 +177,8 @@ QuMaEditor integrates Google Gemini API with seamless YAML Front Matter metadata
 | `Ctrl + S`         | Direct save to disk                                   |
 | `Ctrl + Shift + S` | Save As (choose file location)                        |
 | `Ctrl + W`         | Close current tab                                     |
+| `Ctrl + F`         | In-editor inline find bar (Find)                      |
+| `Ctrl + H`         | In-editor inline replace bar (Replace)                |
 | `Ctrl + Shift + F` | Markdown auto-formatting (align tables, lines)        |
 | `Ctrl + E`         | Toggle View Mode (Editor Only ↔ Preview Only)         |
 | `Ctrl + Z`         | Undo (reverts typing and text formatting)             |
@@ -191,5 +194,6 @@ QuMaEditor integrates Google Gemini API with seamless YAML Front Matter metadata
 | `Ctrl + Shift + D` | Open Document Diff Comparison modal                   |
 | `Ctrl + Shift + L` | Open System Activity Logs modal                       |
 | `Ctrl + Shift + Z` | Toggle Zen Focus Mode (Exit with `Esc`)               |
+| `Esc`              | Close find bar / Exit Zen Focus Mode                  |
 | `F1`               | Open Keyboard Shortcuts Help                          |
 

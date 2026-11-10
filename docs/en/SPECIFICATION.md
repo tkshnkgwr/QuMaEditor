@@ -22,10 +22,12 @@ QuMaEditor is a performance-first desktop Markdown editor built with **Tauri v2*
 | **Editing**       | Formatting Undo/Redo Integration             | `applyTextReplacementWithUndo` preserving native browser Undo/Redo stack, toolbar focus retention (`preventDefault`)           |
 | **Editing**       | Underline Shortcut (`Ctrl+U`)                | Inserts `<u>...</u>` tags and wraps selection via `Ctrl+U`                                                                     |
 | **Editing**       | Toolbar Mermaid Template Dropdown            | One-click insertion of 8 major diagram templates (flowchart, sequence, state, class, ER, mindmap, gantt, git)                  |
+| **Editing**       | Inline Find & Replace Bar (`Ctrl+F`/`Ctrl+H`) | `FindReplaceBar` with case/whole-word/regex toggle, match counters, jump navigation, single & batch replace                    |
 | **Proofreading**  | Japanese Proofreading & Syntax Linting       | Rust background worker checking duplicate particles, variant spellings, brackets, and code blocks                              |
 | **Navigation**    | Heading Outline & TOC Tree                   | Native H1~H6 extraction, indentation badges, keyword filter, bi-directional jump scrolling                                     |
+| **Navigation**    | Collapsible Heading Outline (TOC)            | Heading collapse/expand toggles (`ChevronDown`/`Right`) and global expand-all / collapse-all buttons (`Chevrons`)               |
 | **Preview**       | Pure Rust Native HTML Rendering              | Zero-latency 60fps rendering via `pulldown-cmark` + `syntect` with interactive task lists                                      |
-| **Preview**       | Complete Mermaid Preview Integration         | Seamless Rust preview mounting, zoom (50%~600%), fullscreen modal, syntax error notifications, and SHA-256 caching             |
+| **Preview**       | Next-Gen Mermaid (Pele) & Utilities          | Zero-deps sub-millisecond sync SVG rendering (`pele`), zoom, fullscreen, error badges, SVG export, template                    |
 | **Preview**       | Enhanced PowerShell Highlighting             | Prism/Refractor grammar extension for parameters, operators, numbers, and aliases (`ps`, `posh`)                               |
 | **File I/O**      | Atomic File Persistence & Instant mtime      | Staged temporary write and OS-level atomic replace to prevent 0-byte corruption                                                |
 | **File I/O**      | Standalone HTML Export (Mermaid Auto-Render) | `export_html_full_native` embedding Mermaid CDN & auto-init scripts for browser standalone rendering & print CSS               |
@@ -33,6 +35,7 @@ QuMaEditor is a performance-first desktop Markdown editor built with **Tauri v2*
 | **File I/O**      | Memory-Mapped Zero-Copy Streaming            | OS virtual memory page cache integration via `memmap2` for instant 0s multi-gigabyte log loading                               |
 | **File I/O**      | Large File Streaming                         | `read_file_chunk_native` 1,500-line chunk on-demand lazy loading                                                               |
 | **Data Safety**   | LocalStorage Dual Persistence                | 3-second debounce auto-save, 100% crash recovery                                                                               |
+| **Data Safety**   | Local Automatic Backups & Snapshots          | Automatic snapshots on save (max 20/doc, 100 global), failsafe rollback modal with pre-restore backup (`RevisionHistoryModal`)  |
 | **Sync**          | Bidirectional Sync Manager                   | Centralized `FileSyncManager` resolving mtime locks, race conditions, and self-save events                                     |
 | **Sync**          | Native OS-Level File Watching                | Windows kernel event listening (`ReadDirectoryChangesW`) via `notify` with 0% idle CPU overhead                                |
 | **Search**        | Workspace Parallel Full-Text Search          | Multithreaded parallel directory scan via `rayon` combined with in-memory inverted indexing                                    |
@@ -43,6 +46,7 @@ QuMaEditor is a performance-first desktop Markdown editor built with **Tauri v2*
 | **AI Summary**    | AI Document Summary & Hybrid Fallback        | Google Gemini API (`@google/genai`), user model choice, prompt editing, connectivity test & local fallback                     |
 | **Metadata**      | YAML Front Matter & Summary Cards            | Rust `yaml.rs` & React sync for `summary` / `summary_type`, editor controls, and preview summary card                          |
 | **UI / Settings** | Modular Settings Modal (`SettingsModal`)     | 3-tab layout (General, AI, Storage) strictly adhering to <1,000 lines architecture guidelines                                  |
+| **Architecture**  | Strict Modular Decomposition (<1,000 Lines)  | `index.css` (114 lines), `App.tsx` (827 lines), extracted hooks (`useAppTheme`, `useTextAnalysis`, `useAutoSaveManager`)      |
 
 
 ---
@@ -82,7 +86,7 @@ stateDiagram-v2
 
 | Item     | Details                                  |
 | :------- | :--------------------------------------- |
-| Version  | v1.5.4                                   |
+| Version  | v1.5.5                                   |
 | OS       | Windows 10 / 11 (Tauri v2 Native Window) |
 | Runtime  | Rust Native Engine + WebView2            |
 | Frontend | React 19 + TypeScript 5.8                |

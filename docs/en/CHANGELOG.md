@@ -4,6 +4,28 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.5.5] - 2026-11-10
+
+### 🔍 Inline Find & Replace, Collapsible Outline, Revision History & Refactoring (v1.5.5)
+
+- **In-Editor Inline Find & Replace Bar (`Editor / Search`)**:
+  - Implemented floating `FindReplaceBar` triggered via `Ctrl + F` (Find) and `Ctrl + H` (Replace).
+  - Supported case-sensitive (`Aa`), whole-word (`\b`), regex (`.*`) toggles, and live match counters (`3 / 12`).
+  - Added Next (Enter / Down Arrow), Previous (Shift + Enter / Up Arrow), single Replace, batch Replace All, and Esc dismissal with editor focus restoration.
+- **Collapsible Heading Outline & TOC Tree (`Sidebar / Outline`)**:
+  - Added per-heading collapse/expand toggles (`ChevronDown` / `ChevronRight`) for parent headings (H1–H5) in the sidebar TOC tab.
+  - Added global expand-all and collapse-all buttons (`ChevronsUpDown` / `ChevronsDownUp`) in the TOC header for fast long-document navigation.
+- **Local Automatic Backups & Version Snapshot History (`File / Backup`)**:
+  - Implemented automatic local snapshot creation upon manual save and debounced auto-save (LocalStorage `markdown_editor_snapshots_v1`, up to 20/doc and 100 global rotation).
+  - Introduced the Revision History modal (`RevisionHistoryModal`), accessible via File > "Backups & History..." in the TitleBar menu.
+  - Added snapshot timestamping, character difference calculation, trigger type tagging, live content preview, manual snapshot capture, and per-item deletion.
+  - Built-in failsafe: creating an automatic pre-restore backup before restoring any older snapshot.
+- **Code Decomposition Refactoring (<1,000 Lines Threshold) (`Architecture / Refactoring`)**:
+  - `index.css` (950 ➔ **114 lines**): Separated print styles (`src/styles/print.css`, ~330 lines) and Markdown rendering styles (`src/styles/markdown.css`, ~510 lines).
+  - `App.tsx` (987 ➔ **827 lines**): Extracted theme/settings sync (`useAppTheme.ts`), text analysis/linting (`useTextAnalysis.ts`), and auto-save/snapshot coordination (`useAutoSaveManager.ts`).
+- **MermaidRenderer Zoom Tooltip Fix (`Preview / Mermaid`)**:
+  - Corrected zoom toggle tooltip from `300% ↔ 100%` to match actual behavior (`200% ↔ 100%`).
+
 ## [1.5.4] - 2026-11-06
 
 ### ⚡ Next-Gen Mermaid Renderer (Pele) & Dependency Optimization (v1.5.4)

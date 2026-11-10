@@ -5,7 +5,7 @@
 ## 1. バージョン管理規約
 
 本プロジェクトは セマンティック バージョニング (Semantic Versioning 2.0.0) に準拠します。
-`MAJOR.MINOR.PATCH` (例: `1.5.3`)
+`MAJOR.MINOR.PATCH` (例: `1.5.5`)
 
 - **MAJOR**: 互換性のないUI/データ構造の変更
 - **MINOR**: 後方互換性のある新機能追加
@@ -26,6 +26,7 @@
 | ユーザーガイド (日・英)      | [`docs/ja/USER_GUIDE.md`](USER_GUIDE.md) / [`docs/en/USER_GUIDE.md`](../en/USER_GUIDE.md)             |
 | 更新履歴 (日・英)            | [`docs/ja/CHANGELOG.md`](CHANGELOG.md) / [`docs/en/CHANGELOG.md`](../en/CHANGELOG.md)                 |
 | TODO リスト (日・英)         | [`docs/ja/TODO.md`](TODO.md) / [`docs/en/TODO.md`](../en/TODO.md)                                     |
+| テスト実行報告書 (日・英)    | [`docs/ja/TEST_REPORT.md`](TEST_REPORT.md) / [`docs/en/TEST_REPORT.md`](../en/TEST_REPORT.md)         |
 
 ---
 
@@ -43,7 +44,7 @@ GitHub Actions による品質検証・自動リリースワークフローが�
 
 ### 3.2 リリース自動化ワークフロー (`.github/workflows/release.yml`)
 
-- **トリガー**: `v*` タグのプッシュ（例: `git push origin v1.5.3`）または GitHub 上での手動トリガー (`workflow_dispatch`)
+- **トリガー**: `v*` タグのプッシュ（例: `git push origin v1.5.5`）または GitHub 上での手動トリガー (`workflow_dispatch`)
 - **処理内容**:
   - CI 品質検証 & 全44件ユニットテスト通過の事前確認
   - Windows デスクトップアプリバイナリ (`.msi` / `.exe` インストーラー) の全自動ビルド
@@ -62,6 +63,6 @@ npm run test:rust
 npm run lint
 
 # 2. リリースタグの付与とプッシュ (GitHub Actions 自動リリース発動)
-git tag -a v1.5.3 -m "QuMaEditor v1.5.3 Release"
-git push origin v1.5.3
+git tag -a v1.5.5 -m "QuMaEditor v1.5.5 Release"
+git push origin v1.5.5
 ```

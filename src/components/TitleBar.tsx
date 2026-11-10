@@ -26,6 +26,7 @@ import {
   Moon,
   Monitor,
   GitCompare,
+  History,
   ScrollText,
   Globe,
   RefreshCw,
@@ -86,6 +87,7 @@ interface TitleBarProps {
   onOpenHelpGuide?: () => void;
   onOpenShortcuts?: () => void;
   onOpenDiffModal?: () => void;
+  onOpenRevisionHistory?: () => void;
   onOpenLogModal?: () => void;
   onOpenBatchConvert?: () => void;
   onOpenStatsModal?: () => void;
@@ -123,6 +125,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   onOpenHelpGuide,
   onOpenShortcuts,
   onOpenDiffModal,
+  onOpenRevisionHistory,
   onOpenLogModal,
   onOpenBatchConvert,
   onOpenStatsModal,
@@ -501,6 +504,31 @@ export const TitleBar: React.FC<TitleBarProps> = ({
                   <Copy className="w-3.5 h-3.5 text-blue-500" />
                   複製を作成
                 </button>
+                <div className={`my-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}></div>
+                {onOpenRevisionHistory && (
+                  <button
+                    onClick={() => {
+                      onOpenRevisionHistory();
+                      setActiveMenu(null);
+                    }}
+                    className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800 text-cyan-300' : 'hover:bg-slate-100 text-cyan-800 font-medium'}`}
+                  >
+                    <History className="w-3.5 h-3.5 text-cyan-400" />
+                    バックアップ・履歴...
+                  </button>
+                )}
+                {onOpenDiffModal && (
+                  <button
+                    onClick={() => {
+                      onOpenDiffModal();
+                      setActiveMenu(null);
+                    }}
+                    className={`w-full px-3 py-1.5 text-left flex items-center gap-2 ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+                  >
+                    <GitCompare className="w-3.5 h-3.5 text-indigo-400" />
+                    差分比較 (Diff)...
+                  </button>
+                )}
                 <div className={`my-1 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}></div>
                 <button
                   onClick={() => {

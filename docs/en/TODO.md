@@ -8,6 +8,14 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.5.5 Release (2026-11-10)
+
+- [x] **In-Editor Inline Find & Replace Bar (`Editor / Search`)**: Added floating find & replace bar triggered via `Ctrl+F` and `Ctrl+H`. Includes case-sensitive (Aa), whole-word (\b), regex (.*) toggles, real-time match counts (`3 / 12`), Enter / Shift+Enter navigation, single replace, batch replace-all, and Esc dismissal with focus restoration.
+- [x] **Collapsible Heading Outline & TOC Tree (`Sidebar / Outline`)**: Added parent heading collapse/expand toggles (`ChevronDown` / `ChevronRight`) in the sidebar outline tab, along with global expand-all / collapse-all buttons (`ChevronsUpDown` / `ChevronsDownUp`) in the TOC header.
+- [x] **Local Automatic Backups & Version Snapshot History (`File / Backup`)**: Implemented generational local snapshots on save (manual and debounced auto-save, up to 20/doc and 100 global), character diff calculation, manual snapshot triggering, and failsafe restoration modal (`RevisionHistoryModal`) with automatic pre-restore backup.
+- [x] **Module Decomposition Refactoring (<1,000 Line Threshold) (`Architecture / Refactoring`)**: Split `index.css` (950 ➔ 114 lines) into `src/styles/print.css` and `src/styles/markdown.css`. Refactored `App.tsx` (987 ➔ 827 lines) by extracting `useAppTheme.ts`, `useTextAnalysis.ts`, and `useAutoSaveManager.ts`.
+- [x] **MermaidRenderer Zoom Toggle Tooltip Fix (`Preview / Mermaid`)**: Corrected zoom toggle tooltip from `300% ↔ 100%` to match actual behavior (`200% ↔ 100%`).
+
 ### v1.5.4 Release (2026-11-06)
 
 - [x] **Next-Gen Mermaid Renderer (Pele) Migration (`Preview / Mermaid`)**: Replaced `mermaid.js` with zero-dependency `pele` (v1.13.0). Enabled sub-millisecond synchronous SVG rendering, Obsidian-native CSS variables, Vite build time optimization (44s ➔ 12s), and ~42% module reduction (4,930 ➔ 2,854).
@@ -126,6 +134,12 @@ List of completed features and upcoming development tasks for QuMaEditor.
 | 16  | `Preview / Mermaid`    | **Complete Mermaid Preview Integration & Utilities** — Zoom, fullscreen, SVG download, HTML export, toolbar templates                        | High     | ✅ Completed |
 | 17  | `Preview / Mermaid`    | **Next-Gen Mermaid Renderer (Pele) Migration Exploration** — Zero-deps, sub-millisecond rendering (<1ms), ~6x smaller bundle, native CSS theme sync | High     | ✅ Completed |
 | 18  | `Dependencies / Build` | **Unused Dependencies Cleanup (express / @types/express)** — Remove obsolete dependencies to streamline package footprint                     | Low      | ✅ Completed |
+| 19  | `Architecture / Code`  | **App.tsx & index.css Line Count Monitoring & Decomposition** — Refactored to 827 / 114 lines via custom hooks & style split                 | Medium   | ✅ Completed  |
+| 20  | `Editor / Search`      | **In-Editor Inline Find & Replace Bar** — Search match highlights, next/previous match jump, and batch text replacement (Ctrl+F/Ctrl+H)      | High     | ✅ Completed  |
+| 21  | `Sidebar / Outline`    | **Collapsible Heading Outline & TOC Tree** — Expand/collapse subheadings in document outline for long documents                              | Medium   | ✅ Completed  |
+| 22  | `Preview / Math`       | **LaTeX Mathematical Expression Rendering (KaTeX)** — Support inline `$..$` and block `$$..$$` math rendering and export                     | Low      | 🔲 Proposed  |
+| 23  | `Performance / Editor` | **Virtual Scrolling for Ultra-Large Files** — Windowed rendering DOM virtualization for instant rendering of 100k+ line documents           | Low      | 🔲 Proposed  |
+| 24  | `File / Backup`        | **Local Automatic Backups & Version Snapshot History** — Generational snapshots to safeguard against inadvertent overwrites or loss          | Medium   | ✅ Completed  |
 
 
 

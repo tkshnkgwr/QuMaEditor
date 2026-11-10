@@ -10,22 +10,15 @@ import {
 } from './types';
 import {
   saveStoredDocs,
-  loadSettings,
-  saveSettings,
 } from './utils/storage';
-import { calculateTextStats, toggleTaskInMarkdown } from './utils/markdownUtils';
+import { toggleTaskInMarkdown } from './utils/markdownUtils';
 import { decodeFileContent } from './utils/encodingUtils';
 import { parseYamlFrontMatter } from './utils/yamlUtils';
 import {
-  parseMarkdownNative,
-  calculateTextStatsNative,
   toggleTaskNative,
   formatMarkdownNative,
-  lintMarkdownDocumentNative,
-  ProofreadingIssue,
 } from './utils/tauriNative';
-import { openNativeFileFromPath, loadFullNativeDoc, loadMoreChunkNativeDoc, saveNativeFile } from './utils/fileSystem';
-import { commands } from './bindings';
+import { openNativeFileFromPath, loadFullNativeDoc, loadMoreChunkNativeDoc } from './utils/fileSystem';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { TitleBar } from './components/TitleBar';
@@ -50,6 +43,9 @@ import { useFileWatcher } from './hooks/useFileWatcher';
 import { useGlobalShortcuts } from './hooks/useGlobalShortcuts';
 import { useWindowDragDrop } from './hooks/useWindowDragDrop';
 import { useEditorToolbarActions } from './hooks/useEditorToolbarActions';
+import { useAppTheme } from './hooks/useAppTheme';
+import { useTextAnalysis } from './hooks/useTextAnalysis';
+import { useAutoSaveManager } from './hooks/useAutoSaveManager';
 
 export default function App() {
   // ドキュメント一覧・タブ状態の管理 (useDocumentManager)
@@ -102,62 +98,19 @@ export default function App() {
     setIsLogModalOpen,
     isStatsModalOpen,
     setIsStatsModalOpen,
+    isRevisionHistoryOpen,
+    setIsRevisionHistoryOpen,
   } = useModalState();
 
-  // 基本設定 state
-  const [settings, setSettings] = useState<EditorSettings>(loadSettings);
-
-  // OSのシステムダークモード設定の検出
-  const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'dark';
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      setSystemTheme(e.matches ? 'dark' : 'light');
-    };
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    } else if (mediaQuery.addListener) {
-      mediaQuery.addListener(handleChange);
-      return () => mediaQuery.removeListener(handleChange);
-    }
-  }, []);
-
-  const effectiveTheme: 'dark' | 'light' =
-    settings.theme === 'system' ? systemTheme : settings.theme || 'dark';
-  const isDark = effectiveTheme === 'dark';
-
-  // HTML ルート (documentElement) のテーマクラス・color-scheme 同期
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isDark) {
-      root.classList.add('dark');
-      root.classList.remove('light');
-      root.style.colorScheme = 'dark';
-    } else {
-      root.classList.add('light');
-      root.classList.remove('dark');
-      root.style.colorScheme = 'light';
-    }
-  }, [isDark]);
-
-  // ウィンドウタイトルおよび印刷タイトルを現在のドキュメント名に同期
-  useEffect(() => {
-    const docName = currentDoc.title || 'QuMaEditor';
-    document.title = docName;
-  }, [currentDoc.title]);
-
-  const handleChangeTheme = (newTheme: ThemeMode) => {
-    handleUpdateSettings({ theme: newTheme });
-  };
+  // テーマ・基本設定・ウィンドウタイトルの管理 (useAppTheme)
+  const {
+    settings,
+    setSettings,
+    handleUpdateSettings,
+    isDark,
+    effectiveTheme,
+    handleChangeTheme,
+  } = useAppTheme(currentDoc);
 
   // 表示レイアウト＆サイドバー幅
   const [viewMode, setViewMode] = useState<ViewMode>('editor');
@@ -196,10 +149,6 @@ export default function App() {
     localStorage.setItem('quma_sidebar_width', newWidth.toString());
   };
 
-  // 自動保存ステータス
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
-  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
-
   // 全文一括読み込みハンドラー
   const handleLoadFullDoc = useCallback(async () => {
     if (!currentDoc.filePath) return;
@@ -228,8 +177,6 @@ export default function App() {
     }
   }, [currentDoc, setDocs]);
 
-
-
   // トースト通知 state
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
@@ -239,17 +186,12 @@ export default function App() {
 
   // 参照 (Refs)
   const previewScrollRef = useRef<HTMLDivElement | null>(null);
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const editorTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // 自動保存タイマーの明示的キャンセルハンドラー
-  const handleCancelAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-      autoSaveTimeoutRef.current = null;
-    }
-  }, []);
+  // 外部ファイル変更監視コールバック用の Ref（循環依存解消）
+  const markLocalSavingRef = useRef<() => void>(() => {});
+  const recordLocalSaveRef = useRef<(filePath: string, mtimeMs?: number) => void>(() => {});
 
   // 外部プロセス更新時のドキュメント自動再読み込み処理 (filePath 完全一致で安全に対象特定)
   const handleReloadExternalFile = useCallback(
@@ -297,12 +239,40 @@ export default function App() {
     [setDocs]
   );
 
+  // 自動保存・スナップショット自動記録フック (useAutoSaveManager)
+  const {
+    saveStatus,
+    setSaveStatus,
+    lastSavedTime,
+    setLastSavedTime,
+    handleCancelAutoSave,
+    updateDocContent,
+    handleRestoreContent,
+  } = useAutoSaveManager({
+    currentDoc,
+    docs,
+    setDocs,
+    settings,
+    markLocalSaving: () => markLocalSavingRef.current(),
+    recordLocalSave: (filePath, mtimeMs) => recordLocalSaveRef.current(filePath, mtimeMs),
+  });
+
   // 外部ファイル変更監視フック (useFileWatcher)
   const { markLocalSaving, recordLocalSave, reloadCurrentDoc } = useFileWatcher({
     currentDoc,
     onReloadFile: handleReloadExternalFile,
     saveStatus,
   });
+
+  // Ref の同期
+  markLocalSavingRef.current = markLocalSaving;
+  recordLocalSaveRef.current = recordLocalSave;
+
+  // リアルタイムテキスト統計＆日本語校正・Lint解析フック (useTextAnalysis)
+  const { stats, proofreadingIssues } = useTextAnalysis(currentDoc.content);
+
+  // 前回のドキュメント情報（差分比較用）
+  const previousDoc = docs.find((d) => d.id === previousDocId);
 
   // Markdown 自動整形ハンドラー (Rust ネイティブ)
   const handleAutoFormat = useCallback(async () => {
@@ -320,7 +290,7 @@ export default function App() {
     } catch (err) {
       console.error('自動整形エラー:', err);
     }
-  }, [currentDoc.content]);
+  }, [currentDoc.content, updateDocContent]);
 
   // ファイル操作アクションの管理 (useFileOperations)
   const {
@@ -343,131 +313,6 @@ export default function App() {
     onCancelAutoSave: handleCancelAutoSave,
     setToast,
   });
-
-  // テキスト統計情報 (Rust ネイティブによる超高速・低メモリ計算 + 150ms ディバウンス)
-  const [nativeStats, setNativeStats] = useState<TextStats | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const timer = setTimeout(() => {
-      calculateTextStatsNative(currentDoc.content).then((res) => {
-        if (isMounted && res) {
-          setNativeStats(res);
-        }
-      });
-    }, 150);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [currentDoc.content]);
-
-  const stats: TextStats = nativeStats || calculateTextStats(currentDoc.content);
-
-  // 日本語校正 ＆ Markdown 構文 lint (Rust 非同期バックグラウンド高速解析 + 250ms ディバウンス)
-  const [proofreadingIssues, setProofreadingIssues] = useState<ProofreadingIssue[]>([]);
-
-  useEffect(() => {
-    let isMounted = true;
-    const timer = setTimeout(() => {
-      lintMarkdownDocumentNative(currentDoc.content).then((issues) => {
-        if (isMounted) {
-          setProofreadingIssues(issues);
-        }
-      });
-    }, 250);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [currentDoc.content]);
-
-  // 前回のドキュメント情報（差分比較用）
-  const previousDoc = docs.find((d) => d.id === previousDocId);
-
-  // テキスト内容の更新＆自動保存タイマー
-  const updateDocContent = (newContent: string, targetDocId?: string) => {
-    const docId = targetDocId || currentDoc.id;
-    const targetDoc = docs.find((d) => d.id === docId) || currentDoc;
-    const nowISO = new Date().toISOString();
-    const updaterName = settings.defaultAuthor?.trim() || targetDoc.updatedBy || targetDoc.author || 'Unknown';
-    const targetFilePath = targetDoc.filePath;
-    const isRemote = targetDoc.isRemote;
-    const docToSave: MarkdownDoc = {
-      ...targetDoc,
-      content: newContent,
-      author: targetDoc.author || 'Unknown',
-      updatedAt: nowISO,
-      updatedBy: updaterName,
-    };
-
-    setDocs((prevDocs) =>
-      prevDocs.map((doc) =>
-        doc.id === docId
-          ? {
-              ...doc,
-              content: newContent,
-              author: doc.author || 'Unknown',
-              updatedAt: nowISO,
-              updatedBy: updaterName,
-            }
-          : doc
-      )
-    );
-
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    setSaveStatus('editing');
-
-    const delayMs = Math.max(2000, Math.min(10000, settings.autoSaveIntervalMs || 3000));
-
-    autoSaveTimeoutRef.current = setTimeout(async () => {
-      if (isRemote) {
-        setSaveStatus('unsaved');
-        logger.info(
-          `[自動保存スキップ] リモートファイル "${docToSave.title}" (ID: ${docToSave.id}) はリモート仕様に基づき自動保存されません。`
-        );
-        return;
-      }
-
-      if (docToSave.isChunkedLoaded) {
-        setSaveStatus('unsaved');
-        logger.info(
-          `[自動保存スキップ] 大容量チャンク部分読込中のファイル "${docToSave.title}" は後半データ保護のため全文読込まで自動上書き保存をスキップします。`
-        );
-        return;
-      }
-
-      setSaveStatus('saving');
-      let savedToFile = false;
-      if (targetFilePath) {
-        markLocalSaving();
-        const res = await saveNativeFile(docToSave, { forceSaveAs: false, defaultAuthor: settings.defaultAuthor });
-        if (res.success && res.filePath) {
-          savedToFile = true;
-          recordLocalSave(res.filePath, res.mtimeMs);
-        }
-      }
-
-      setDocs((latestDocs) => {
-        saveStoredDocs(latestDocs);
-        return latestDocs;
-      });
-
-      const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setLastSavedTime(timeStr);
-
-      if (savedToFile) {
-        setSaveStatus('saved_file');
-      } else {
-        setSaveStatus('saved_local');
-      }
-    }, delayMs);
-  };
 
   // プレビュー上のタスク項目チェック状態トグル (Rust ネイティブ高速置換)
   const handleToggleTaskItem = useCallback(async (taskIndex: number) => {
@@ -561,15 +406,6 @@ export default function App() {
     };
     handleAddOpenedDoc(tplDoc);
     setIsTemplateModalOpen(false);
-  };
-
-  // 設定の更新
-  const handleUpdateSettings = (newSettings: Partial<EditorSettings>) => {
-    setSettings((prev) => {
-      const updated = { ...prev, ...newSettings };
-      saveSettings(updated);
-      return updated;
-    });
   };
 
   // キーボードショートカット管理
@@ -732,6 +568,7 @@ export default function App() {
           onOpenHelpGuide={() => setIsHelpGuideModalOpen(true)}
           onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
           onOpenDiffModal={() => setIsDiffModalOpen(true)}
+          onOpenRevisionHistory={() => setIsRevisionHistoryOpen(true)}
           onOpenBatchConvert={() => setIsBatchConvertModalOpen(true)}
           onOpenLogModal={() => setIsLogModalOpen(true)}
           onOpenStatsModal={() => setIsStatsModalOpen(true)}
@@ -968,6 +805,9 @@ export default function App() {
         setIsLogModalOpen={setIsLogModalOpen}
         isStatsModalOpen={isStatsModalOpen}
         setIsStatsModalOpen={setIsStatsModalOpen}
+        isRevisionHistoryOpen={isRevisionHistoryOpen}
+        setIsRevisionHistoryOpen={setIsRevisionHistoryOpen}
+        onRestoreContent={handleRestoreContent}
         currentDoc={currentDoc}
         previousDoc={previousDoc}
         docs={docs}

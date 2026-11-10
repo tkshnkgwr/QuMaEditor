@@ -4,6 +4,7 @@ import { EditorSettings, MarkdownDoc, ViewMode } from '../types';
 import { handleAutoListContinuation, insertFormatting, handleTabIndent, applyTextReplacementWithUndo } from '../utils/markdownUtils';
 import { handleTableKeyNavigation } from '../utils/tableUtils';
 import { triggerDocumentSummary } from '../utils/aiSummary';
+import { FindReplaceBar } from './FindReplaceBar';
 
 interface EditorProps {
   content: string;
@@ -64,6 +65,8 @@ export const Editor: React.FC<EditorProps> = ({
   const [isEditingSummary, setIsEditingSummary] = useState(false);
   const [editedSummaryText, setEditedSummaryText] = useState('');
   const [summaryErrorMessage, setSummaryErrorMessage] = useState<string | null>(null);
+  const [isFindOpen, setIsFindOpen] = useState(false);
+  const [findMode, setFindMode] = useState<'find' | 'replace'>('find');
 
   const tags = doc?.tags || [];
 
@@ -251,6 +254,22 @@ export const Editor: React.FC<EditorProps> = ({
 
     const start = textareaRef.current.selectionStart;
     const end = textareaRef.current.selectionEnd;
+
+    // Ctrl + F (インライン検索バーを開く)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      setIsFindOpen(true);
+      setFindMode('find');
+      return;
+    }
+
+    // Ctrl + H (インライン置換バーを開く)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'h') {
+      e.preventDefault();
+      setIsFindOpen(true);
+      setFindMode('replace');
+      return;
+    }
 
     // Ctrl + B (太字 - ネイティブ Undo/Ctrl+Z 履歴対応)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
@@ -726,6 +745,16 @@ export const Editor: React.FC<EditorProps> = ({
 
       {/* エディタ＆行番号エリア */}
       <div className="flex-1 flex overflow-hidden relative">
+        {/* エディタ内インライン検索・一括置換バー */}
+        <FindReplaceBar
+          content={content}
+          onReplace={onChange}
+          textareaRef={textareaRef}
+          isOpen={isFindOpen}
+          onClose={() => setIsFindOpen(false)}
+          initialMode={findMode}
+          isDark={isDark}
+        />
         {/* 行番号カラム (単一 pre による超高速・ゼロDOMオーバーヘッド描画) */}
         {settings.lineNumbers && (
           <div

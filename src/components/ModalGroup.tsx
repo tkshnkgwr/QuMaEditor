@@ -10,6 +10,7 @@ import { DiffModal } from './DiffModal';
 import { BatchConvertModal } from './BatchConvertModal';
 import { LogModal } from './LogModal';
 import { StatsModal } from './StatsModal';
+import { RevisionHistoryModal } from './RevisionHistoryModal';
 
 interface ModalGroupProps {
   // モーダル開閉状態
@@ -33,6 +34,9 @@ interface ModalGroupProps {
   setIsLogModalOpen: (v: boolean) => void;
   isStatsModalOpen: boolean;
   setIsStatsModalOpen: (v: boolean) => void;
+  isRevisionHistoryOpen: boolean;
+  setIsRevisionHistoryOpen: (v: boolean) => void;
+  onRestoreContent?: (newContent: string) => void;
 
   // データ & ハンドラー
   currentDoc: MarkdownDoc;
@@ -71,6 +75,9 @@ export const ModalGroup: React.FC<ModalGroupProps> = ({
   setIsLogModalOpen,
   isStatsModalOpen,
   setIsStatsModalOpen,
+  isRevisionHistoryOpen,
+  setIsRevisionHistoryOpen,
+  onRestoreContent,
 
   currentDoc,
   previousDoc,
@@ -156,6 +163,14 @@ export const ModalGroup: React.FC<ModalGroupProps> = ({
         onClose={() => setIsStatsModalOpen(false)}
         doc={currentDoc}
         stats={stats}
+        isDark={isDark}
+      />
+
+      <RevisionHistoryModal
+        isOpen={isRevisionHistoryOpen}
+        onClose={() => setIsRevisionHistoryOpen(false)}
+        currentDoc={currentDoc}
+        onRestoreContent={onRestoreContent || (() => {})}
         isDark={isDark}
       />
     </>

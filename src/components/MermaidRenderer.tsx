@@ -195,7 +195,7 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
                   className={`px-1.5 py-0.5 font-mono text-[10px] font-bold rounded hover:bg-slate-700/60 transition-colors cursor-pointer ${
                     isDark ? 'text-cyan-300' : 'text-cyan-800'
                   }`}
-                  title="クリックで 300% ↔ 100% 切替"
+                  title="クリックで 200% ↔ 100% 切替"
                 >
                   {Math.round(zoom * 100)}%
                 </button>

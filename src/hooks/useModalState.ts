@@ -15,6 +15,7 @@ export function useModalState() {
   const [isBatchConvertModalOpen, setIsBatchConvertModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [isRevisionHistoryOpen, setIsRevisionHistoryOpen] = useState(false);
 
   const toggleZenMode = () => setIsZenMode((prev) => !prev);
   const closeAllModals = () => {
@@ -28,6 +29,7 @@ export function useModalState() {
     setIsBatchConvertModalOpen(false);
     setIsLogModalOpen(false);
     setIsStatsModalOpen(false);
+    setIsRevisionHistoryOpen(false);
   };
 
   return {
@@ -54,6 +56,8 @@ export function useModalState() {
     setIsLogModalOpen,
     isStatsModalOpen,
     setIsStatsModalOpen,
+    isRevisionHistoryOpen,
+    setIsRevisionHistoryOpen,
     closeAllModals,
   };
 }
