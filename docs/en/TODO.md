@@ -147,5 +147,26 @@ List of completed features and upcoming development tasks for QuMaEditor.
 | 23  | `Performance / Editor` | **Virtual Scrolling for Ultra-Large Files** — Windowed rendering DOM virtualization for instant rendering of 100k+ line documents           | Low      | 🔲 Proposed  |
 | 24  | `File / Backup`        | **Local Automatic Backups & Version Snapshot History** — Generational snapshots to safeguard against inadvertent overwrites or loss          | Medium   | ✅ Completed  |
 
+---
+
+## 🚀 Ver.2.0 Lightweight Optimization & Code Audit Backlog
+
+Technical debt, bugs, and performance optimizations identified in the full source code audit on 2026-11-16 to eliminate per-keystroke IPC floods, hidden preview rendering, re-render cascades, broken stubs, dead code, and unused dependencies.
+
+### ⚡ IPC, Watcher, Re-render & Bug Fixes
+- [ ] **Eliminate Per-Keystroke IPCs, Dual Polling & Hidden Preview Rendering (`Sidebar.tsx`, `useFileWatcher.ts`, `Preview.tsx`, `MermaidRenderer.tsx`)**:
+  - Debounce `indexDocumentsNative` and `extractHeadingsNative` in `Sidebar.tsx` and skip when closed/inactive (also fix the Rules of Hooks violation where `useMemo` appears after `if (!isOpen) return null;`).
+  - Remove the redundant 2.5s `getFileMetadataNative` polling running alongside OS `notify` watching in `useFileWatcher.ts`, unmount hidden `<Preview>` when `viewMode === 'editor'`, and check `svgCache` (with bounded size) before calling `validateMermaidSyntaxNative`.
+- [ ] **Fix Re-render Cascades & Dual-Pane / Zen State Bugs (`App.tsx`, `Editor.tsx`, `ModalGroup.tsx`, `StatsModal.tsx`, `useAutoSaveManager.ts`)**:
+  - Decouple cursor position updates from root `App.tsx`, stop per-pixel scroll re-renders and forced `offsetWidth` reflow in `Editor.tsx`, lazy-mount the 11 modals (`ModalGroup.tsx`) so `StatsModal` does not compute hidden stats, isolate autosave timers per pane in `useAutoSaveManager.ts`, and preserve `FocusTimer` across Zen mode toggles.
+- [ ] **Fix 0-Byte PDF Bug, Startup Overhead & Dead Rust Commands (`tauriNative.ts`, `useFileOperations.ts`, `lib.rs`, `file_watcher.rs`, `fileSystem.ts`)**:
+  - Fix `generatePdfNative` stub returning `null` (producing 0-byte PDFs in `useFileOperations.ts`), remove dead stubs (`batchConvertFilesNative`, `highlightCodeNative`), and replace `Array.from(TextEncoder)` `number[]` transfers with `atomicWriteFileNative`.
+  - Skip `export_specta_types()` on release startup, stop unconditionally spawning `powershell.exe` on every startup, deduplicate double `open-file` / `open-file-from-args` events, fix discarded `last_mtime_opt` in `file_watcher.rs`, and clean up unused Rust commands (e.g., all 8 commands in `rope_buffer.rs`, `mmap_read_file_chunk_native`, etc.).
+
+### 🧹 Dependency, Blur & Animation Cleanup
+- [ ] **Trim Unused Dependencies, Static Bundles & Blur/Animation Overhead (`package.json`, `Cargo.toml`, `MarkdownRenderers.tsx`, `vite.config.ts`)**:
+  - Remove completely unused `dotenv`, `motion`, `printpdf`, `unicode-segmentation`, and dead `vendor-katex` chunk config; dynamically import `refractor/all` and `react-markdown` only when JS fallback preview is active.
+  - Clean up excessive `backdrop-blur` overlays, continuous `animate-pulse`/`animate-ping`, and undefined `animate-fade-in`/`animate-fadeIn` classes.
+
 
 
