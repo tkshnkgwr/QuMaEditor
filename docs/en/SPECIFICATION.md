@@ -89,7 +89,7 @@ stateDiagram-v2
 
 | Item     | Details                                  |
 | :------- | :--------------------------------------- |
-| Version  | v1.5.6                                   |
+| Version  | v1.5.7                                   |
 | OS       | Windows 10 / 11 (Tauri v2 Native Window) |
 | Runtime  | Rust Native Engine + WebView2            |
 | Frontend | React 19 + TypeScript 5.8                |

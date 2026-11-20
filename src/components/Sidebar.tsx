@@ -142,36 +142,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
   }, [isResizing, onWidthChange]);
 
-  // Rust 転置インデックスへのドキュメント群（本文＋タグ情報）登録
+  // Rust 転置インデックスへのドキュメント群（本文＋タグ情報）登録（サイドバー開＆ドキュメントタブ時のみデバウンス実行）
   useEffect(() => {
-    const searchInputs = docs.map((d) => ({
-      id: d.id,
-      title: d.title,
-      content: `${d.content}\nTags: ${d.tags ? d.tags.map((t) => `#${t}`).join(' ') : ''}`,
-    }));
-    indexDocumentsNative(searchInputs);
-  }, [docs]);
+    if (!isOpen || activeTab !== 'docs') return;
+    const timer = setTimeout(() => {
+      const searchInputs = docs.map((d) => ({
+        id: d.id,
+        title: d.title,
+        content: `${d.content}\nTags: ${d.tags ? d.tags.map((t) => `#${t}`).join(' ') : ''}`,
+      }));
+      indexDocumentsNative(searchInputs);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [docs, isOpen, activeTab]);
 
   // Rust ネイティブ全文検索
   useEffect(() => {
+    if (!isOpen || activeTab !== 'docs') return;
     let isMounted = true;
     const q = searchQuery.trim();
     if (q.length > 0) {
-      searchDocumentsNative(q).then((hits) => {
-        if (isMounted) {
-          setNativeHits(hits);
-        }
-      });
+      const timer = setTimeout(() => {
+        searchDocumentsNative(q).then((hits) => {
+          if (isMounted) {
+            setNativeHits(hits);
+          }
+        });
+      }, 150);
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
     } else {
       setNativeHits(null);
     }
     return () => {
       isMounted = false;
     };
-  }, [searchQuery]);
+  }, [searchQuery, isOpen, activeTab]);
 
-  // アクティブドキュメントの見出しアウトライン抽出
+  // アクティブドキュメントの見出しアウトライン抽出（サイドバー開＆目次タブ時のみデバウンス実行）
   useEffect(() => {
+    if (!isOpen || activeTab !== 'outline') return;
     let isMounted = true;
     const content = currentDoc?.content || '';
     if (!content.trim()) {
@@ -179,34 +191,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return;
     }
 
-    extractHeadingsNative(content).then((extracted) => {
-      if (isMounted && extracted) {
-        setHeadings(extracted);
-      }
-    });
+    const timer = setTimeout(() => {
+      extractHeadingsNative(content).then((extracted) => {
+        if (isMounted && extracted) {
+          setHeadings(extracted);
+        }
+      });
+    }, 300);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
-  }, [currentDoc?.content]);
-
-  if (!isOpen) return null;
-
-  const normalizedQuery = searchQuery.trim().toLowerCase().replace(/^#/, '');
-
-  const filteredDocs = docs.filter((doc) => {
-    const matchesTags = (doc.tags || []).some((t) => t.toLowerCase().includes(normalizedQuery));
-    const matchesSearch =
-      doc.title.toLowerCase().includes(normalizedQuery) ||
-      doc.content.toLowerCase().includes(normalizedQuery) ||
-      matchesTags;
-    const matchesFilter = filterMode === 'all' || (filterMode === 'favorites' && doc.isFavorite);
-    return matchesSearch && matchesFilter;
-  });
+  }, [currentDoc?.content, isOpen, activeTab]);
 
   const normalizedOutlineFilter = outlineFilter.trim().toLowerCase();
 
-  // 見出しアウトラインの階層折りたたみ・子見出し判定
+  // 見出しアウトラインの階層折りたたみ・子見出し判定（Rules of Hooks 遵守のため早期リターン前に配置）
   const { visibleHeadings, hasChildrenMap } = useMemo(() => {
     const hasChildren = new Map<number, boolean>();
     for (let i = 0; i < headings.length; i++) {
@@ -246,6 +247,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     return { visibleHeadings: visible, hasChildrenMap: hasChildren };
   }, [headings, collapsedHeadings, normalizedOutlineFilter]);
+
+  if (!isOpen) return null;
+
+  const normalizedQuery = searchQuery.trim().toLowerCase().replace(/^#/, '');
+
+  const filteredDocs = docs.filter((doc) => {
+    const matchesTags = (doc.tags || []).some((t) => t.toLowerCase().includes(normalizedQuery));
+    const matchesSearch =
+      doc.title.toLowerCase().includes(normalizedQuery) ||
+      doc.content.toLowerCase().includes(normalizedQuery) ||
+      matchesTags;
+    const matchesFilter = filterMode === 'all' || (filterMode === 'favorites' && doc.isFavorite);
+    return matchesSearch && matchesFilter;
+  });
 
   const toggleCollapseHeading = (e: React.MouseEvent, lineNumber: number) => {
     e.stopPropagation();

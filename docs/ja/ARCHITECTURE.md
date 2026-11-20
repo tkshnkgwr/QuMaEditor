@@ -48,7 +48,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    FileSel["📂 ファイル選択 (.md / .txt / .csv)"] --> ReadData["Uint8Array バイナリ読込<br/>(readFileNative / plugin-fs)"]
+    FileSel["📂 ファイル選択 (.md / .txt)"] --> ReadData["Uint8Array バイナリ読込<br/>(readFileNative / plugin-fs)"]
     ReadData --> DetectEnc["文字コード自動判別<br/>(encoding_rs: UTF-8 / Shift_JIS / EUC-JP)"]
     DetectEnc --> ToUtf8["Rust Native / UTF-8 文字列変換"]
     ToUtf8 --> AppState["JavaScript 内部標準 UTF-8 (App State)"]
@@ -61,11 +61,11 @@ flowchart TD
 
     EncSel -->|"Shift_JIS"| EncSJIS["改行を CRLF に変換 ➔ Shift_JIS エンコード"]
     EncSel -->|"EUC-JP"| EncEUC["改行を LF に変換 ➔ EUC-JP エンコード"]
-    EncSel -->|"UTF-8"| EncUTF8["改行を LF に変換 ➔ UTF-8 エンコード"]
+    EncSel -->|"UTF-8"| EncUTF8["改行を LF に変換 ➔ UTF-8 テキスト"]
 
-    EncSJIS --> SaveDirect["ローカルファイル直書き込み (write_file_bytes_native)"]
+    EncSJIS --> SaveDirect["アトミック直書き込み (atomic_write_file_bytes_native)"]
     EncEUC --> SaveDirect
-    EncUTF8 --> SaveDirect
+    EncUTF8 --> SaveUtf8["アトミック直書き込み (atomic_write_file_native)"]
 ```
 
 ---

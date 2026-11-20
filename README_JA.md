@@ -2,7 +2,7 @@
 
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-blue)](https://v2.tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb)](https://react.dev/)
-[![Version](https://img.shields.io/badge/Version-v1.5.6-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.5.7-green)](package.json)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 
 [English Version](README.md) | **日本語版**
@@ -53,43 +53,43 @@ Electron 製エディタにありがちな「重い・メモリを食う・起�
 
 ## 🚀 主な機能一覧
 
-| カテゴリ | 機能詳細 |
-| :------- | :------- |
+| カテゴリ                  | 機能詳細                                                                                                                                                                                                    |
+| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ストレージ & ファイル** | LocalStorage ドキュメント管理（検索・タグ・お気に入り）、PC実ファイル保存・読込、自動バックアップ＆リビジョン履歴（差分プレビュー・復元）、文字コード自動判別（UTF-8, Shift_JIS, EUC-JP）、改行コード正規化（CRLF, LF） |
-| **エディタ & 執筆補助** | エディタ内インライン検索・一括置換（`Ctrl+F` / `Ctrl+H`、大文字小文字・単語一致・正規表現）、見出しアウトライン（H1〜H5折りたたみ・展開）、Tab インデント＆箇条書き階層化、文字装飾 Undo/Redo 連動、PowerShell 構文ハイライト強化 |
-| **集中執筆 (Zen Mode)** | Zen フルスクリーン集中モード、現在行ハイライトフォーカス、ポモドーロタイマー（🍅 カウント＆和音ベル通知）、Web Audio リアルタイム環境音 BGM（雨音・ホワイトノイズ・せせらぎ・風・瞑想ドローン） |
-| **プレビュー & 描画** | Rust ネイティブ高速 HTML レンダリング、次世代 Mermaid 同期描画（ズーム・全画面・SVG 保存）、Obsidian 互換（コールアウト・ハイライト・Wikiリンク）、デュアルペイン 2 画面並列比較編集、ドキュメント差分比較 (Diff Viewer) |
-| **AI 要約 & 品質校正** | Google Gemini API 自動要約（APIキー自由指定）＋ オフライン要約エンジン、Rust 非同期日本語校正＆記法 Lint（助詞連続・表記ゆれ・未閉じ括弧検出）、詳細統計モーダル（文字数・単語数・読了目安時間） |
-| **出力 & エクスポート** | スタンドアロン HTML 出力（Mermaid・スタイル完全内包）、PDF 出力（印刷ダイアログ最適化）、Markdown エクスポート |
+| **エディタ & 執筆補助**   | エディタ内インライン検索・一括置換（`Ctrl+F` / `Ctrl+H`、大文字小文字・単語一致・正規表現）、見出しアウトライン（H1〜H5折りたたみ・展開）、Tab インデント＆箇条書き階層化、文字装飾 Undo/Redo 連動、PowerShell 構文ハイライト強化 |
+| **集中執筆 (Zen Mode)**   | Zen フルスクリーン集中モード、現在行ハイライトフォーカス、ポモドーロタイマー（🍅 カウント＆和音ベル通知、Zen切替時も状態保持）、Web Audio リアルタイム環境音 BGM（雨音・ホワイトノイズ・せせらぎ・風・瞑想ドローン） |
+| **プレビュー & 描画**     | Rust ネイティブ高速 HTML レンダリング（編集専用時は裏プレビュー完全アンマウント）、次世代 Mermaid 同期描画（ズーム・全画面・SVG 保存）、Obsidian 互換（コールアウト・ハイライト・Wikiリンク）、デュアルペイン 2 画面並列比較編集、ドキュメント差分比較 (Diff Viewer) |
+| **AI 要約 & 品質校正**    | Google Gemini API 自動要約（APIキー自由指定）＋ オフライン要約エンジン、Rust 非同期日本語校正＆記法 Lint（助詞連続・表記ゆれ・未閉じ括弧検出）、詳細統計モーダル（文字数・単語数・読了目安時間）              |
+| **出力 & エクスポート**   | スタンドアロン HTML 出力（Mermaid・スタイル完全内包）、PDF 出力（印刷ダイアログ最適化）、Markdown エクスポート                                                                                              |
 
 ---
 
 ## 💻 動作要件・技術スタック
 
-| 区分 | 採用技術 |
-| :--- | :------- |
-| **対応 OS** | Windows 10 / 11 (x64) |
-| **フレームワーク** | [Tauri v2](https://v2.tauri.app/) (Rust 1.80+) |
-| **フロントエンド** | React 19, TypeScript 5.8, Vite, Tailwind CSS v4, Lucide Icons |
-| **バックエンド (Rust)** | pulldown-cmark, syntect, ropey, similar, notify, encoding_rs, zip |
-| **音響合成エンジン** | Web Audio API (Native DSP, 外部アセット 0KB) |
+| 区分                   | 採用技術                                                                           |
+| :--------------------- | :--------------------------------------------------------------------------------- |
+| **対応 OS**            | Windows 10 / 11 (x64)                                                              |
+| **フレームワーク**     | [Tauri v2](https://v2.tauri.app/) (Rust 1.80+)                                     |
+| **フロントエンド**     | React 19, TypeScript 5.8, Vite, Tailwind CSS v4, Lucide Icons, Pele (Mermaid SVG)  |
+| **バックエンド (Rust)**| pulldown-cmark, syntect, ropey, similar, notify, encoding_rs, zip, memmap2, ignore |
+| **音響合成エンジン**   | Web Audio API (Native DSP, 外部アセット 0KB)                                       |
 
 ---
 
 ## ⌨️ 主なショートカットキー
 
-| ショートカット | 機能 |
-| :------------- | :--- |
-| `Ctrl + N` | 新規ドキュメント作成 (LocalStorage 即時作成) |
-| `Ctrl + S` | 実ファイルに保存 (初回は名前を付けて保存) |
-| `Ctrl + O` | PC 上のファイルを開く |
-| `Ctrl + F` | エディタ内インライン検索バーを開く |
-| `Ctrl + H` | エディタ内インライン置換バーを開く |
-| `Ctrl + Shift + Z` | 🧘 Zen 集中執筆モード切り替え (解除は `Esc`) |
-| `Ctrl + Shift + D` | ドキュメント差分比較モーダル (Diff) の起動 |
-| `Ctrl + Shift + F` | Markdown 表組み・空行の自動整形フォーマット |
-| `Ctrl + E` | プレビューからエディタへフォーカス復帰（カーソル位置復元） |
-| `F1` | キーボードショートカット一覧ヘルプの表示 |
+| ショートカット     | 機能                                                                |
+| :----------------- | :------------------------------------------------------------------ |
+| `Ctrl + N`         | 新規ドキュメント作成 (LocalStorage 即時作成)                        |
+| `Ctrl + S`         | 実ファイルに保存 (初回は名前を付けて保存)                           |
+| `Ctrl + O`         | PC 上のファイルを開く                                               |
+| `Ctrl + F`         | エディタ内インライン検索バーを開く                                  |
+| `Ctrl + H`         | エディタ内インライン置換バーを開く                                  |
+| `Ctrl + Shift + Z` | 🧘 Zen 集中執筆モード切り替え (解除は `Esc`)                        |
+| `Ctrl + Shift + D` | ドキュメント差分比較モーダル (Diff) の起動                          |
+| `Ctrl + Shift + F` | Markdown 表組み・空行の自動整形フォーマット                         |
+| `Ctrl + E`         | プレビューからエディタへフォーカス復帰（カーソル位置復元）          |
+| `F1`               | キーボードショートカット一覧ヘルプの表示                            |
 
 ---
 

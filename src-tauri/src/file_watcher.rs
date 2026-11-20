@@ -110,12 +110,13 @@ impl FileWatcherManager {
                 continue;
             }
 
-            // SyncManager に記録されている mtime と比較
-            if let Ok(last_mtime_opt) =
-                crate::sync_manager::sync_register_file(norm.clone(), curr_mtime)
-            {
-                let _ = last_mtime_opt;
+            // SyncManager に記録されている mtime と比較し、実質的な変化がない連続イベントを抑止
+            if let Ok(Some(last_mtime)) = crate::sync_manager::sync_get_last_mtime(&norm) {
+                if curr_mtime <= last_mtime + 50.0 {
+                    continue;
+                }
             }
+            let _ = crate::sync_manager::sync_register_file(norm, curr_mtime);
 
             // フロントエンドへ外部変更イベントを発行
             let payload = NativeFileChangedPayload {

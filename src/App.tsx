@@ -116,6 +116,19 @@ export default function App() {
 
   // 表示レイアウト＆サイドバー幅
   const [viewMode, setViewMode] = useState<ViewMode>('editor');
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  // 印刷ダイアログ時のみエディタ専用モードでもプレビューをマウントする
+  useEffect(() => {
+    const handleBeforePrint = () => setIsPrinting(true);
+    const handleAfterPrint = () => setIsPrinting(false);
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
 
   // 2画面比較編集・プレビュー管理 (useDualPane)
   const {
@@ -430,7 +443,6 @@ export default function App() {
   // 起動時のファイルオープンイベントリスナー
   useEffect(() => {
     let unlistenOpenFile: (() => void) | undefined;
-    let unlistenOpenFromArgs: (() => void) | undefined;
 
     const handleIncomingFilePath = async (filePath: string) => {
       if (!filePath) return;
@@ -452,9 +464,6 @@ export default function App() {
         unlistenOpenFile = await listen<string>('open-file', async (event) => {
           await handleIncomingFilePath(event.payload);
         });
-        unlistenOpenFromArgs = await listen<string>('open-file-from-args', async (event) => {
-          await handleIncomingFilePath(event.payload);
-        });
       } catch (e) {
         console.log('Tauri listen error:', e);
       }
@@ -463,7 +472,6 @@ export default function App() {
     setupListener();
     return () => {
       if (unlistenOpenFile) unlistenOpenFile();
-      if (unlistenOpenFromArgs) unlistenOpenFromArgs();
     };
   }, [handleAddOpenedDoc]);
 
@@ -773,27 +781,29 @@ export default function App() {
                 />
               </div>
 
-              {/* プレビューパネル (常時マウント＋CSS表示切替で即時レイアウト反映＆全ページ同期) */}
-              <div className={`flex-1 h-full flex flex-col min-w-0 print:block print:w-full print:static print:p-0 print:m-0 ${
-                viewMode === 'editor' ? 'hidden print:block' : ''
-              }`}>
-                <Preview
-                  key={currentDoc.id}
-                  content={currentDoc.content}
-                  docTitle={currentDoc.title}
-                  onToggleTaskItem={handleToggleTaskItem}
-                  onScrollRef={(el) => {
-                    previewScrollRef.current = el;
-                  }}
-                  isDark={isDark}
-                  fontSize={settings.fontSize}
-                  lineHeight={settings.lineHeight}
-                  fontFamily={settings.fontFamily}
-                  headingTheme={settings.headingTheme}
-                  codeBlockTheme={settings.codeBlockTheme}
-                  previewEngine={settings.previewEngine}
-                />
-              </div>
+              {/* プレビューパネル (編集専用モード時は完全アンマウントして打鍵負荷ゼロ化、印刷時のみ一時マウント) */}
+              {(viewMode !== 'editor' || isPrinting) && (
+                <div className={`flex-1 h-full flex flex-col min-w-0 print:block print:w-full print:static print:p-0 print:m-0 ${
+                  viewMode === 'editor' ? 'hidden print:block' : ''
+                }`}>
+                  <Preview
+                    key={currentDoc.id}
+                    content={currentDoc.content}
+                    docTitle={currentDoc.title}
+                    onToggleTaskItem={handleToggleTaskItem}
+                    onScrollRef={(el) => {
+                      previewScrollRef.current = el;
+                    }}
+                    isDark={isDark}
+                    fontSize={settings.fontSize}
+                    lineHeight={settings.lineHeight}
+                    fontFamily={settings.fontFamily}
+                    headingTheme={settings.headingTheme}
+                    codeBlockTheme={settings.codeBlockTheme}
+                    previewEngine={settings.previewEngine}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

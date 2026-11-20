@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, SkipForward, Bell, Volume2, Sparkles } from 'lucide-react';
 import { ambientSound } from '../utils/ambientSound';
 
@@ -23,57 +23,89 @@ const MODE_LABELS: Record<PomodoroMode, string> = {
   longBreak: '長休憩 (15m)',
 };
 
+// Zenモード切替時にTitleBarとZen浮遊バー間でタイマー状態がリセットされないようモジュール共有ストアで一元管理
+interface SharedTimerState {
+  mode: PomodoroMode;
+  timeLeft: number;
+  isRunning: boolean;
+  completedCount: number;
+}
+
+const sharedTimerState: SharedTimerState = {
+  mode: 'focus',
+  timeLeft: MODE_DURATIONS.focus,
+  isRunning: false,
+  completedCount: 0,
+};
+
+let sharedIntervalId: ReturnType<typeof setInterval> | null = null;
+const timerListeners = new Set<() => void>();
+let activeCompleteCallback: ((message: string) => void) | undefined;
+
+function notifyTimerListeners() {
+  timerListeners.forEach((listener) => listener());
+}
+
+function stopSharedInterval() {
+  if (sharedIntervalId !== null) {
+    clearInterval(sharedIntervalId);
+    sharedIntervalId = null;
+  }
+}
+
+function startSharedInterval() {
+  if (sharedIntervalId !== null) return;
+  sharedIntervalId = setInterval(() => {
+    if (sharedTimerState.timeLeft <= 1) {
+      ambientSound.playChime();
+      sharedTimerState.isRunning = false;
+      stopSharedInterval();
+
+      if (sharedTimerState.mode === 'focus') {
+        const nextCount = sharedTimerState.completedCount + 1;
+        sharedTimerState.completedCount = nextCount;
+        const nextMode: PomodoroMode = nextCount % 4 === 0 ? 'longBreak' : 'shortBreak';
+        sharedTimerState.mode = nextMode;
+        sharedTimerState.timeLeft = MODE_DURATIONS[nextMode];
+        activeCompleteCallback?.(
+          `🍅 集中セッション（25分）お疲れ様でした！${nextMode === 'longBreak' ? '15分の長休憩' : '5分の休憩'}を取りましょう。`
+        );
+      } else {
+        sharedTimerState.mode = 'focus';
+        sharedTimerState.timeLeft = MODE_DURATIONS.focus;
+        activeCompleteCallback?.('☕ 休憩終了です！次の集中セッション（25分）を始めましょう。');
+      }
+      notifyTimerListeners();
+      return;
+    }
+
+    sharedTimerState.timeLeft -= 1;
+    notifyTimerListeners();
+  }, 1000);
+}
+
 export const FocusTimer: React.FC<FocusTimerProps> = ({
   isDark = true,
   onTimerComplete,
   compact = false,
 }) => {
-  const [mode, setMode] = useState<PomodoroMode>('focus');
-  const [timeLeft, setTimeLeft] = useState<number>(MODE_DURATIONS.focus);
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [completedCount, setCompletedCount] = useState<number>(0);
+  const [, setTick] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // タイマー完了時のアクション
-  const handleComplete = useCallback(() => {
-    ambientSound.playChime();
-    setIsRunning(false);
-
-    if (mode === 'focus') {
-      const nextCount = completedCount + 1;
-      setCompletedCount(nextCount);
-      const nextMode: PomodoroMode = nextCount % 4 === 0 ? 'longBreak' : 'shortBreak';
-      setMode(nextMode);
-      setTimeLeft(MODE_DURATIONS[nextMode]);
-      onTimerComplete?.(`🍅 集中セッション（25分）お疲れ様でした！${nextMode === 'longBreak' ? '15分の長休憩' : '5分の休憩'}を取りましょう。`);
-    } else {
-      setMode('focus');
-      setTimeLeft(MODE_DURATIONS.focus);
-      onTimerComplete?.('☕ 休憩終了です！次の集中セッション（25分）を始めましょう。');
-    }
-  }, [mode, completedCount, onTimerComplete]);
-
-  // カウントダウン useEffect
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
-    if (isRunning) {
-      intervalId = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            handleComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    activeCompleteCallback = onTimerComplete;
+  }, [onTimerComplete]);
 
+  useEffect(() => {
+    const listener = () => setTick((t) => t + 1);
+    timerListeners.add(listener);
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      timerListeners.delete(listener);
     };
-  }, [isRunning, handleComplete]);
+  }, []);
+
+  const { mode, timeLeft, isRunning, completedCount } = sharedTimerState;
 
   // 外部クリックでメニューを閉じる
   useEffect(() => {
@@ -91,19 +123,29 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
   }, [isMenuOpen]);
 
   const toggleRun = () => {
-    setIsRunning(!isRunning);
+    sharedTimerState.isRunning = !sharedTimerState.isRunning;
+    if (sharedTimerState.isRunning) {
+      startSharedInterval();
+    } else {
+      stopSharedInterval();
+    }
+    notifyTimerListeners();
   };
 
   const handleReset = () => {
-    setIsRunning(false);
-    setTimeLeft(MODE_DURATIONS[mode]);
+    sharedTimerState.isRunning = false;
+    stopSharedInterval();
+    sharedTimerState.timeLeft = MODE_DURATIONS[sharedTimerState.mode];
+    notifyTimerListeners();
   };
 
   const handleSwitchMode = (newMode: PomodoroMode) => {
-    setMode(newMode);
-    setTimeLeft(MODE_DURATIONS[newMode]);
-    setIsRunning(false);
+    sharedTimerState.mode = newMode;
+    sharedTimerState.timeLeft = MODE_DURATIONS[newMode];
+    sharedTimerState.isRunning = false;
+    stopSharedInterval();
     setIsMenuOpen(false);
+    notifyTimerListeners();
   };
 
   const formatTime = (seconds: number) => {
@@ -211,7 +253,8 @@ export const FocusTimer: React.FC<FocusTimerProps> = ({
             <button
               type="button"
               onClick={() => {
-                setCompletedCount(0);
+                sharedTimerState.completedCount = 0;
+                notifyTimerListeners();
                 setIsMenuOpen(false);
               }}
               className="w-full text-left px-2.5 py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"

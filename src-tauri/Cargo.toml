@@ -1,6 +1,6 @@
 [package]
 name = "QuMaEditor"
-version = "1.5.6"
+version = "1.5.7"
 description = "High-Performance Desktop Markdown Editor with Native Encoding Support"
 authors = ["you"]
 edition = "2021"
@@ -35,12 +35,10 @@ tauri-plugin-single-instance = "2"
 # 爆速ネイティブ処理クレート
 encoding_rs = "0.8"         # Firefox採用の最高速文字コード検出・変換
 pulldown-cmark = "0.12"     # 爆速 GFM Markdown パーサー
-printpdf = "0.7"            # ブラウザ非依存のネイティブ PDF 直接出力
 syntect = "5.2"             # ネイティブ高速構文ハイライト
 similar = "2.6"             # 高速 Text Diff 差分計算エンジン
 rayon = "1.10"              # マルチスレッド並列処理エンジン
 serde_yaml = "0.9"          # 高速・高信頼 YAML デシリアライズ
-unicode-segmentation = "1.12" # 高速・高精度 Unicode 単語/文字境界走査
 unicode-width = "0.2"         # 表組み垂直整列用の高精度 Unicode 表示幅計算
 ropey = "1.6"                 # 巨大ファイル編集用 Bツリー Rope データ構造
 notify = "6.1"                # OSカーネル直結ファイル監視エンジン

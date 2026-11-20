@@ -18,16 +18,20 @@
 │   │   │   ├── GeneralTab.tsx      # 外観・フォント・自動保存設定タブ
 │   │   │   └── StorageTab.tsx      # ストレージ管理・ZIP出力タブ
 │   │   ├── AboutModal.tsx          # バージョン情報モーダル
+│   │   ├── AmbientSoundControl.tsx # 環境音BGM切替・音量コントロール
 │   │   ├── BatchConvertModal.tsx   # 一括文字コード変換ダイアログ
 │   │   ├── DiffModal.tsx           # Text Diff 比較ダイアログ
 │   │   ├── DualPaneWorkspace.tsx   # 2画面並列比較・編集・プレビューワークスペース
 │   │   ├── Editor.tsx              # テキストエディタコンポーネント
+│   │   ├── FindReplaceBar.tsx      # エディタ内インライン検索・一括置換バー
+│   │   ├── FocusTimer.tsx          # ポモドーロ集中タイマー（Zen切替時状態保持）
 │   │   ├── HelpGuideModal.tsx      # ヘルプガイドダイアログ
 │   │   ├── LogModal.tsx            # ログ表示モーダル
 │   │   ├── MarkdownRenderers.tsx   # ReactMarkdown カスタム要素レンダラー
-│   │   ├── MermaidRenderer.tsx     # Mermaid SVG レンダラー（ズーム・全画面・SVG保存）
-│   │   ├── ModalGroup.tsx          # 10個の各種モーダル集約コンポーネント
+│   │   ├── MermaidRenderer.tsx     # Mermaid SVG レンダラー（Pele同期描画・ズーム・SVG保存）
+│   │   ├── ModalGroup.tsx          # 11個の各種モーダル遅延マウント集約コンポーネント
 │   │   ├── Preview.tsx             # Markdown リアルタイムプレビュー & Mermaid 描画
+│   │   ├── RevisionHistoryModal.tsx# リビジョン履歴・スナップショット復元モーダル
 │   │   ├── SettingsModal.tsx       # エディタ設定変更モーダル親枠
 │   │   ├── ShortcutsModal.tsx      # キーボードショートカット一覧ダイアログ
 │   │   ├── Sidebar.tsx             # ドキュメント管理＆見出しアウトラインサイドバー
@@ -40,6 +44,8 @@
 │   │   ├── Toast.tsx               # トースト通知コンポーネント
 │   │   └── Toolbar.tsx             # 入力補助ツールバー
 │   ├── hooks/                      # カスタムフック群
+│   │   ├── useAppTheme.ts          # テーマ・設定・ウィンドウタイトル同期フック
+│   │   ├── useAutoSaveManager.ts   # ペイン別ディバウンス自動保存＆スナップショット管理フック
 │   │   ├── useDocumentManager.ts   # ドキュメント一覧・タブ管理フック
 │   │   ├── useDualPane.ts          # 2画面デュアルペインスプリッター・フォーカス管理フック
 │   │   ├── useEditorToolbarActions.ts # ツールバー書式挿入・表・見出しジャンプフック
@@ -47,13 +53,19 @@
 │   │   ├── useFileWatcher.ts       # 外部ファイル更新検知フック
 │   │   ├── useGlobalShortcuts.ts   # グローバルキーボードショートカット制御フック
 │   │   ├── useModalState.ts        # 全モーダル表示状態管理フック
+│   │   ├── useTextAnalysis.ts      # テキスト統計・日本語校正Lint非同期解析フック
 │   │   └── useWindowDragDrop.ts    # ウィンドウドラッグ＆ドロップハンドリングフック
+│   ├── styles/                     # 分割スタイルシート群
+│   │   ├── markdown.css            # Markdown プレビュー・Obsidian互換スタイル
+│   │   └── print.css               # 印刷・PDF出力最適化スタイル
 │   ├── utils/                      # ユーティリティモジュール
 │   │   ├── aiSummary.ts            # Gemini API & ローカル要約ハイブリッドエンジン
+│   │   ├── ambientSound.ts         # Web Audio API リアルタイム環境音シンセサイザー
 │   │   ├── encodingUtils.ts        # 文字コード判別・エンコード・改行コード変換
-│   │   ├── fileSystem.ts           # ファイルシステム・チャンク読込
+│   │   ├── fileSystem.ts           # ファイルシステム・チャンク読込・アトミック保存
 │   │   ├── logger.ts               # ロガーユーティリティ
 │   │   ├── markdownUtils.ts        # フォーマット挿入・テキスト操作
+│   │   ├── snapshotManager.ts      # ローカルスナップショット自動バックアップ管理
 │   │   ├── storage.ts              # LocalStorage 入出力・GC
 │   │   ├── tableUtils.ts           # Markdown 表自動移動・行追加ロジック
 │   │   ├── tauriNative.ts          # Tauri ネイティブ IPC ラッパー

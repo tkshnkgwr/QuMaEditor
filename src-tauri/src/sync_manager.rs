@@ -176,6 +176,14 @@ pub fn sync_is_self_saving(file_path: String, window_ms: f64) -> Result<bool, St
     Ok(manager.is_self_saving(&file_path, window_ms))
 }
 
+/// 記録されているファイルの最新 mtime を取得する
+pub fn sync_get_last_mtime(file_path: &str) -> Result<Option<f64>, String> {
+    let manager = SYNC_MANAGER
+        .lock()
+        .map_err(|e| format!("同期マネージャーのロック失敗: {}", e))?;
+    Ok(manager.get_last_mtime(file_path))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

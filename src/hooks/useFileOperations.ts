@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { MarkdownDoc, EditorSettings, SaveStatus } from '../types';
-import { openNativeFileDialog, saveNativeFile, openNativeFileFromPath } from '../utils/fileSystem';
-import { decodeFileContent, prepareEncodedBlob } from '../utils/encodingUtils';
-import { parseYamlFrontMatter, buildFullMarkdownWithFrontMatter } from '../utils/yamlUtils';
+import { openNativeFileDialog, saveNativeFile } from '../utils/fileSystem';
+import { prepareEncodedBlob } from '../utils/encodingUtils';
+import { buildFullMarkdownWithFrontMatter } from '../utils/yamlUtils';
 import { generatePdfNative, exportHtmlFullNative } from '../utils/tauriNative';
 import { saveStoredDocs } from '../utils/storage';
 import { saveSnapshot } from '../utils/snapshotManager';
@@ -196,10 +196,29 @@ export function useFileOperations({
     }
   }, [currentDoc, settings.theme]);
 
-  // ダイレクト PDF 保存 (Rust ネイティブ生成)
+  // ダイレクト PDF 保存 (Rust ネイティブ生成、未対応時は印刷ダイアログ PDF 出力へ安全フォールバック)
   const handleExportPdfDirect = useCallback(async () => {
     try {
       const pdfBytes = await generatePdfNative(currentDoc.title, currentDoc.content);
+      if (!pdfBytes || pdfBytes.length === 0) {
+        logger.info(
+          `[PDF出力] 印刷ダイアログ経由のPDF保存へフォールバックします`,
+          `タイトル: ${currentDoc.title}`
+        );
+        setToast?.({
+          id: Date.now().toString(),
+          message: '印刷ダイアログで「PDFに保存」を選択してください。',
+          type: 'info',
+          duration: 3500,
+        });
+        const originalTitle = document.title;
+        document.title = currentDoc.title || 'document';
+        window.print();
+        setTimeout(() => {
+          document.title = originalTitle;
+        }, 1000);
+        return;
+      }
       const uint8Array = new Uint8Array(pdfBytes);
       const blob = new Blob([uint8Array], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -213,7 +232,7 @@ export function useFileOperations({
       logger.error(`[Rust PDF生成エラー] PDF出力に失敗しました`, String(e));
       alert(`PDF生成に失敗しました: ${String(e)}`);
     }
-  }, [currentDoc]);
+  }, [currentDoc, setToast]);
 
   // 印刷
   const handlePrint = useCallback(() => {

@@ -48,7 +48,7 @@ Data processing flow for file imports and exports:
 
 ```mermaid
 flowchart TD
-    FileSel["📂 File Selection (.md / .txt / .csv)"] --> ReadData["Uint8Array Binary Read<br/>(readFileNative / plugin-fs)"]
+    FileSel["📂 File Selection (.md / .txt)"] --> ReadData["Uint8Array Binary Read<br/>(readFileNative / plugin-fs)"]
     ReadData --> DetectEnc["Encoding Auto-Detection<br/>(encoding_rs: UTF-8 / Shift_JIS / EUC-JP)"]
     DetectEnc --> ToUtf8["Rust Native / UTF-8 String Conversion"]
     ToUtf8 --> AppState["JavaScript Standard UTF-8 (App State)"]
@@ -61,11 +61,11 @@ flowchart TD
 
     EncSel -->|"Shift_JIS"| EncSJIS["Convert EOL to CRLF ➔ Encode to Shift_JIS"]
     EncSel -->|"EUC-JP"| EncEUC["Convert EOL to LF ➔ Encode to EUC-JP"]
-    EncSel -->|"UTF-8"| EncUTF8["Convert EOL to LF ➔ Encode to UTF-8"]
+    EncSel -->|"UTF-8"| EncUTF8["Convert EOL to LF ➔ UTF-8 String"]
 
-    EncSJIS --> SaveDirect["Direct Disk Write (write_file_bytes_native)"]
+    EncSJIS --> SaveDirect["Atomic Disk Write (atomic_write_file_bytes_native)"]
     EncEUC --> SaveDirect
-    EncUTF8 --> SaveDirect
+    EncUTF8 --> SaveUtf8["Atomic Disk Write (atomic_write_file_native)"]
 ```
 
 ---

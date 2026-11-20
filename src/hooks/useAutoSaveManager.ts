@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { MarkdownDoc, EditorSettings, SaveStatus } from '../types';
 import { saveStoredDocs } from '../utils/storage';
 import { saveNativeFile } from '../utils/fileSystem';
@@ -29,14 +29,30 @@ export function useAutoSaveManager({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // デュアルペイン同時編集時に別ドキュメントの保存タイマーを消さないよう docId 別に管理
+  const autoSaveTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  // 自動保存タイマーの明示的キャンセルハンドラー
-  const handleCancelAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-      autoSaveTimeoutRef.current = null;
+  // アンマウント時に全タイマーをクリーンアップ
+  useEffect(() => {
+    const timers = autoSaveTimeoutsRef.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
+  // 自動保存タイマーの明示的キャンセルハンドラー（targetDocId 指定時は対象のみ、省略時は全件クリア）
+  const handleCancelAutoSave = useCallback((targetDocId?: string) => {
+    if (targetDocId) {
+      const existing = autoSaveTimeoutsRef.current.get(targetDocId);
+      if (existing) {
+        clearTimeout(existing);
+        autoSaveTimeoutsRef.current.delete(targetDocId);
+      }
+      return;
     }
+    autoSaveTimeoutsRef.current.forEach((timer) => clearTimeout(timer));
+    autoSaveTimeoutsRef.current.clear();
   }, []);
 
   // テキスト内容の更新＆自動保存タイマー
@@ -71,15 +87,18 @@ export function useAutoSaveManager({
         )
       );
 
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
+      const existingTimer = autoSaveTimeoutsRef.current.get(docId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
       }
 
       setSaveStatus('editing');
 
       const delayMs = Math.max(2000, Math.min(10000, settings.autoSaveIntervalMs || 3000));
 
-      autoSaveTimeoutRef.current = setTimeout(async () => {
+      const timerId = setTimeout(async () => {
+        autoSaveTimeoutsRef.current.delete(docId);
+
         if (isRemote) {
           setSaveStatus('unsaved');
           logger.info(
@@ -131,6 +150,8 @@ export function useAutoSaveManager({
           savedToFile ? `実ファイル: ${targetFilePath}` : 'LocalStorage'
         );
       }, delayMs);
+
+      autoSaveTimeoutsRef.current.set(docId, timerId);
     },
     [currentDoc, docs, setDocs, settings.defaultAuthor, settings.autoSaveIntervalMs, markLocalSaving, recordLocalSave]
   );

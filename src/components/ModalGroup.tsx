@@ -92,87 +92,109 @@ export const ModalGroup: React.FC<ModalGroupProps> = ({
 }) => {
   return (
     <>
-      <TableModal
-        isOpen={isTableModalOpen}
-        onClose={() => setIsTableModalOpen(false)}
-        onInsertTable={onInsertTable}
-      />
+      {isTableModalOpen && (
+        <TableModal
+          isOpen={isTableModalOpen}
+          onClose={() => setIsTableModalOpen(false)}
+          onInsertTable={onInsertTable}
+        />
+      )}
 
-      <TemplateModal
-        isOpen={isTemplateModalOpen}
-        onClose={() => setIsTemplateModalOpen(false)}
-        onSelectTemplate={onSelectTemplate}
-        currentDoc={currentDoc}
-        isDark={isDark}
-      />
+      {isTemplateModalOpen && (
+        <TemplateModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+          onSelectTemplate={onSelectTemplate}
+          currentDoc={currentDoc}
+          isDark={isDark}
+        />
+      )}
 
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        settings={settings}
-        onUpdateSettings={onUpdateSettings}
-        onResetData={() => {
-          localStorage.clear();
-          window.location.reload();
-        }}
-        isDark={isDark}
-      />
+      {isSettingsModalOpen && (
+        <SettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          settings={settings}
+          onUpdateSettings={onUpdateSettings}
+          onResetData={() => {
+            localStorage.clear();
+            window.location.reload();
+          }}
+          isDark={isDark}
+        />
+      )}
 
-      <AboutModal
-        isOpen={isAboutModalOpen}
-        onClose={() => setIsAboutModalOpen(false)}
-        isDark={isDark}
-      />
+      {isAboutModalOpen && (
+        <AboutModal
+          isOpen={isAboutModalOpen}
+          onClose={() => setIsAboutModalOpen(false)}
+          isDark={isDark}
+        />
+      )}
 
-      <HelpGuideModal
-        isOpen={isHelpGuideModalOpen}
-        onClose={() => setIsHelpGuideModalOpen(false)}
-        isDark={isDark}
-      />
+      {isHelpGuideModalOpen && (
+        <HelpGuideModal
+          isOpen={isHelpGuideModalOpen}
+          onClose={() => setIsHelpGuideModalOpen(false)}
+          isDark={isDark}
+        />
+      )}
 
-      <ShortcutsModal
-        isOpen={isShortcutsModalOpen}
-        onClose={() => setIsShortcutsModalOpen(false)}
-        isDark={isDark}
-      />
+      {isShortcutsModalOpen && (
+        <ShortcutsModal
+          isOpen={isShortcutsModalOpen}
+          onClose={() => setIsShortcutsModalOpen(false)}
+          isDark={isDark}
+        />
+      )}
 
-      <DiffModal
-        isOpen={isDiffModalOpen}
-        onClose={() => setIsDiffModalOpen(false)}
-        activeDoc={currentDoc}
-        previousDoc={previousDoc}
-        allDocs={docs}
-        openTabIds={openTabIds}
-        isDark={isDark}
-      />
+      {isDiffModalOpen && (
+        <DiffModal
+          isOpen={isDiffModalOpen}
+          onClose={() => setIsDiffModalOpen(false)}
+          activeDoc={currentDoc}
+          previousDoc={previousDoc}
+          allDocs={docs}
+          openTabIds={openTabIds}
+          isDark={isDark}
+        />
+      )}
 
-      <BatchConvertModal
-        isOpen={isBatchConvertModalOpen}
-        onClose={() => setIsBatchConvertModalOpen(false)}
-        isDark={isDark}
-      />
+      {isBatchConvertModalOpen && (
+        <BatchConvertModal
+          isOpen={isBatchConvertModalOpen}
+          onClose={() => setIsBatchConvertModalOpen(false)}
+          isDark={isDark}
+        />
+      )}
 
-      <LogModal
-        isOpen={isLogModalOpen}
-        onClose={() => setIsLogModalOpen(false)}
-        isDark={isDark}
-      />
+      {isLogModalOpen && (
+        <LogModal
+          isOpen={isLogModalOpen}
+          onClose={() => setIsLogModalOpen(false)}
+          isDark={isDark}
+        />
+      )}
 
-      <StatsModal
-        isOpen={isStatsModalOpen}
-        onClose={() => setIsStatsModalOpen(false)}
-        doc={currentDoc}
-        stats={stats}
-        isDark={isDark}
-      />
+      {isStatsModalOpen && (
+        <StatsModal
+          isOpen={isStatsModalOpen}
+          onClose={() => setIsStatsModalOpen(false)}
+          doc={currentDoc}
+          stats={stats}
+          isDark={isDark}
+        />
+      )}
 
-      <RevisionHistoryModal
-        isOpen={isRevisionHistoryOpen}
-        onClose={() => setIsRevisionHistoryOpen(false)}
-        currentDoc={currentDoc}
-        onRestoreContent={onRestoreContent || (() => {})}
-        isDark={isDark}
-      />
+      {isRevisionHistoryOpen && (
+        <RevisionHistoryModal
+          isOpen={isRevisionHistoryOpen}
+          onClose={() => setIsRevisionHistoryOpen(false)}
+          currentDoc={currentDoc}
+          onRestoreContent={onRestoreContent || (() => {})}
+          isDark={isDark}
+        />
+      )}
     </>
   );
 };

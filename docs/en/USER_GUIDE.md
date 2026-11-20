@@ -2,13 +2,13 @@
 
 **English** | [日本語版](../ja/USER_GUIDE.md)
 
-## 1. UI Components Overview (v1.5.6)
+## 1. UI Components Overview (v1.5.7)
 
 QuMaEditor features an intuitive Windows desktop-native layout:
 
 1. **Title Bar (Header)**:
    - Left: Sidebar toggle, editable document title, encoding badge (`UTF-8`, `Shift_JIS`, `EUC-JP`), line-ending badge (`LF`, `CRLF`), character and line counters.
-   - Right: Focus timer (🍅 Pomodoro), ambient sound BGM controls, line focus toggle, theme toggle (Light/Dark/System), version info (`v1.5.6`), settings button, native window controls.
+   - Right: Focus timer (🍅 Pomodoro), ambient sound BGM controls, line focus toggle, theme toggle (Light/Dark/System), version info (`v1.5.7`), settings button, native window controls.
    - Sub-bar: File / Template / Help dropdown menus (including "Backups & History..." and "Diff Comparison..."), view mode switcher (Split / Editor Only / Preview Only), Zen Mode toggle.
 2. **Left Sidebar (Sidebar & Outline)**:
    - **📁 Documents Tab**: Switch, search, tag-filter, favorite, and manage active/stored documents.

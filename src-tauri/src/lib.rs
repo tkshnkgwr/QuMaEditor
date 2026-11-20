@@ -20,8 +20,9 @@ pub mod workspace_scanner;
 use tauri::{Emitter, Manager};
 
 /// Specta により TypeScript 型定義ファイル (src/bindings.ts) を自動エクスポートするハンドラー
+#[cfg(debug_assertions)]
 pub fn export_specta_types() {
-    let _builder =
+    let builder =
         tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
             commands::detect_and_convert_to_utf8,
             commands::convert_utf8_to_encoding,
@@ -68,19 +69,19 @@ pub fn export_specta_types() {
             commands::scan_workspace_tree_native,
         ]);
 
-    #[cfg(debug_assertions)]
-    {
-        let target_path = if std::path::Path::new("src-tauri").exists() {
-            "src/bindings.ts"
-        } else {
-            "../src/bindings.ts"
-        };
+    let target_path = if std::path::Path::new("src-tauri").exists() {
+        "src/bindings.ts"
+    } else {
+        "../src/bindings.ts"
+    };
 
-        _builder
-            .export(specta_typescript::Typescript::default(), target_path)
-            .expect("Specta TS 型定義のエクスポートに失敗しました");
-    }
+    builder
+        .export(specta_typescript::Typescript::default(), target_path)
+        .expect("Specta TS 型定義のエクスポートに失敗しました");
 }
+
+#[cfg(not(debug_assertions))]
+pub fn export_specta_types() {}
 
 /// Windows のコンテキストメニュー「QuMaEditorで開く」を自動登録する
 fn register_context_menu_native() -> Result<bool, String> {
@@ -134,8 +135,7 @@ pub fn run() {
 
                 if argv.len() > 1 {
                     let file_path = argv[1].clone();
-                    let _ = window.emit("open-file", file_path.clone());
-                    let _ = window.emit("open-file-from-args", file_path);
+                    let _ = window.emit("open-file", file_path);
                 }
             }
         }))
@@ -147,8 +147,7 @@ pub fn run() {
                     if !arg_path.starts_with('-') && std::path::Path::new(&arg_path).exists() {
                         std::thread::sleep(std::time::Duration::from_millis(500));
                         if let Some(window) = app_handle.get_webview_window("main") {
-                            let _ = window.emit("open-file", arg_path.clone());
-                            let _ = window.emit("open-file-from-args", arg_path);
+                            let _ = window.emit("open-file", arg_path);
                         }
                     }
                 }

@@ -19,8 +19,21 @@ interface MermaidRendererProps {
   isDark?: boolean;
 }
 
-// SHA-256 ハッシュをキーとした Mermaid SVG レンダリング結果の高速インメモリキャッシュ
+// SHA-256 ハッシュをキーとした Mermaid SVG レンダリング結果の高速インメモリキャッシュ（上限付き）
+const SVG_CACHE_MAX_SIZE = 100;
 const svgCache = new Map<string, string>();
+
+function setSvgCache(key: string, svg: string) {
+  if (svgCache.has(key)) {
+    svgCache.delete(key);
+  } else if (svgCache.size >= SVG_CACHE_MAX_SIZE) {
+    const oldestKey = svgCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      svgCache.delete(oldestKey);
+    }
+  }
+  svgCache.set(key, svg);
+}
 
 export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark = true }) => {
   const [svgHtml, setSvgHtml] = useState<string>('');
@@ -91,7 +104,7 @@ export const MermaidRenderer: React.FC<MermaidRendererProps> = ({ chart, isDark 
           const svg = result.svg;
           if (valRes) {
             const cacheKey = `${valRes.content_hash}-${isDark ? 'dark' : 'light'}`;
-            svgCache.set(cacheKey, svg);
+            setSvgCache(cacheKey, svg);
           }
           setSvgHtml(svg);
           setError(null);

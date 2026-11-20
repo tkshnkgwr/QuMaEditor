@@ -236,8 +236,9 @@ export async function saveNativeFile(
     // ファイル書き込み実行 (Rust ネイティブ アトミック書き込みを最優先し、クラッシュ破損ゼロ＆mtime完全保証)
     let savedMtimeMs: number | undefined;
     try {
-      const bytes = bytesToSave ? Array.from(bytesToSave) : Array.from(new TextEncoder().encode(textToSave));
-      const nativeWriteRes = await commands.atomicWriteFileBytesNative(targetPath, bytes);
+      const nativeWriteRes = bytesToSave
+        ? await commands.atomicWriteFileBytesNative(targetPath, Array.from(bytesToSave))
+        : await commands.atomicWriteFileNative(targetPath, textToSave);
       if (nativeWriteRes.status !== 'ok') {
         throw new Error(nativeWriteRes.error);
       }

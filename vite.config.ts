@@ -30,10 +30,6 @@ export default defineConfig({
             if (id.includes('@google/genai')) {
               return 'vendor-ai';
             }
-            // 数式レンダラー (KaTeX)
-            if (id.includes('katex')) {
-              return 'vendor-katex';
-            }
             // Markdown 解析・HTML 変換エンジン関連
             if (
               id.includes('react-markdown') ||

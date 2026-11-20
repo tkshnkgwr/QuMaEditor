@@ -8,6 +8,10 @@ List of completed features and upcoming development tasks for QuMaEditor.
 
 ## 🎯 Completed Tasks
 
+### v1.5.7 Release (2026-11-20)
+
+- [x] **Code Audit Bugfixes, Performance Optimization & Dependency Updates (`Performance / Stability / Dependencies`)**: Fixed 0-byte PDF output bug (print-dialog fallback), fixed `Sidebar.tsx` Rules of Hooks violation & added IPC debouncing/inactive guards, isolated `useAutoSaveManager` timers per document ID, preserved `FocusTimer` across Zen toggles, lazy-mounted all 11 modals in `ModalGroup`, unmounted hidden `<Preview>` in editor-only mode, eliminated redundant `useFileWatcher` polling, implemented `file_watcher.rs` mtime deduplication, unified `open-file` events & guarded release `export_specta_types()`, switched UTF-8 saves to `atomicWriteFileNative`, bounded `MermaidRenderer` cache, removed unused dependencies (`dotenv`, `motion`, `printpdf`, `unicode-segmentation`, `vendor-katex`), updated Rust crates, and synchronized EN/JA `README` and `docs/`.
+
 ### v1.5.6 Release (2026-11-10)
 
 - [x] **Current Line Focus Mode (`ZenMode / Editor`)**: Highlights the active cursor line and dims neighboring lines for distraction-free typing. Accessible via settings, TitleBar, and Zen floating toolbar.
@@ -154,19 +158,26 @@ List of completed features and upcoming development tasks for QuMaEditor.
 Technical debt, bugs, and performance optimizations identified in the full source code audit on 2026-11-16 to eliminate per-keystroke IPC floods, hidden preview rendering, re-render cascades, broken stubs, dead code, and unused dependencies.
 
 ### ⚡ IPC, Watcher, Re-render & Bug Fixes
-- [ ] **Eliminate Per-Keystroke IPCs, Dual Polling & Hidden Preview Rendering (`Sidebar.tsx`, `useFileWatcher.ts`, `Preview.tsx`, `MermaidRenderer.tsx`)**:
-  - Debounce `indexDocumentsNative` and `extractHeadingsNative` in `Sidebar.tsx` and skip when closed/inactive (also fix the Rules of Hooks violation where `useMemo` appears after `if (!isOpen) return null;`).
-  - Remove the redundant 2.5s `getFileMetadataNative` polling running alongside OS `notify` watching in `useFileWatcher.ts`, unmount hidden `<Preview>` when `viewMode === 'editor'`, and check `svgCache` (with bounded size) before calling `validateMermaidSyntaxNative`.
-- [ ] **Fix Re-render Cascades & Dual-Pane / Zen State Bugs (`App.tsx`, `Editor.tsx`, `ModalGroup.tsx`, `StatsModal.tsx`, `useAutoSaveManager.ts`)**:
-  - Decouple cursor position updates from root `App.tsx`, stop per-pixel scroll re-renders and forced `offsetWidth` reflow in `Editor.tsx`, lazy-mount the 11 modals (`ModalGroup.tsx`) so `StatsModal` does not compute hidden stats, isolate autosave timers per pane in `useAutoSaveManager.ts`, and preserve `FocusTimer` across Zen mode toggles.
-- [ ] **Fix 0-Byte PDF Bug, Startup Overhead & Dead Rust Commands (`tauriNative.ts`, `useFileOperations.ts`, `lib.rs`, `file_watcher.rs`, `fileSystem.ts`)**:
-  - Fix `generatePdfNative` stub returning `null` (producing 0-byte PDFs in `useFileOperations.ts`), remove dead stubs (`batchConvertFilesNative`, `highlightCodeNative`), and replace `Array.from(TextEncoder)` `number[]` transfers with `atomicWriteFileNative`.
-  - Skip `export_specta_types()` on release startup, stop unconditionally spawning `powershell.exe` on every startup, deduplicate double `open-file` / `open-file-from-args` events, fix discarded `last_mtime_opt` in `file_watcher.rs`, and clean up unused Rust commands (e.g., all 8 commands in `rope_buffer.rs`, `mmap_read_file_chunk_native`, etc.).
+- [x] **Eliminate Per-Keystroke IPCs, Dual Polling & Hidden Preview Rendering (`Sidebar.tsx`, `useFileWatcher.ts`, `App.tsx`, `MermaidRenderer.tsx`)**:
+  - Debounced `indexDocumentsNative`, `searchDocumentsNative`, and `extractHeadingsNative` in `Sidebar.tsx` and skipped when closed/inactive (also fixed the Rules of Hooks violation where `useMemo` appeared after `if (!isOpen) return null;`).
+  - Removed the redundant 2.5s `getFileMetadataNative` polling alongside OS `notify` watching in `useFileWatcher.ts` (fallback only on registration failure), unmounted hidden `<Preview>` when `viewMode === 'editor'` (mounted temporarily on `beforeprint`), and bounded `svgCache` (max 100 entries) in `MermaidRenderer.tsx`.
+- [x] **Fix Modal Always-Mount, Dual-Pane Autosave & Zen Timer Reset Bugs (`ModalGroup.tsx`, `useAutoSaveManager.ts`, `FocusTimer.tsx`)**:
+  - Converted all 11 modals in `ModalGroup.tsx` to conditional lazy mounting so `StatsModal` does not compute hidden stats on every keystroke.
+  - Isolated autosave timers per document ID (`Map`) in `useAutoSaveManager.ts` to prevent dual-pane editing from cancelling the other pane's timer, and shared `FocusTimer` state via a module store so Zen mode toggles preserve countdown state.
+- [ ] **Isolate Cursor & Scroll Re-renders (`App.tsx`, `Editor.tsx`)**:
+  - Decouple `cursorLine`/`cursorCol` updates from root `App.tsx` and stop per-pixel scroll re-renders / forced `offsetWidth` reflow in `Editor.tsx`.
+- [x] **Fix 0-Byte PDF Bug, Double Open Events, UTF-8 Write Overhead & Watcher mtime Comparison (`useFileOperations.ts`, `lib.rs`, `file_watcher.rs`, `sync_manager.rs`, `fileSystem.ts`)**:
+  - Fixed `handleExportPdfDirect` producing 0-byte PDFs when `generatePdfNative` returns `null` by safely falling back to print-dialog PDF export.
+  - Replaced UTF-8 `Array.from(TextEncoder)` `number[]` transfers with direct `atomicWriteFileNative` calls in `fileSystem.ts`.
+  - Guarded `export_specta_types()` with `#[cfg(debug_assertions)]`, unified duplicate `open-file` / `open-file-from-args` events into `open-file`, and added `sync_get_last_mtime` 50ms deduplication in `file_watcher.rs`.
+- [ ] **Startup Registry Check Optimization & Dead Rust Command Cleanup (`lib.rs`, `tauriNative.ts`, `rope_buffer.rs`, etc.)**:
+  - Avoid spawning `powershell.exe` unconditionally on every startup when the context menu registry key already matches, and clean up unused stubs (`batchConvertFilesNative`, `highlightCodeNative`) and uncalled Rust commands.
 
 ### 🧹 Dependency, Blur & Animation Cleanup
-- [ ] **Trim Unused Dependencies, Static Bundles & Blur/Animation Overhead (`package.json`, `Cargo.toml`, `MarkdownRenderers.tsx`, `vite.config.ts`)**:
-  - Remove completely unused `dotenv`, `motion`, `printpdf`, `unicode-segmentation`, and dead `vendor-katex` chunk config; dynamically import `refractor/all` and `react-markdown` only when JS fallback preview is active.
-  - Clean up excessive `backdrop-blur` overlays, continuous `animate-pulse`/`animate-ping`, and undefined `animate-fade-in`/`animate-fadeIn` classes.
+- [x] **Remove Completely Unused Dependencies & Dead Chunk Config (`package.json`, `Cargo.toml`, `vite.config.ts`)**:
+  - Removed unused `dotenv`, `motion`, `printpdf`, `unicode-segmentation`, and dead `vendor-katex` chunk config, and updated `Cargo.lock` dependencies to the latest compatible versions.
+- [ ] **Dynamic Import Heavy Fallback Bundles & Trim CSS Overhead (`MarkdownRenderers.tsx`, `Preview.tsx`, etc.)**:
+  - Dynamically import `refractor/all` and `react-markdown` only when JS fallback preview is active, and clean up excessive `backdrop-blur`, continuous `animate-pulse`/`animate-ping`, and undefined `animate-fade-in`/`animate-fadeIn` classes.
 
 
 

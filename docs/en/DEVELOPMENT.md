@@ -18,16 +18,20 @@
 │   │   │   ├── GeneralTab.tsx      # Appearance, font & auto-save tab
 │   │   │   └── StorageTab.tsx      # Storage management & ZIP export tab
 │   │   ├── AboutModal.tsx          # About modal
+│   │   ├── AmbientSoundControl.tsx # Ambient soundscape & volume controls
 │   │   ├── BatchConvertModal.tsx   # Batch encoding conversion dialog
 │   │   ├── DiffModal.tsx           # Text diff visualizer
 │   │   ├── DualPaneWorkspace.tsx   # Side-by-side dual-pane editing & preview workspace
 │   │   ├── Editor.tsx              # Text editor component
+│   │   ├── FindReplaceBar.tsx      # In-editor inline find & replace bar
+│   │   ├── FocusTimer.tsx          # Pomodoro focus timer (preserved across Zen toggle)
 │   │   ├── HelpGuideModal.tsx      # Quick help guide dialog
 │   │   ├── LogModal.tsx            # Application log modal
 │   │   ├── MarkdownRenderers.tsx   # ReactMarkdown custom renderers
-│   │   ├── MermaidRenderer.tsx     # Mermaid SVG renderer (zoom, fullscreen, SVG save)
-│   │   ├── ModalGroup.tsx          # Consolidated modal container
+│   │   ├── MermaidRenderer.tsx     # Mermaid SVG renderer (Pele sync rendering, zoom, SVG save)
+│   │   ├── ModalGroup.tsx          # Lazy-mounted consolidated container for 11 modals
 │   │   ├── Preview.tsx             # Markdown real-time preview & Mermaid renderer
+│   │   ├── RevisionHistoryModal.tsx# Revision history & snapshot restore modal
 │   │   ├── SettingsModal.tsx       # Editor settings dialog shell
 │   │   ├── ShortcutsModal.tsx      # Keyboard shortcuts guide
 │   │   ├── Sidebar.tsx             # Document management & outline sidebar
@@ -40,6 +44,8 @@
 │   │   ├── Toast.tsx               # Toast alert component
 │   │   └── Toolbar.tsx             # Formatting toolbar
 │   ├── hooks/                      # Custom React hooks
+│   │   ├── useAppTheme.ts          # Theme, settings & window title sync hook
+│   │   ├── useAutoSaveManager.ts   # Per-document debounced autosave & snapshot hook
 │   │   ├── useDocumentManager.ts   # Document state & tabs manager hook
 │   │   ├── useDualPane.ts          # Side-by-side dual-pane splitter & focus hook
 │   │   ├── useEditorToolbarActions.ts # Toolbar format actions, tables & heading jump hook
@@ -47,13 +53,19 @@
 │   │   ├── useFileWatcher.ts       # External file watcher hook
 │   │   ├── useGlobalShortcuts.ts   # Global keyboard shortcuts hook
 │   │   ├── useModalState.ts        # Modal state manager hook
+│   │   ├── useTextAnalysis.ts      # Async text statistics & Japanese proofreading hook
 │   │   └── useWindowDragDrop.ts    # OS drag-and-drop handler hook
+│   ├── styles/                     # Split stylesheets
+│   │   ├── markdown.css            # Markdown preview & Obsidian-compatible styles
+│   │   └── print.css               # Print & PDF export optimized styles
 │   ├── utils/                      # Utilities
 │   │   ├── aiSummary.ts            # Gemini API & local summary hybrid engine
+│   │   ├── ambientSound.ts         # Web Audio API real-time ambient sound synthesizer
 │   │   ├── encodingUtils.ts        # Encoding detection & conversion
-│   │   ├── fileSystem.ts           # File system & chunk loader
+│   │   ├── fileSystem.ts           # File system, chunk loader & atomic write
 │   │   ├── logger.ts               # Logger utility
 │   │   ├── markdownUtils.ts        # Formatting insertion & stats
+│   │   ├── snapshotManager.ts      # Local snapshot auto-backup manager
 │   │   ├── storage.ts              # LocalStorage I/O & GC
 │   │   ├── tableUtils.ts           # Table navigation & auto-row logic
 │   │   ├── tauriNative.ts          # Tauri IPC wrappers

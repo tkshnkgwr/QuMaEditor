@@ -151,31 +151,34 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
     });
   }, [currentDoc?.id, currentDoc?.filePath, currentDoc?.isRemote, onReloadFile, saveStatus]);
 
-  // ウィンドウフォーカス時および定期ポーリング (2.5秒) による監視
+  // ウィンドウフォーカス時の外部変更チェック（通常時は OS ネイティブ監視 notify に委譲しポーリング負荷をゼロ化）
   useEffect(() => {
     const handleFocus = () => {
       checkFileUpdate();
     };
 
     window.addEventListener('focus', handleFocus);
-    const intervalId = setInterval(() => checkFileUpdate(), 2500);
-
     return () => {
       window.removeEventListener('focus', handleFocus);
-      clearInterval(intervalId);
     };
   }, [checkFileUpdate]);
 
-  // OS ネイティブ外部変更監視 (notify + Tauri イベント連携)
+  // OS ネイティブ外部変更監視 (notify + Tauri イベント連携、登録失敗時のみフォールバックポーリング)
   useEffect(() => {
     const filePath = currentDoc?.filePath;
     if (!filePath || currentDoc.isRemote) return;
 
     let unlistenFn: (() => void) | null = null;
+    let fallbackIntervalId: ReturnType<typeof setInterval> | null = null;
 
     // ネイティブ監視の登録
-    commands.watchFileNative(filePath).catch((err) => {
-      console.warn('[NativeFileWatcher] watchFileNative 失敗:', err);
+    commands.watchFileNative(filePath).then((res) => {
+      if (res.status !== 'ok') {
+        fallbackIntervalId = setInterval(() => checkFileUpdate(filePath), 5000);
+      }
+    }).catch((err) => {
+      console.warn('[NativeFileWatcher] watchFileNative 失敗、フォールバック監視へ切替:', err);
+      fallbackIntervalId = setInterval(() => checkFileUpdate(filePath), 5000);
     });
 
     // Tauri イベント native-file-changed の購読
@@ -202,9 +205,12 @@ export function useFileWatcher({ currentDoc, onReloadFile, saveStatus }: UseFile
       if (unlistenFn) {
         unlistenFn();
       }
+      if (fallbackIntervalId) {
+        clearInterval(fallbackIntervalId);
+      }
       commands.unwatchFileNative(filePath).catch(() => {});
     };
-  }, [currentDoc?.filePath, currentDoc?.isRemote, onReloadFile]);
+  }, [currentDoc?.filePath, currentDoc?.isRemote, onReloadFile, checkFileUpdate]);
 
   return {
     markLocalSaving,

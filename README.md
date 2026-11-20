@@ -4,7 +4,7 @@
 [![Rust](https://img.shields.io/badge/Rust-1.80+-orange?logo=rust)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-v19-61dafb?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-v5-3178c6?logo=typescript)](https://www.typescriptlang.org/)
-[![Version](https://img.shields.io/badge/Version-v1.5.6-green)](package.json)
+[![Version](https://img.shields.io/badge/Version-v1.5.7-green)](package.json)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 
 **English** | [日本語版 (Japanese)](README_JA.md)
@@ -55,43 +55,43 @@ Equipped with all the expressive capabilities required for specifications and so
 
 ## 🚀 Feature Matrix
 
-| Category | Highlights |
-| :------- | :--------- |
+| Category                      | Highlights                                                                                                                                                                                                    |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Storage & File Management** | LocalStorage document manager (search, tags, favorites), disk file read/write, automated local backups & revision history (diff preview & rollback), multi-encoding auto-detection (UTF-8, Shift_JIS, EUC-JP), line-ending normalization (CRLF, LF) |
 | **Editor & Writing Assistance** | Floating inline Find & Replace bar (`Ctrl+F` / `Ctrl+H`, case/word/regex options), collapsible heading outline (H1~H5 expand/collapse), Tab indentation & nested list nesting, Undo/Redo formatting integration, advanced PowerShell syntax highlighting |
-| **Deep Focus (Zen Mode)** | Zen fullscreen focus mode, current line focus highlight, Pomodoro timer (🍅 counter & chord chime notification), Web Audio real-time ambient soundscapes (Rain, White Noise, Brook, Breeze, Cosmic Drone) |
-| **Preview & Rendering** | Rust native HTML rendering, Next-Gen synchronous Mermaid preview (zoom, fullscreen, SVG save), Obsidian compatibility (callouts, highlights, wikilinks), side-by-side dual-pane split view, graphical diff viewer |
+| **Deep Focus (Zen Mode)**     | Zen fullscreen focus mode, current line focus highlight, Pomodoro timer (🍅 counter & chord chime notification, preserved across Zen toggle), Web Audio real-time ambient soundscapes (Rain, White Noise, Brook, Breeze, Cosmic Drone) |
+| **Preview & Rendering**       | Rust native HTML rendering (zero-overhead unmounted preview in editor-only mode), Next-Gen synchronous Mermaid preview (zoom, fullscreen, SVG save), Obsidian compatibility (callouts, highlights, wikilinks), side-by-side dual-pane split view, graphical diff viewer |
 | **AI Summaries & Proofreading** | Google Gemini API document summarization (custom API key) + offline extractive summarizer, asynchronous Rust Japanese proofreading & syntax linting (particles, typos, unclosed brackets), live document statistics modal |
-| **Export & Publishing** | Standalone self-contained HTML export (embedded Mermaid & styles), PDF export (print-optimized CSS), raw Markdown export |
+| **Export & Publishing**       | Standalone self-contained HTML export (embedded Mermaid & styles), PDF export (print-optimized CSS), raw Markdown export                                                                                      |
 
 ---
 
 ## 💻 System Requirements & Tech Stack
 
-| Category | Technology |
-| :------- | :--------- |
-| **Supported OS** | Windows 10 / 11 (x64) |
-| **Application Framework** | [Tauri v2](https://v2.tauri.app/) (Rust 1.80+) |
-| **Frontend** | React 19, TypeScript 5.8, Vite, Tailwind CSS v4, Lucide Icons |
-| **Backend (Rust)** | pulldown-cmark, syntect, ropey, similar, notify, encoding_rs, zip |
-| **Audio Synthesis Engine** | Web Audio API (Native DSP, 0KB external assets) |
+| Category                   | Technology                                                                         |
+| :------------------------- | :--------------------------------------------------------------------------------- |
+| **Supported OS**           | Windows 10 / 11 (x64)                                                              |
+| **Application Framework**  | [Tauri v2](https://v2.tauri.app/) (Rust 1.80+)                                     |
+| **Frontend**               | React 19, TypeScript 5.8, Vite, Tailwind CSS v4, Lucide Icons, Pele (Mermaid SVG)  |
+| **Backend (Rust)**         | pulldown-cmark, syntect, ropey, similar, notify, encoding_rs, zip, memmap2, ignore |
+| **Audio Synthesis Engine** | Web Audio API (Native DSP, 0KB external assets)                                    |
 
 ---
 
 ## ⌨️ Essential Keyboard Shortcuts
 
-| Shortcut | Action |
-| :------- | :----- |
-| `Ctrl + N` | Create new document (Instant LocalStorage scratchpad) |
-| `Ctrl + S` | Save to disk file (Save As on first run) |
-| `Ctrl + O` | Open file from disk |
-| `Ctrl + F` | Toggle in-editor inline Find bar |
-| `Ctrl + H` | Toggle in-editor inline Replace bar |
-| `Ctrl + Shift + Z` | 🧘 Toggle Zen writing mode (Exit with `Esc`) |
-| `Ctrl + Shift + D` | Open document Diff comparison modal |
-| `Ctrl + Shift + F` | Auto-format Markdown tables and blank lines |
-| `Ctrl + E` | Restore focus and cursor position from preview to editor |
-| `F1` | Show keyboard shortcuts help cheat sheet |
+| Shortcut           | Action                                                       |
+| :----------------- | :----------------------------------------------------------- |
+| `Ctrl + N`         | Create new document (Instant LocalStorage scratchpad)        |
+| `Ctrl + S`         | Save to disk file (Save As on first run)                     |
+| `Ctrl + O`         | Open file from disk                                          |
+| `Ctrl + F`         | Toggle in-editor inline Find bar                             |
+| `Ctrl + H`         | Toggle in-editor inline Replace bar                          |
+| `Ctrl + Shift + Z` | 🧘 Toggle Zen writing mode (Exit with `Esc`)                 |
+| `Ctrl + Shift + D` | Open document Diff comparison modal                          |
+| `Ctrl + Shift + F` | Auto-format Markdown tables and blank lines                  |
+| `Ctrl + E`         | Restore focus and cursor position from preview to editor     |
+| `F1`               | Show keyboard shortcuts help cheat sheet                     |
 
 ---
 

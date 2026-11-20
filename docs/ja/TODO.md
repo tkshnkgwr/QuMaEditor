@@ -8,6 +8,10 @@ QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 
 ## 🎯 完了済みタスク (Completed)
 
+### v1.5.7 リリース版 (2026-11-20)
+
+- [x] **コード監査不具合修正・パフォーマンス軽量化・依存最新化 (`Performance / Stability / Dependencies`)**: 0バイト PDF 出力不具合修正（印刷ダイアログフォールバック）、`Sidebar.tsx` Rules of Hooks 違反修正＆IPCデバウンス・非表示抑止、`useAutoSaveManager` ペイン別タイマー分離、`FocusTimer` Zen切替時状態保持、`ModalGroup` 11モーダル遅延マウント、`viewMode === 'editor'` 時の裏 `<Preview>` アンマウント、`useFileWatcher` 二重ポーリング廃止、`file_watcher.rs` mtime 比較実装、`lib.rs` 二重イベント解消＆Release時Spectaガード、`fileSystem.ts` `atomicWriteFileNative` 利用、`MermaidRenderer` キャッシュ上限設定、未使用依存（`dotenv`, `motion`, `printpdf`, `unicode-segmentation`, `vendor-katex`）削除、Rust クレート一括更新、日英 `README` / `docs/` 全面同期。
+
 ### v1.5.6 リリース版 (2026-11-10)
 
 - [x] **現在行フォーカス機能（カーソル行強調 / Focus Mode） (`ZenMode / Editor`)**: エディタ入力中のアクティブ行にハイライトバーを表示し、前後の行を薄暗く減光表示して執筆への没入感を極大化。設定およびZenモード・TitleBarでワンクリック切替可能。
@@ -157,20 +161,27 @@ QuMaEditor の開発タスクおよび完了済み機能の一覧です。
 2026-11-16 の全ソースコード監査により判明した「1打鍵ごとのIPC連打・裏プレビュー常時稼働・再レンダリング波及・0バイトPDFスタブ不具合・大量のデッドコード・過剰依存」の解消タスク。
 
 ### ⚡ IPC・監視・再レンダリング・バグ修正
-- [ ] **IPC 連打・二重監視・裏プレビュー稼働の解消 (`Sidebar.tsx`, `useFileWatcher.ts`, `Preview.tsx`, `MermaidRenderer.tsx`)**:
-  - `Sidebar.tsx` の `indexDocumentsNative` / `extractHeadingsNative` にデバウンスを導入し、サイドバー閉鎖時や非該当タブ時は実行しない（あわせて `if (!isOpen) return null;` 後の `useMemo` による Rules of Hooks 違反も修正）。
-  - `useFileWatcher.ts` の OS 監視 (`notify`) と並列稼働している 2.5秒ごとポーリングを削減・整理し、`viewMode === 'editor'` 時の裏 `<Preview>` を完全アンマウント化、`MermaidRenderer.tsx` のキャッシュ照合前 IPC を廃止する（`svgCache` にも上限を設定）。
-- [ ] **再レンダリング波及とデュアルペイン／Zen状態不具合の修正 (`App.tsx`, `Editor.tsx`, `ModalGroup.tsx`, `StatsModal.tsx`, `useAutoSaveManager.ts`)**:
-  - `cursorLine`/`cursorCol` 更新による `App` 全体の再レンダリング、1px スクロールごとの `Editor` 全体再描画・強制レイアウト（`offsetWidth`）、11モーダル常時マウント（`StatsModal` の非表示時裏計算）を解消する。
-  - `useAutoSaveManager.ts` の `autoSaveTimeoutRef` をペイン別管理にしてデュアルペイン編集時の保存キャンセルを防ぎ、Zen モード切替で `FocusTimer` がリセットされないよう統合する。
-- [ ] **0バイト PDF 出力不具合・起動時無駄処理・デッドコマンド一掃 (`tauriNative.ts`, `useFileOperations.ts`, `lib.rs`, `file_watcher.rs`, `fileSystem.ts`)**:
-  - `null` を返す `generatePdfNative` スタブ呼び出しにより 0バイト PDF が出力される問題を修正し、未使用スタブ（`batchConvertFilesNative`, `highlightCodeNative`）および `saveNativeFile` での UTF-8 巨大 `number[]` 転送（`atomicWriteFileNative` 未使用）を改善する。
-  - Release 起動時の毎回 `export_specta_types()` 構築、毎回 `powershell.exe` spawn によるレジストリ上書き、`open-file` / `open-file-from-args` 二重発火、`file_watcher.rs` の `let _ = last_mtime_opt;` 破棄、フロント未呼び出し Rust コマンド群（`rope_buffer.rs` 全8コマンド等）を整理する。
+- [x] **IPC 連打・二重監視・裏プレビュー稼働の解消 (`Sidebar.tsx`, `useFileWatcher.ts`, `App.tsx`, `MermaidRenderer.tsx`)**:
+  - `Sidebar.tsx` の `indexDocumentsNative` / `extractHeadingsNative` / `searchDocumentsNative` にデバウンスを導入し、サイドバー閉鎖時や非該当タブ時は実行しないよう最適化（あわせて `if (!isOpen) return null;` 後の `useMemo` による Rules of Hooks 違反も修正済み）。
+  - `useFileWatcher.ts` の OS 監視 (`notify`) と並列稼働していた 2.5秒ごとポーリングを廃止（監視登録失敗時のみフォールバック）、`App.tsx` で `viewMode === 'editor'` 時の裏 `<Preview>` を通常時完全アンマウント（印刷時のみ一時マウント）、`MermaidRenderer.tsx` の `svgCache` に上限（100件）を設定済み。
+- [x] **モーダル常時マウント・デュアルペイン自動保存・Zenタイマー不具合の修正 (`ModalGroup.tsx`, `useAutoSaveManager.ts`, `FocusTimer.tsx`)**:
+  - `ModalGroup.tsx` の全 11 モーダルを条件付き遅延マウントへ変更し、`StatsModal` 等の非表示時裏計算を完全解消済み。
+  - `useAutoSaveManager.ts` の `autoSaveTimeoutsRef` をドキュメント ID 別の `Map` 管理へ変更し、デュアルペイン編集時の保存キャンセル不具合を修正済み。
+  - `FocusTimer.tsx` をモジュール共有ストア化し、Zen モード切替時にタイマー状態・達成カウントがリセットされないよう統合済み。
+- [ ] **カーソル・スクロール再レンダリングの局所化 (`App.tsx`, `Editor.tsx`)**:
+  - `cursorLine`/`cursorCol` 更新による `App` 全体の再レンダリング、1px スクロールごとの `Editor` 全体再描画・強制レイアウト（`offsetWidth`）のさらなる最適化。
+- [x] **0バイト PDF 出力不具合・起動時二重発火・UTF-8 保存転送・mtime比較の修正 (`useFileOperations.ts`, `lib.rs`, `file_watcher.rs`, `sync_manager.rs`, `fileSystem.ts`)**:
+  - `null` を返す `generatePdfNative` スタブ呼び出しにより 0バイト PDF が出力される問題を修正（印刷ダイアログ PDF 保存へ安全フォールバック）。
+  - `fileSystem.ts` の UTF-8 保存を巨大な `number[]` 転送から `atomicWriteFileNative` 直接呼び出しへ改善済み。
+  - Release 起動時の `export_specta_types()` 無駄構築を `#[cfg(debug_assertions)]` でガード、`open-file` / `open-file-from-args` 二重発火を `open-file` に一本化、`file_watcher.rs` で `sync_get_last_mtime` による 50ms 以内の重複イベント抑止を実装済み。
+- [ ] **起動時レジストリ登録最適化 ＆ 未使用 Rust コマンド整理 (`lib.rs`, `tauriNative.ts`, `rope_buffer.rs` 等)**:
+  - 毎回 `powershell.exe` spawn によるコンテキストメニュー登録の差分チェック化、未使用スタブ（`batchConvertFilesNative`, `highlightCodeNative`）およびフロント未呼び出し Rust コマンド群の整理。
 
 ### 🧹 過剰依存・ぼかし・アニメ整理
-- [ ] **不要依存・重い静的バンドル・CSS負荷の削減 (`package.json`, `Cargo.toml`, `MarkdownRenderers.tsx`, `vite.config.ts`)**:
-  - 完全未使用の `dotenv`・`motion`・`printpdf`・`unicode-segmentation`・`vendor-katex` チャンク設定を削除し、デフォルト `rust` プレビュー時に使われない `refractor/all` や `react-markdown` 系を動的 import 化して初期バンドル・メモリを削減する。
-  - 常時/高頻度表示UIの `backdrop-blur`、`animate-pulse`/`animate-ping`、CSS 未定義の `animate-fade-in`/`animate-fadeIn` を整理する。
+- [x] **完全未使用パッケージ・クレート・チャンク設定の削除 (`package.json`, `Cargo.toml`, `vite.config.ts`)**:
+  - 完全未使用の `dotenv`・`motion`・`printpdf`・`unicode-segmentation`・`vendor-katex` チャンク設定を削除し、`Cargo.lock` の依存クレートを最新互換版へ更新済み。
+- [ ] **重い静的バンドル動的化・CSS負荷の削減 (`MarkdownRenderers.tsx`, `Preview.tsx` 等)**:
+  - デフォルト `rust` プレビュー時に使われない `refractor/all` や `react-markdown` 系の動的 import 化、および常時/高頻度表示UIの `backdrop-blur`・`animate-pulse`/`animate-ping`・未定義アニメクラスの整理。
 
 
 

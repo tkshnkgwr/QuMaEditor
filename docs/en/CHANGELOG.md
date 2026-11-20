@@ -4,6 +4,28 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.5.7] - 2026-11-20
+
+### ⚡ Code Audit Bugfixes, Performance Optimization & Dependency Updates (v1.5.7)
+
+- **Bugfixes & Stability (`Bugfix / Stability`)**:
+  - Fixed `handleExportPdfDirect` producing 0-byte PDF files when `generatePdfNative` returned `null` by safely falling back to print-dialog PDF export.
+  - Fixed a React Rules of Hooks violation in `Sidebar.tsx` where `useMemo` appeared after `if (!isOpen) return null;`.
+  - Isolated autosave timers per document ID (`Map`) in `useAutoSaveManager.ts` so dual-pane editing no longer cancels the other pane's pending autosave.
+  - Shared `FocusTimer.tsx` state via a module store so Zen mode toggles preserve countdown state and completed session counts.
+  - Unified duplicate `open-file` / `open-file-from-args` events into `open-file` across `lib.rs` and `App.tsx`.
+  - Implemented `sync_get_last_mtime` 50ms deduplication in `file_watcher.rs` instead of discarding the previous `mtime`.
+- **IPC, Rendering & Memory Optimization (`Performance / Optimization`)**:
+  - Debounced `indexDocumentsNative`, `searchDocumentsNative`, and `extractHeadingsNative` in `Sidebar.tsx` and skipped execution when closed or on an inactive tab.
+  - Unmounted hidden `<Preview>` in `App.tsx` when `viewMode === 'editor'` (temporarily mounting only on `beforeprint`).
+  - Converted all 11 modals in `ModalGroup.tsx` to conditional lazy mounting so `StatsModal` does not compute hidden stats on every keystroke.
+  - Eliminated redundant 2.5s polling in `useFileWatcher.ts` when OS native `notify` watching succeeds (retained only as fallback).
+  - Switched UTF-8 saves in `fileSystem.ts` to direct `atomicWriteFileNative` calls instead of large `number[]` transfers.
+  - Bounded `svgCache` (max 100 entries) in `MermaidRenderer.tsx` and guarded `export_specta_types()` with `#[cfg(debug_assertions)]` in `lib.rs`.
+- **Dependency Updates, Cleanup & Documentation Sync (`Dependencies / Docs`)**:
+  - Updated Rust crates in `Cargo.lock` to the latest compatible versions (`tauri 2.12.7`, `encoding_rs 0.8.44`, `windows 0.62.2`, etc.) and removed unused `printpdf`, `unicode-segmentation`, `dotenv`, `motion`, and dead `vendor-katex` chunk config.
+  - Synchronized EN/JA `README` (with strict vertical table alignment) and `docs/` (`DEVELOPMENT`, `ARCHITECTURE`, `TODO`, `TEST_REPORT`, `SPECIFICATION`, `USER_GUIDE`).
+
 ## [1.5.6] - 2026-11-10
 
 ### 🧘 Current Line Focus, Pomodoro Focus Timer & Zero-Dependency Ambient Soundscapes (v1.5.6)

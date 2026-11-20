@@ -4,6 +4,28 @@
 
 QuMaEditor の主要な変更点およびリリース履歴です。
 
+## [1.5.7] - 2026-11-20
+
+### ⚡ コード監査不具合修正・パフォーマンス軽量化・依存クレート最新化 (v1.5.7)
+
+- **不具合修正・安定性向上 (`Bugfix / Stability`)**:
+  - `generatePdfNative` が `null` を返した際に 0 バイト PDF がダウンロードされていた不具合を修正し、印刷ダイアログ経由の PDF 保存へ安全にフォールバックするよう改善。
+  - `Sidebar.tsx` の `if (!isOpen) return null;` 後に配置されていた `useMemo` による React Rules of Hooks 違反を解消。
+  - `useAutoSaveManager.ts` の自動保存タイマーをドキュメント ID 別 `Map` 管理へ変更し、デュアルペイン交互編集時の自動保存キャンセル不具合を修正。
+  - `FocusTimer.tsx` の状態をモジュール共有ストア化し、Zen モード切替時にカウントダウンと達成カウントがリセットされないよう改善。
+  - `lib.rs` / `App.tsx` の `open-file` / `open-file-from-args` イベント二重発火を `open-file` へ一本化。
+  - `file_watcher.rs` で破棄されていた `mtime` 比較を実装（`sync_get_last_mtime` により 50ms 以内の同一 `mtime` 連続イベントを抑止）。
+- **IPC・描画・メモリ最適化 (`Performance / Optimization`)**:
+  - `Sidebar.tsx` の全文検索インデックス登録・検索・見出し抽出にデバウンスを導入し、サイドバー閉鎖時や非該当タブ時は実行しないよう最適化。
+  - `App.tsx` で編集専用モード (`viewMode === 'editor'`) 時の裏 `<Preview>` を通常時完全アンマウント（印刷時のみ一時マウント）へ修正。
+  - `ModalGroup.tsx` の全 11 モーダルを条件付き遅延マウントへ変更し、`StatsModal` 等の非表示時裏計算をゼロ化。
+  - `useFileWatcher.ts` の OS ネイティブ監視 (`notify`) 登録成功時の 2.5 秒ポーリングを廃止（失敗時のみフォールバック）。
+  - `fileSystem.ts` の UTF-8 保存を `atomicWriteFileNative` 直接呼び出しへ変更し、巨大な数値配列転送を削減。
+  - `MermaidRenderer.tsx` の `svgCache` に上限（100件）を設定し、`lib.rs` の Release 起動時 `export_specta_types()` 無駄構築を `#[cfg(debug_assertions)]` でガード。
+- **依存関係最新化・クリーンアップ・ドキュメント同期 (`Dependencies / Docs`)**:
+  - Rust 依存クレート (`Cargo.lock`) を最新互換版へ一括更新（`tauri 2.12.7`, `encoding_rs 0.8.44`, `windows 0.62.2` 等）し、未使用の `printpdf`・`unicode-segmentation`・`dotenv`・`motion`・`vendor-katex` チャンク設定を削除。
+  - 日英 `README` のテーブル垂直整列および `docs/`（`DEVELOPMENT`, `ARCHITECTURE`, `TODO`, `TEST_REPORT`, `SPECIFICATION`, `USER_GUIDE`）を最新化。
+
 ## [1.5.6] - 2026-11-10
 
 ### 🧘 現在行フォーカス・ポモドーロタイマー・環境音リアルタイムBGM (v1.5.6)
