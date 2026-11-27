@@ -4,6 +4,21 @@
 
 All notable changes and release history for QuMaEditor.
 
+## [1.5.8] - 2026-11-27
+
+### 🎵 Ambient Sound Overhaul, Pink Noise & Word-Wrap Line Numbers / Line Focus Fixes (v1.5.8)
+
+- **Ambient Sound Synthesizer Improvements & New Preset (`ambientSound.ts`)**:
+  - Added **Pink Noise (`pinknoise`)** preset using the Paul Kellet 1/f noise algorithm.
+  - Overhauled **Brook (`brook`)** to replace wind-like low-frequency sweeps with shallow stream layers, Minnaert-resonance bubble pulses, and subtle stereo splashes.
+  - Softened **Forest Breeze (`breeze`)** by removing heavy low-end rumble and layering gentle air flow with rustling leaves modulated by slow amplitude envelopes.
+  - Tuned **Rain (`rain`)** to a gentler rainfall with reduced low-mid pressure and randomized stereo raindrop impulses.
+  - Added seamless crossfade looping to all noise buffers to eliminate loop boundary clicks.
+- **Editor Word-Wrap, Line Numbers & Current Line Focus Fixes (`Editor.tsx`, `editorLayout.ts`)**:
+  - Fixed line number misalignment under word wrap by padding wrapped visual lines so logical line numbers stay aligned with text.
+  - Fixed current line focus lagging or failing to follow cursor movement during key repeat and scrolling by tracking `onSelect`/`onChange`/key-repeat and updating overlay geometry directly on the DOM with zero transition lag.
+  - Added a dedicated `editorLayout.ts` measurer using a hidden mirror and the `Range` API to compute exact wrapped visual cursor positions for both current line focus and typewriter scroll.
+
 ## [1.5.7] - 2026-11-20
 
 ### ⚡ Code Audit Bugfixes, Performance Optimization & Dependency Updates (v1.5.7)

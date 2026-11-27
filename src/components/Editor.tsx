@@ -1,9 +1,10 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useCallback, useLayoutEffect } from 'react';
 import { Upload, Lock, Unlock, Tag, Plus, X, ChevronDown, ChevronRight, Edit3, Layers, Download, Zap, Sparkles, AlertCircle } from 'lucide-react';
 import { EditorSettings, MarkdownDoc, ViewMode } from '../types';
 import { handleAutoListContinuation, insertFormatting, handleTabIndent, applyTextReplacementWithUndo } from '../utils/markdownUtils';
 import { handleTableKeyNavigation } from '../utils/tableUtils';
 import { triggerDocumentSummary } from '../utils/aiSummary';
+import { EditorLayoutMeasurer, EditorTypography, getTextareaContentWidth } from '../utils/editorLayout';
 import { FindReplaceBar } from './FindReplaceBar';
 
 interface EditorProps {
@@ -57,6 +58,13 @@ export const Editor: React.FC<EditorProps> = ({
     }
   }, [onTextareaRef]);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
+  const focusTopRef = useRef<HTMLDivElement>(null);
+  const focusBarRef = useRef<HTMLDivElement>(null);
+  const focusBottomRef = useRef<HTMLDivElement>(null);
+  const layoutMeasurerRef = useRef<EditorLayoutMeasurer | null>(null);
+  const caretPosRef = useRef<{ top: number; height: number }>({ top: 0, height: 24 });
+  const keyRepeatRafRef = useRef<number | null>(null);
+  const [textareaContentWidth, setTextareaContentWidth] = useState<number>(0);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isFrontMatterOpen, setIsFrontMatterOpen] = useState(true);
   const [newTagInput, setNewTagInput] = useState('');
@@ -67,8 +75,41 @@ export const Editor: React.FC<EditorProps> = ({
   const [summaryErrorMessage, setSummaryErrorMessage] = useState<string | null>(null);
   const [isFindOpen, setIsFindOpen] = useState(false);
   const [findMode, setFindMode] = useState<'find' | 'replace'>('find');
-  const [currentCursorLine, setCurrentCursorLine] = useState<number>(1);
-  const [currentScrollTop, setCurrentScrollTop] = useState<number>(0);
+
+  const getLayoutMeasurer = useCallback(() => {
+    if (!layoutMeasurerRef.current) {
+      layoutMeasurerRef.current = new EditorLayoutMeasurer();
+    }
+    return layoutMeasurerRef.current;
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      layoutMeasurerRef.current?.dispose();
+      layoutMeasurerRef.current = null;
+      if (keyRepeatRafRef.current !== null) {
+        cancelAnimationFrame(keyRepeatRafRef.current);
+      }
+    };
+  }, []);
+
+  // textarea の描画幅変化を ResizeObserver で監視（折り返し行番号・カーソル座標の自動再計算用）
+  React.useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      const w = getTextareaContentWidth(el);
+      setTextareaContentWidth((prev) => (Math.abs(prev - w) >= 0.5 ? w : prev));
+    };
+
+    updateWidth();
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [viewMode, settings.lineNumbers]);
 
   const tags = doc?.tags || [];
 
@@ -108,6 +149,37 @@ export const Editor: React.FC<EditorProps> = ({
     }
   };
 
+  const getFontFamilyCss = (ff?: string) => {
+    switch (ff) {
+      case 'sans-serif':
+        return '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Meiryo", sans-serif';
+      case 'serif':
+        return '"Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif';
+      case 'monospace':
+      default:
+        return '"JetBrains Mono", "Cascadia Code", "Consolas", "Courier New", monospace';
+    }
+  };
+
+  const effectiveFontSize = settings.fontSize || 15;
+  const effectiveLineHeightRatio = typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625;
+  // サブピクセル丸め誤差による長文での行番号・フォーカス帯のズレを防ぐため整数 px に統一
+  const effectiveLineHeightPx = Math.max(12, Math.round(effectiveFontSize * effectiveLineHeightRatio));
+  const effectiveFontFamily = getFontFamilyCss(settings.fontFamily);
+  const effectiveTabSize = settings.tabSize || 2;
+
+  const typography: EditorTypography = useMemo(
+    () => ({
+      fontSize: effectiveFontSize,
+      lineHeightPx: effectiveLineHeightPx,
+      fontFamily: effectiveFontFamily,
+      tabSize: effectiveTabSize,
+      wordWrap: settings.wordWrap,
+      contentWidth: textareaContentWidth,
+    }),
+    [effectiveFontSize, effectiveLineHeightPx, effectiveFontFamily, effectiveTabSize, settings.wordWrap, textareaContentWidth]
+  );
+
   // 改行文字の高速カウント (ゼロアロケーション)
   const lineCount = useMemo(() => {
     if (!content) return 1;
@@ -120,14 +192,36 @@ export const Editor: React.FC<EditorProps> = ({
     return count;
   }, [content]);
 
-  // 行番号文字列の単一キャッシュ (10万個のDOM要素生成を完全廃止し1要素化)
+  // 折り返し行を空行パディングした行番号文字列 (単一 pre による超高速描画 + 自動折り返し完全同期)
   const lineNumbersText = useMemo(() => {
-    let result = '';
-    for (let i = 1; i <= lineCount; i++) {
-      result += i + (i === lineCount ? '' : '\n');
+    return getLayoutMeasurer().buildLineNumbersText(content, typography);
+  }, [content, typography, getLayoutMeasurer]);
+
+  // 現在行フォーカスオーバーレイを DOM へ直接反映 (React 再レンダリング無し・遅延 0ms で追従)
+  const syncFocusOverlayDOM = useCallback(() => {
+    if (!settings.currentLineFocus) return;
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const paddingTop = 12; // p-3 = 12px
+    const scrollTop = el.scrollTop;
+    const { top: caretTop, height: caretHeight } = caretPosRef.current;
+
+    const barTop = caretTop + paddingTop - scrollTop;
+    const topMaskHeight = Math.max(0, barTop);
+    const bottomMaskTop = Math.max(0, barTop + caretHeight);
+
+    if (focusTopRef.current) {
+      focusTopRef.current.style.height = `${topMaskHeight}px`;
     }
-    return result;
-  }, [lineCount]);
+    if (focusBarRef.current) {
+      focusBarRef.current.style.top = `${barTop}px`;
+      focusBarRef.current.style.height = `${caretHeight}px`;
+    }
+    if (focusBottomRef.current) {
+      focusBottomRef.current.style.top = `${bottomMaskTop}px`;
+    }
+  }, [settings.currentLineFocus]);
 
   // カーソル復元処理中の誤保存ガードフラグ
   const isRestoringCursorRef = React.useRef(false);
@@ -147,14 +241,11 @@ export const Editor: React.FC<EditorProps> = ({
     }
   };
 
-  // タイプライタースクロール処理 (カーソル行を画面中央に維持)
-  const applyTypewriterScroll = (line: number) => {
+  // タイプライタースクロール処理 (カーソル視覚位置を画面中央に維持・折り返し対応)
+  const applyTypewriterScroll = (caretTop: number, caretHeight: number) => {
     if (!settings.typewriterScroll || !textareaRef.current) return;
     const el = textareaRef.current;
-    const numericLineHeight = typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625;
-    const computedLineHeight = (settings.fontSize || 15) * numericLineHeight;
-    const cursorTop = (line - 1) * computedLineHeight;
-    const targetScrollTop = Math.max(0, cursorTop - el.clientHeight / 2 + computedLineHeight / 2);
+    const targetScrollTop = Math.max(0, caretTop - el.clientHeight / 2 + caretHeight / 2);
 
     el.scrollTo({
       top: targetScrollTop,
@@ -162,36 +253,70 @@ export const Editor: React.FC<EditorProps> = ({
     });
   };
 
-  // カーソル位置の行・列番号を高速更新 (split を使わないゼロアロケーション走査)
-  const updateCursorPos = () => {
-    if (!textareaRef.current) return;
+  // カーソル位置の行・列番号および視覚座標を高速更新
+  const updateCursorPos = (overrideText?: string) => {
+    const el = textareaRef.current;
+    if (!el) return;
     saveCursorState();
-    const pos = textareaRef.current.selectionStart;
+    const text = overrideText !== undefined ? overrideText : el.value;
+    const pos = Math.min(el.selectionStart, text.length);
     let line = 1;
     let lastLineStart = 0;
     for (let i = 0; i < pos; i++) {
-      if (content.charCodeAt(i) === 10) {
+      if (text.charCodeAt(i) === 10) {
         line++;
         lastLineStart = i + 1;
       }
     }
     const col = pos - lastLineStart + 1;
-    setCurrentCursorLine(line);
     onCursorChange?.(line, col);
 
-    if (settings.typewriterScroll) {
-      applyTypewriterScroll(line);
+    if (settings.currentLineFocus || settings.typewriterScroll) {
+      const liveWidth = getTextareaContentWidth(el);
+      const effectiveTypography =
+        liveWidth > 0 && Math.abs(liveWidth - typography.contentWidth) >= 0.5
+          ? { ...typography, contentWidth: liveWidth }
+          : typography;
+      const visualPos = getLayoutMeasurer().measureCaretPosition(text, pos, effectiveTypography);
+      caretPosRef.current = visualPos;
+
+      if (settings.currentLineFocus) {
+        syncFocusOverlayDOM();
+      }
+      if (settings.typewriterScroll) {
+        applyTypewriterScroll(visualPos.top, visualPos.height);
+      }
     }
   };
 
-  // 行番号およびプレビューとのスクロール同期処理
+  // コンテンツ・幅・折り返し設定・フォーカス有効化の変化時にスクロールバー幅変化を検知しつつオーバーレイ位置を即時再同期
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const liveWidth = getTextareaContentWidth(el);
+    if (liveWidth > 0 && Math.abs(liveWidth - textareaContentWidth) >= 0.5) {
+      setTextareaContentWidth(liveWidth);
+    }
+    if (!settings.currentLineFocus) return;
+    const pos = Math.min(el.selectionStart, content.length);
+    const effectiveTypography =
+      liveWidth > 0 && Math.abs(liveWidth - typography.contentWidth) >= 0.5
+        ? { ...typography, contentWidth: liveWidth }
+        : typography;
+    caretPosRef.current = getLayoutMeasurer().measureCaretPosition(content, pos, effectiveTypography);
+    syncFocusOverlayDOM();
+  }, [content, typography, textareaContentWidth, settings.currentLineFocus, getLayoutMeasurer, syncFocusOverlayDOM]);
+
+  // 行番号およびプレビュー・現在行フォーカスとのスクロール同期処理 (再レンダリング無しで 0ms 追従)
   const handleScroll = () => {
     if (textareaRef.current) {
       saveCursorState();
       const { scrollTop, scrollHeight, clientHeight } = textareaRef.current;
-      setCurrentScrollTop(scrollTop);
       if (lineNumbersRef.current) {
         lineNumbersRef.current.scrollTop = scrollTop;
+      }
+      if (settings.currentLineFocus) {
+        syncFocusOverlayDOM();
       }
       if (onScrollSync && settings.syncScroll) {
         onScrollSync(scrollTop, scrollHeight, clientHeight);
@@ -365,9 +490,33 @@ export const Editor: React.FC<EditorProps> = ({
         onChange(continuation.newText);
         setTimeout(() => {
           textareaRef.current?.setSelectionRange(continuation.newCursor, continuation.newCursor);
+          updateCursorPos(continuation.newText);
         }, 0);
         return;
       }
+    }
+
+    // 矢印キー押しっぱなし（キーリピート）やナビゲーションキーでも即座にカーソル位置を追従
+    if (
+      e.key === 'ArrowUp' ||
+      e.key === 'ArrowDown' ||
+      e.key === 'ArrowLeft' ||
+      e.key === 'ArrowRight' ||
+      e.key === 'Home' ||
+      e.key === 'End' ||
+      e.key === 'PageUp' ||
+      e.key === 'PageDown' ||
+      e.key === 'Enter' ||
+      e.key === 'Backspace' ||
+      e.key === 'Delete'
+    ) {
+      if (keyRepeatRafRef.current !== null) {
+        cancelAnimationFrame(keyRepeatRafRef.current);
+      }
+      keyRepeatRafRef.current = requestAnimationFrame(() => {
+        keyRepeatRafRef.current = null;
+        updateCursorPos();
+      });
     }
   };
 
@@ -446,22 +595,6 @@ export const Editor: React.FC<EditorProps> = ({
       }
     }
   };
-
-  const getFontFamilyCss = (ff?: string) => {
-    switch (ff) {
-      case 'sans-serif':
-        return '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Meiryo", sans-serif';
-      case 'serif':
-        return '"Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif';
-      case 'monospace':
-      default:
-        return '"JetBrains Mono", "Cascadia Code", "Consolas", "Courier New", monospace';
-    }
-  };
-
-  const effectiveLineHeight = settings.lineHeight || 1.625;
-  const effectiveFontFamily = getFontFamilyCss(settings.fontFamily);
-  const effectiveTabSize = settings.tabSize || 2;
 
   return (
     <div
@@ -759,7 +892,7 @@ export const Editor: React.FC<EditorProps> = ({
           initialMode={findMode}
           isDark={isDark}
         />
-        {/* 行番号カラム (単一 pre による超高速・ゼロDOMオーバーヘッド描画) */}
+        {/* 行番号カラム (単一 pre による超高速描画・自動折り返し完全同期) */}
         {settings.lineNumbers && (
           <div
             ref={lineNumbersRef}
@@ -769,8 +902,8 @@ export const Editor: React.FC<EditorProps> = ({
                 : 'bg-slate-100 text-slate-400 border-slate-200'
             }`}
             style={{
-              fontSize: `${settings.fontSize}px`,
-              lineHeight: effectiveLineHeight,
+              fontSize: `${effectiveFontSize}px`,
+              lineHeight: `${effectiveLineHeightPx}px`,
               fontFamily: effectiveFontFamily,
             }}
           >
@@ -778,7 +911,8 @@ export const Editor: React.FC<EditorProps> = ({
               className="m-0 p-0 text-right whitespace-pre"
               style={{
                 fontFamily: effectiveFontFamily,
-                lineHeight: effectiveLineHeight,
+                fontSize: `${effectiveFontSize}px`,
+                lineHeight: `${effectiveLineHeightPx}px`,
                 paddingBottom: settings.typewriterScroll ? '50vh' : undefined,
               }}
             >
@@ -787,78 +921,79 @@ export const Editor: React.FC<EditorProps> = ({
           </div>
         )}
 
-        {/* メインテキストエリアエディタ */}
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          onKeyUp={updateCursorPos}
-          onClick={updateCursorPos}
-          onBlur={saveCursorState}
-          onScroll={handleScroll}
-          readOnly={isReadOnly}
-          placeholder="ここからMarkdown入力を開始してください..."
-          spellCheck={false}
-          className={`flex-1 w-full h-full p-3 font-mono resize-none focus:outline-none leading-relaxed transition-colors ${
-            isDark
-              ? 'bg-slate-950 text-slate-100 selection:bg-cyan-800 selection:text-slate-100'
-              : 'bg-white text-slate-900 selection:bg-cyan-200 selection:text-slate-900'
-          } ${
-            isReadOnly ? 'cursor-default opacity-90' : ''
-          } ${
-            settings.wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre overflow-x-auto'
-          }`}
-          style={{
-            fontSize: `${settings.fontSize}px`,
-            lineHeight: effectiveLineHeight,
-            fontFamily: effectiveFontFamily,
-            tabSize: effectiveTabSize,
-            paddingBottom: settings.typewriterScroll ? '50vh' : undefined,
-          }}
-        />
-
-        {/* 現在行フォーカス・ハイライト＆上下減光オーバーレイ */}
-        {settings.currentLineFocus && (
-          <div
-            className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
-            style={{
-              left: settings.lineNumbers && lineNumbersRef.current ? `${lineNumbersRef.current.offsetWidth}px` : '0px',
+        {/* メインテキストエリア＋現在行フォーカスオーバーレイ専用ラッパー */}
+        <div className="relative flex-1 flex h-full overflow-hidden">
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => {
+              const nextVal = e.target.value;
+              onChange(nextVal);
+              updateCursorPos(nextVal);
             }}
-          >
-            {/* 現在行より上の減光エリア */}
-            <div
-              className={`absolute left-0 right-0 top-0 transition-all duration-75 ${
-                isDark ? 'bg-slate-950/65' : 'bg-slate-900/20'
-              }`}
-              style={{
-                height: `${Math.max(0, (currentCursorLine - 1) * ((settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)) + 12 - currentScrollTop)}px`,
-              }}
-            />
-            {/* 現在行のハイライトバー */}
-            <div
-              className={`absolute left-0 right-0 border-y transition-all duration-75 ${
-                isDark
-                  ? 'bg-cyan-500/10 border-cyan-500/30 shadow-xs shadow-cyan-950'
-                  : 'bg-amber-500/10 border-amber-500/30'
-              }`}
-              style={{
-                top: `${(currentCursorLine - 1) * ((settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)) + 12 - currentScrollTop}px`,
-                height: `${(settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)}px`,
-              }}
-            />
-            {/* 現在行より下の減光エリア */}
-            <div
-              className={`absolute left-0 right-0 bottom-0 transition-all duration-75 ${
-                isDark ? 'bg-slate-950/65' : 'bg-slate-900/20'
-              }`}
-              style={{
-                top: `${Math.max(0, currentCursorLine * ((settings.fontSize || 15) * (typeof settings.lineHeight === 'number' ? settings.lineHeight : 1.625)) + 12 - currentScrollTop)}px`,
-              }}
-            />
-          </div>
-        )}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            onKeyUp={() => updateCursorPos()}
+            onClick={() => updateCursorPos()}
+            onSelect={() => updateCursorPos()}
+            onBlur={saveCursorState}
+            onScroll={handleScroll}
+            readOnly={isReadOnly}
+            placeholder="ここからMarkdown入力を開始してください..."
+            spellCheck={false}
+            className={`flex-1 w-full h-full p-3 font-mono resize-none focus:outline-none transition-colors ${
+              isDark
+                ? 'bg-slate-950 text-slate-100 selection:bg-cyan-800 selection:text-slate-100'
+                : 'bg-white text-slate-900 selection:bg-cyan-200 selection:text-slate-900'
+            } ${
+              isReadOnly ? 'cursor-default opacity-90' : ''
+            } ${
+              settings.wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre overflow-x-auto'
+            }`}
+            style={{
+              fontSize: `${effectiveFontSize}px`,
+              lineHeight: `${effectiveLineHeightPx}px`,
+              fontFamily: effectiveFontFamily,
+              tabSize: effectiveTabSize,
+              paddingBottom: settings.typewriterScroll ? '50vh' : undefined,
+            }}
+          />
+
+          {/* 現在行フォーカス・ハイライト＆上下減光オーバーレイ (DOM直接同期・遅延 0ms・折り返し完全対応) */}
+          {settings.currentLineFocus && (
+            <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+              {/* 現在行より上の減光エリア */}
+              <div
+                ref={focusTopRef}
+                className={`absolute left-0 right-0 top-0 ${
+                  isDark ? 'bg-slate-950/65' : 'bg-slate-900/20'
+                }`}
+                style={{ height: '12px' }}
+              />
+              {/* 現在行のハイライトバー */}
+              <div
+                ref={focusBarRef}
+                className={`absolute left-0 right-0 border-y ${
+                  isDark
+                    ? 'bg-cyan-500/10 border-cyan-500/30 shadow-xs shadow-cyan-950'
+                    : 'bg-amber-500/10 border-amber-500/30'
+                }`}
+                style={{
+                  top: '12px',
+                  height: `${effectiveLineHeightPx}px`,
+                }}
+              />
+              {/* 現在行より下の減光エリア */}
+              <div
+                ref={focusBottomRef}
+                className={`absolute left-0 right-0 bottom-0 ${
+                  isDark ? 'bg-slate-950/65' : 'bg-slate-900/20'
+                }`}
+                style={{ top: `${12 + effectiveLineHeightPx}px` }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 大容量ファイルの遅延読み込み（部分表示中）アクションバー */}

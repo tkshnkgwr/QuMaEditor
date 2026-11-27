@@ -99,8 +99,8 @@ export interface EditorSettings {
   typewriterScroll?: boolean;
   /** 現在行フォーカス（カーソル行を強調し、他行を優しく減光）有効フラグ */
   currentLineFocus?: boolean;
-  /** 環境音の選択 ('rain' | 'whitenoise' | 'brook' | 'breeze' | 'space') */
-  ambientSoundType?: 'rain' | 'whitenoise' | 'brook' | 'breeze' | 'space';
+  /** 環境音の選択 ('rain' | 'whitenoise' | 'pinknoise' | 'brook' | 'breeze' | 'space') */
+  ambientSoundType?: 'rain' | 'whitenoise' | 'pinknoise' | 'brook' | 'breeze' | 'space';
   /** 環境音の音量 (0.0〜1.0) */
   ambientSoundVolume?: number;
   /** Markdown プレビュー描画エンジン ('rust' | 'react') */
